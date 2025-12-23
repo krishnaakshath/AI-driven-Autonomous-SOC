@@ -8,7 +8,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🛡️ AI-Driven Autonomous SOC Dashboard")
+st.title("AI-Driven Autonomous SOC Dashboard")
 
 DATA_PATH = "data/parsed_logs/incident_responses.csv"
 FULL_MODE = os.path.exists(DATA_PATH)
@@ -41,12 +41,12 @@ df = load_data()
 # ================= MODE INDICATOR =================
 if FULL_MODE:
     st.success(
-        "🟢 Full SOC Mode Enabled  \n"
+        "Full SOC Mode Enabled \n"
         "Analyzing over 8 lakh real security events."
     )
 else:
     st.info(
-        "🟡 Demo Mode (Cloud Deployment)  \n"
+        "Demo Mode (Cloud Deployment)\n"
         "Running simulated telemetry for visualization."
     )
 
@@ -65,27 +65,27 @@ c3.metric("Restricted", f"{restricted:,}")
 st.divider()
 
 # ================= RISK DISTRIBUTION =================
-st.subheader("📊 Risk Score Distribution")
+st.subheader("Risk Score Distribution")
 st.bar_chart(df["risk_score"].value_counts().sort_index())
 
 st.divider()
 
 # ================= ALERTS =================
-st.subheader("🚨 Active Security Alerts")
+st.subheader("Active Security Alerts")
 alerts = df[df["access_decision"] != "ALLOW"].head(100)
 st.dataframe(alerts, width="stretch")
 
 st.divider()
 
 # ================= RESPONSES =================
-st.subheader("🤖 Automated Incident Responses")
+st.subheader("Automated Incident Responses")
 responses = df[["access_decision", "automated_response"]].head(100)
 st.dataframe(responses, width="stretch")
 
 st.divider()
 
 # ================= DATASETS =================
-st.subheader("📚 Dataset Coverage")
+st.subheader("Dataset Coverage")
 
 dataset_df = pd.DataFrame({
     "Dataset": ["CICIDS 2017", "UNSW-NB15", "ADFA-LD"],
