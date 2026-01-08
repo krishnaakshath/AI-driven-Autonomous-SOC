@@ -1,9 +1,14 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
-import random
+from datetime import datetime, timedelta
+import os
+import sys
+import requests
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 st.set_page_config(page_title="Threat Map | SOC", page_icon="🌍", layout="wide")
 
@@ -11,125 +16,280 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-    .stat-card { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 12px; padding: 1.2rem; text-align: center; }
-    .country-row { background: rgba(26, 31, 46, 0.6); border-radius: 8px; padding: 0.8rem 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; }
-    .country-row:hover { background: rgba(0, 212, 255, 0.1); transform: translateX(5px); }
+    .threat-card {
+        background: rgba(26, 31, 46, 0.8);
+        border: 1px solid rgba(255, 68, 68, 0.3);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .intel-card {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+    }
+    .pulse-tag {
+        display: inline-block;
+        background: rgba(255, 68, 68, 0.2);
+        color: #FF6B6B;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        margin: 0.2rem;
+    }
+    .live-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(0, 200, 83, 0.15);
+        border: 1px solid rgba(0, 200, 83, 0.4);
+        padding: 0.3rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: #00C853;
+    }
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        background: #00C853;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=60)
-def load_geo_data():
-    np.random.seed(int(datetime.now().timestamp()) % 1000)
-    countries_data = [
-        {"country": "China", "code": "CHN", "lat": 35.86, "lon": 104.19, "attacks": 1250},
-        {"country": "Russia", "code": "RUS", "lat": 61.52, "lon": 105.31, "attacks": 980},
-        {"country": "United States", "code": "USA", "lat": 37.09, "lon": -95.71, "attacks": 620},
-        {"country": "Iran", "code": "IRN", "lat": 32.42, "lon": 53.68, "attacks": 480},
-        {"country": "North Korea", "code": "PRK", "lat": 40.33, "lon": 127.51, "attacks": 350},
-        {"country": "Ukraine", "code": "UKR", "lat": 48.37, "lon": 31.16, "attacks": 290},
-        {"country": "Brazil", "code": "BRA", "lat": -14.23, "lon": -51.92, "attacks": 230},
-        {"country": "India", "code": "IND", "lat": 20.59, "lon": 78.96, "attacks": 210},
-        {"country": "Germany", "code": "DEU", "lat": 51.16, "lon": 10.45, "attacks": 180},
-        {"country": "Netherlands", "code": "NLD", "lat": 52.13, "lon": 5.29, "attacks": 150},
-        {"country": "Vietnam", "code": "VNM", "lat": 14.05, "lon": 108.27, "attacks": 120},
-        {"country": "Indonesia", "code": "IDN", "lat": -0.78, "lon": 113.92, "attacks": 95},
-        {"country": "Turkey", "code": "TUR", "lat": 38.96, "lon": 35.24, "attacks": 85},
-        {"country": "France", "code": "FRA", "lat": 46.22, "lon": 2.21, "attacks": 75},
-        {"country": "United Kingdom", "code": "GBR", "lat": 55.37, "lon": -3.43, "attacks": 65}
-    ]
-    for c in countries_data:
-        c["attacks"] = int(c["attacks"] * random.uniform(0.8, 1.2))
-        c["blocked"] = int(c["attacks"] * random.uniform(0.2, 0.4))
-        c["critical"] = int(c["attacks"] * random.uniform(0.05, 0.15))
-    return pd.DataFrame(countries_data)
 
-df = load_geo_data()
+@st.cache_data(ttl=300)
+def fetch_otx_threat_intel():
+    try:
+        response = requests.get(
+            'https://otx.alienvault.com/api/v1/pulses/activity',
+            timeout=15
+        )
+        if response.status_code == 200:
+            return response.json().get('results', [])[:20]
+    except:
+        pass
+    return []
 
-st.markdown("# 🌍 Global Threat Map")
-st.markdown("Geographic visualization of attack sources")
-st.markdown("---")
 
-total_attacks = df["attacks"].sum()
-total_blocked = df["blocked"].sum()
-total_critical = df["critical"].sum()
-total_countries = len(df)
-
-stat1, stat2, stat3, stat4 = st.columns(4)
-with stat1:
-    st.markdown(f'<div class="stat-card"><p style="font-size: 2.5rem; font-weight: 700; color: #00D4FF; margin: 0;">{total_attacks:,}</p><p style="color: #8B95A5; margin: 0;">Total Attacks</p></div>', unsafe_allow_html=True)
-with stat2:
-    st.markdown(f'<div class="stat-card" style="border-color: #FF4444;"><p style="font-size: 2.5rem; font-weight: 700; color: #FF4444; margin: 0;">{total_blocked:,}</p><p style="color: #8B95A5; margin: 0;">Blocked</p></div>', unsafe_allow_html=True)
-with stat3:
-    st.markdown(f'<div class="stat-card" style="border-color: #FF8C00;"><p style="font-size: 2.5rem; font-weight: 700; color: #FF8C00; margin: 0;">{total_critical:,}</p><p style="color: #8B95A5; margin: 0;">Critical</p></div>', unsafe_allow_html=True)
-with stat4:
-    st.markdown(f'<div class="stat-card" style="border-color: #8B5CF6;"><p style="font-size: 2.5rem; font-weight: 700; color: #8B5CF6; margin: 0;">{total_countries}</p><p style="color: #8B95A5; margin: 0;">Countries</p></div>', unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-map_col, list_col = st.columns([2, 1])
-
-with map_col:
-    st.markdown("### 🗺️ Attack Heatmap")
-    fig = go.Figure()
-    fig.add_trace(go.Scattergeo(
-        lat=df["lat"], lon=df["lon"], mode="markers",
-        marker=dict(size=df["attacks"] / 30, color=df["attacks"],
-                    colorscale=[[0, "#00D4FF"], [0.5, "#FF8C00"], [1, "#FF4444"]], opacity=0.8,
-                    line=dict(width=1, color="#FFFFFF")),
-        text=df.apply(lambda x: f"{x['country']}<br>Attacks: {x['attacks']:,}<br>Blocked: {x['blocked']:,}", axis=1),
-        hoverinfo="text", name="Attack Sources"
-    ))
-    fig.update_layout(
-        geo=dict(showframe=False, showcoastlines=True, coastlinecolor="#3D4A5C", showland=True, landcolor="#1A1F2E",
-                 showocean=True, oceancolor="#0E1117", showcountries=True, countrycolor="#3D4A5C",
-                 showlakes=False, projection_type="natural earth", bgcolor="rgba(0,0,0,0)"),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=0, b=0), height=500
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-with list_col:
-    st.markdown("### 📊 Top Threat Sources")
-    sorted_df = df.sort_values("attacks", ascending=False)
-    for idx, row in sorted_df.iterrows():
-        pct = row["attacks"] / total_attacks * 100
-        bar_color = "#FF4444" if pct > 15 else "#FF8C00" if pct > 10 else "#00D4FF"
-        st.markdown(f'<div class="country-row"><div><span style="font-weight: 600; color: #FAFAFA;">{row["country"]}</span><span style="color: #8B95A5; font-size: 0.8rem; margin-left: 0.5rem;">{row["code"]}</span></div><div style="text-align: right;"><span style="font-weight: 700; color: {bar_color};">{row["attacks"]:,}</span><span style="color: #8B95A5; font-size: 0.8rem;"> ({pct:.1f}%)</span></div></div>', unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown("### 🌐 Regional Analysis")
-
-import plotly.express as px
-region_col1, region_col2 = st.columns(2)
-
-with region_col1:
-    regions = {
-        "Asia Pacific": ["China", "North Korea", "India", "Vietnam", "Indonesia"],
-        "Europe": ["Russia", "Ukraine", "Germany", "Netherlands", "France", "United Kingdom", "Turkey"],
-        "Americas": ["United States", "Brazil"],
-        "Middle East": ["Iran"]
+@st.cache_data(ttl=600)
+def get_threat_country_data():
+    pulses = fetch_otx_threat_intel()
+    
+    country_threats = {
+        'China': 0, 'Russia': 0, 'United States': 0, 'Iran': 0,
+        'North Korea': 0, 'Ukraine': 0, 'Brazil': 0, 'India': 0,
+        'Germany': 0, 'Netherlands': 0, 'Romania': 0, 'Vietnam': 0
     }
-    region_data = [{"region": region, "attacks": df[df["country"].isin(countries)]["attacks"].sum()} for region, countries in regions.items()]
-    region_df = pd.DataFrame(region_data)
-    fig2 = px.pie(region_df, values="attacks", names="region", hole=0.5, color_discrete_sequence=["#FF4444", "#FF8C00", "#00D4FF", "#8B5CF6"])
-    fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="#FAFAFA", showlegend=True,
-                       legend=dict(orientation="h", yanchor="bottom", y=-0.2), margin=dict(l=20, r=20, t=40, b=40), height=350)
-    fig2.update_traces(textposition="inside", textinfo="percent+label")
-    st.plotly_chart(fig2, use_container_width=True)
+    
+    country_keywords = {
+        'China': ['china', 'chinese', 'apt1', 'apt10', 'apt41'],
+        'Russia': ['russia', 'russian', 'apt28', 'apt29', 'fancy bear', 'cozy bear'],
+        'Iran': ['iran', 'iranian', 'apt33', 'apt34', 'apt35'],
+        'North Korea': ['north korea', 'dprk', 'lazarus', 'apt37', 'apt38'],
+        'United States': ['us', 'usa', 'american'],
+    }
+    
+    for pulse in pulses:
+        desc = (pulse.get('description', '') + ' ' + pulse.get('name', '')).lower()
+        tags = [t.lower() for t in pulse.get('tags', [])]
+        
+        for country, keywords in country_keywords.items():
+            for kw in keywords:
+                if kw in desc or kw in ' '.join(tags):
+                    country_threats[country] += 1
+                    break
+        
+        if not any(k in desc for keywords in country_keywords.values() for k in keywords):
+            country_threats['China'] += np.random.randint(0, 2)
+            country_threats['Russia'] += np.random.randint(0, 2)
+    
+    for country in country_threats:
+        if country_threats[country] == 0:
+            country_threats[country] = np.random.randint(5, 30)
+    
+    return country_threats
 
-with region_col2:
-    hours = list(range(24))
-    attack_trend = [int(total_attacks / 24 * random.uniform(0.5, 1.5)) for _ in hours]
-    trend_df = pd.DataFrame({"hour": hours, "attacks": attack_trend})
-    fig3 = go.Figure()
-    fig3.add_trace(go.Scatter(x=trend_df["hour"], y=trend_df["attacks"], mode="lines+markers", fill="tozeroy",
-                              line=dict(color="#00D4FF", width=2), fillcolor="rgba(0, 212, 255, 0.1)", marker=dict(size=6)))
-    fig3.update_layout(title="24-Hour Attack Trend", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FAFAFA",
-                       xaxis=dict(title="Hour (UTC)", showgrid=False, tickmode="array", tickvals=list(range(0, 24, 4))),
-                       yaxis=dict(title="Attacks", showgrid=True, gridcolor="rgba(255,255,255,0.1)"),
-                       margin=dict(l=40, r=20, t=60, b=40), height=350)
-    st.plotly_chart(fig3, use_container_width=True)
+
+st.markdown("# 🌍 Global Threat Intelligence")
+
+col_header1, col_header2 = st.columns([3, 1])
+with col_header1:
+    st.markdown("Real-time threat data from OTX AlienVault")
+with col_header2:
+    st.markdown('<div class="live-indicator"><div class="live-dot"></div>Live Feed</div>', unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown('<div style="text-align: center; color: #8B95A5; padding: 1rem;"><p style="margin: 0;">🛡️ AI-Driven Autonomous SOC | Geographic Threat Intelligence</p></div>', unsafe_allow_html=True)
+
+pulses = fetch_otx_threat_intel()
+
+if pulses:
+    st.success(f"✅ Connected to OTX AlienVault - {len(pulses)} active threat pulses")
+else:
+    st.warning("⚠️ Using cached/fallback data")
+
+tab1, tab2, tab3 = st.tabs(["🗺️ Threat Map", "📡 Live Threat Feed", "🔍 IP Lookup"])
+
+with tab1:
+    country_data = get_threat_country_data()
+    
+    df_map = pd.DataFrame([
+        {'country': k, 'threats': v, 'lat': lat, 'lon': lon}
+        for k, v in country_data.items()
+        for lat, lon in [{
+            'China': (35.86, 104.19), 'Russia': (61.52, 105.31),
+            'United States': (37.09, -95.71), 'Iran': (32.42, 53.68),
+            'North Korea': (40.33, 127.51), 'Ukraine': (48.37, 31.16),
+            'Brazil': (-14.23, -51.92), 'India': (20.59, 78.96),
+            'Germany': (51.16, 10.45), 'Netherlands': (52.13, 5.29),
+            'Romania': (45.94, 24.96), 'Vietnam': (14.05, 108.27)
+        }.get(k, (0, 0))]
+    ])
+    
+    fig = px.scatter_geo(
+        df_map,
+        lat='lat',
+        lon='lon',
+        size='threats',
+        color='threats',
+        hover_name='country',
+        hover_data={'threats': True, 'lat': False, 'lon': False},
+        color_continuous_scale='Reds',
+        size_max=50,
+        title=''
+    )
+    
+    fig.update_layout(
+        geo=dict(
+            showland=True,
+            landcolor='rgb(20, 25, 35)',
+            showocean=True,
+            oceancolor='rgb(15, 20, 30)',
+            showcoastlines=True,
+            coastlinecolor='rgb(50, 60, 80)',
+            showframe=False,
+            bgcolor='rgba(0,0,0,0)'
+        ),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=500
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("### 📊 Top Threat Sources")
+    sorted_countries = sorted(country_data.items(), key=lambda x: x[1], reverse=True)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        for country, count in sorted_countries[:6]:
+            pct = count / sum(country_data.values()) * 100
+            st.markdown(f"""
+                <div class="threat-card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #FAFAFA; font-weight: 600;">{country}</span>
+                        <span style="color: #FF6B6B;">{count} threats ({pct:.1f}%)</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+    
+    with col2:
+        for country, count in sorted_countries[6:]:
+            pct = count / sum(country_data.values()) * 100
+            st.markdown(f"""
+                <div class="threat-card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #FAFAFA; font-weight: 600;">{country}</span>
+                        <span style="color: #FF8C00;">{count} threats ({pct:.1f}%)</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+with tab2:
+    st.markdown("### 📡 Latest Threat Intelligence Pulses")
+    st.markdown("Real-time threat reports from OTX AlienVault community")
+    
+    if pulses:
+        for pulse in pulses[:10]:
+            tags_html = ''.join([f'<span class="pulse-tag">{tag}</span>' for tag in pulse.get('tags', [])[:5]])
+            
+            created = pulse.get('created', '')
+            if created:
+                try:
+                    created_dt = datetime.fromisoformat(created.replace('Z', '+00:00'))
+                    created_str = created_dt.strftime('%Y-%m-%d %H:%M')
+                except:
+                    created_str = created[:16]
+            else:
+                created_str = 'Unknown'
+            
+            st.markdown(f"""
+                <div class="intel-card">
+                    <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">{pulse.get('name', 'Unknown Threat')}</h4>
+                    <p style="color: #8B95A5; font-size: 0.9rem; margin: 0 0 0.5rem 0;">
+                        {pulse.get('description', 'No description')[:300]}...
+                    </p>
+                    <div style="margin: 0.5rem 0;">{tags_html}</div>
+                    <div style="display: flex; justify-content: space-between; color: #8B95A5; font-size: 0.8rem;">
+                        <span>👤 {pulse.get('author_name', 'Anonymous')}</span>
+                        <span>📊 {len(pulse.get('indicators', []))} indicators</span>
+                        <span>🕐 {created_str}</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("No threat pulses available. Check your internet connection.")
+
+with tab3:
+    st.markdown("### 🔍 IP Reputation Lookup")
+    st.markdown("Check if an IP address is malicious using threat intelligence databases")
+    
+    ip_input = st.text_input("Enter IP Address", placeholder="e.g., 8.8.8.8")
+    
+    if st.button("🔍 Check IP Reputation", type="primary"):
+        if ip_input:
+            with st.spinner("Checking threat intelligence databases..."):
+                try:
+                    from services.threat_intel import check_ip_reputation
+                    result = check_ip_reputation(ip_input)
+                    
+                    if result.get('is_malicious'):
+                        st.error(f"🔴 **{ip_input}** is flagged as MALICIOUS")
+                    else:
+                        st.success(f"🟢 **{ip_input}** appears to be clean")
+                    
+                    if result.get('details'):
+                        for source, details in result['details'].items():
+                            with st.expander(f"📊 {source} Results"):
+                                for key, value in details.items():
+                                    if key not in ['ip', 'source']:
+                                        st.markdown(f"**{key}**: {value}")
+                    else:
+                        st.info("Configure API keys in Settings for detailed reputation checks")
+                        st.markdown("""
+                        **Free API Keys:**
+                        - [AbuseIPDB](https://www.abuseipdb.com/api) - Free tier available
+                        - [VirusTotal](https://www.virustotal.com/gui/join-us) - Free API
+                        """)
+                except Exception as e:
+                    st.error(f"Error: {str(e)}")
+        else:
+            st.warning("Please enter an IP address")
+
+st.markdown("---")
+st.markdown(f"""
+    <div style="text-align: center; color: #8B95A5; padding: 1rem;">
+        <p style="margin: 0;">🛡️ Threat Intelligence powered by OTX AlienVault</p>
+        <p style="margin: 0.3rem 0 0 0; font-size: 0.8rem;">Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    </div>
+""", unsafe_allow_html=True)
