@@ -1,0 +1,15 @@
+{
+  "gmail_email": "akshuolv@gmail.com",
+  "gmail_password": "bjtx vgrv cgzn fwpw",
+  "gmail_recipient": "",
+  "telegram_token": "8259544221:AAFUysQk4e4YBP6PyT41chxOQFrPKZfq1DA",
+  "telegram_chat_id": "2030704568",
+  "gemini_api_key": "AIzaSyCJpVULFZPL3dBC7Lsihx9tTKrEAxbQ57M",
+  "alert_threshold": 70,
+  "auto_block": true,
+  "mfa_enforcement": true,
+  "notification_email": true,
+  "notification_telegram": true,
+  "block_threshold": 70,
+  "restrict_threshold": 30
+}

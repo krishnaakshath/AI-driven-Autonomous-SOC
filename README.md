@@ -1,152 +1,90 @@
-# AI-Driven Autonomous Security Operations Center (SOC)
+# AI-Driven Autonomous SOC
 
-## Overview
+![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-This project implements an **AI-Driven Autonomous Security Operations Center (SOC)** that automates threat detection, risk evaluation, and incident response using machine learning and Zero Trust security principles.
+An enterprise-grade, AI-powered Security Operations Center with real-time threat detection, Zero Trust enforcement, and automated incident response.
 
-The system simulates real-world SOC workflows by processing large-scale cybersecurity datasets, detecting anomalous behavior, enforcing Zero Trust decisions, and generating automated responses. The architecture is designed to reflect industry practices by separating full-scale local execution from lightweight cloud-based visualization.
+## Features
 
----
+- **Multi-Page Dashboard**: Dashboard, Alerts, Threat Map, Forensics, Reports, Settings
+- **Real-time Monitoring**: Auto-refresh with configurable intervals
+- **AI-Powered Analysis**: Gemini integration for threat analysis
+- **IEEE Format Reports**: Professional security reports
+- **Alerting**: Gmail and Telegram notifications
+- **Zero Trust**: Risk-based access decisions (BLOCK/RESTRICT/ALLOW)
 
-## Objectives
-
-- Detect anomalous network and host activities using machine learning
-- Apply Zero Trust–based risk evaluation for access control decisions
-- Automate incident response actions based on assessed risk
-- Validate detection logic across multiple cybersecurity datasets
-- Provide an interactive SOC dashboard for analysis and monitoring
-
----
-
-## System Architecture
-
-The SOC pipeline consists of the following stages:
-
-### 1. Data Ingestion and Preprocessing
-Raw datasets are cleaned, normalized, and transformed into SOC-ready feature sets.
-
-### 2. Machine Learning Engine
-An Isolation Forest model is trained to learn baseline behavior and detect anomalies.
-
-### 3. Anomaly Scoring
-Each event is assigned an anomaly score representing deviation from normal behavior.
-
-### 4. Zero Trust Risk Engine
-Anomaly scores are mapped to risk levels and access decisions:
-- ALLOW
-- RESTRICT
-- BLOCK
-
-### 5. Automated Incident Response
-Response actions are generated automatically based on risk severity and policy rules.
-
-### 6. SOC Dashboard
-An interactive dashboard visualizes KPIs, alerts, risk distributions, and automated responses.
-
----
-
-## Datasets Used
-
-| Dataset | Category | Purpose |
-|------|--------|--------|
-| CICIDS 2017 | Network Intrusion Detection | Primary training and anomaly detection |
-| UNSW-NB15 | Network Traffic & Attacks | Cross-dataset validation |
-| ADFA-LD | Host-Based Intrusion Detection | Host-level behavioral validation |
-
----
-
-## Technology Stack
-
-- **Programming Language:** Python  
-- **Machine Learning:** Scikit-learn (Isolation Forest)  
-- **Data Processing:** Pandas, NumPy  
-- **Backend API:** FastAPI  
-- **Visualization:** Streamlit  
-- **Environment Management:** Python Virtual Environment  
-- **Operating System:** macOS (Local Execution)
-
----
-
-## Project Structure
-
-autonomous-soc/
-├── ml_engine/ # ML training, scoring, validation
-├── zero_trust/ # Zero Trust risk engine
-├── response_engine/ # Automated incident response
-├── backend/ # API layer
-├── data/
-│ ├── datasets/ # Raw datasets
-│ └── parsed_logs/ # SOC-generated outputs
-├── dashboard.py # Local SOC dashboard
-├── requirements.txt
-└── README.md
-
-
----
-
-## Local Full SOC Execution (Recommended)
-
-Due to dataset size and ML compute requirements, the **complete SOC pipeline is designed to run locally**.
-
-### Environment Setup
+## Quick Start
 
 ```bash
-cd autonomous-soc
+# Clone repository
+git clone https://github.com/your-username/soc-dashboard.git
+cd soc-dashboard
+
+# Create virtual environment
+python3 -m venv soc-env
 source soc-env/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
-```
 
-### Pipeline Execution Order
-```
-python3 ml_engine/preprocess_cicids.py
-python3 ml_engine/train_isolation_forest.py
-python3 ml_engine/score_events.py
-python3 zero_trust/risk_engine.py
-python3 response_engine/incident_response.py
-```
-
-###This generates the final SOC output:
-```
-data/parsed_logs/incident_responses.csv
-```
-
-###Running the SOC Dashboard (Local)
-```
+# Run dashboard
 streamlit run dashboard.py
 ```
 
-###Access the dashboard at:
+Access at **http://localhost:8501**
+
+## Configuration
+
+### Gmail Alerts
+1. Enable 2FA on your Gmail account
+2. Generate an App Password (Google Account → Security → App Passwords)
+3. Configure in Settings → Gmail Alerts
+
+### Telegram Alerts
+1. Create a bot via @BotFather
+2. Get your Chat ID from @userinfobot
+3. Configure in Settings → Telegram Alerts
+
+### AI Integration
+1. Get free API key from [Google AI Studio](https://aistudio.google.com/)
+2. Configure in Settings → AI Integration
+
+## Deployment
+
+### Streamlit Cloud
+1. Push to GitHub
+2. Visit [share.streamlit.io](https://share.streamlit.io)
+3. Connect repository
+4. Set secrets in Advanced Settings
+
+### Docker
+```bash
+docker build -t soc-dashboard .
+docker run -p 8501:8501 soc-dashboard
 ```
-http://localhost:8501
+
+## Project Structure
+
+```
+├── dashboard.py              # Main entry point
+├── pages/
+│   ├── 1_🏠_Dashboard.py     # Security metrics
+│   ├── 2_🚨_Alerts.py        # Active alerts
+│   ├── 3_🌍_Threat_Map.py    # Geographic view
+│   ├── 4_🔬_Forensics.py     # Analysis tools
+│   ├── 5_📊_Reports.py       # IEEE reports
+│   └── 6_⚙️_Settings.py      # Configuration
+├── ai_engine/
+│   └── threat_analyzer.py    # Gemini AI
+├── alerting/
+│   ├── telegram_bot.py       # Telegram alerts
+│   └── email_sender.py       # Gmail alerts
+└── .streamlit/
+    └── config.toml           # Theme config
 ```
 
-The local dashboard runs in Full SOC Mode, analyzing real security events.
+## License
 
-###Cloud Deployment (Visualization Only):
-A lightweight version of the dashboard can be deployed for visualization purposes using simulated telemetry.
-This deployment is intended strictly for demonstration and portfolio sharing.
-The full SOC pipeline remains local due to:
-Large dataset size
-Machine learning compute requirements
-Cloud resource limitations
-
-###Key Features:
-Machine learning–based anomaly detection
-Zero Trust risk evaluation
-Automated incident response
-Multi-dataset validation
-Explainable SOC decisions
-Interactive dashboard visualization
-
-
-###Academic and Industry Relevance:
-The project mirrors real-world SOC architectures where:
-Heavy analytics and ML inference run on secure local or on-premise infrastructure
-Cloud dashboards are primarily used for monitoring and visualization
-This design aligns with modern SOC and Zero Trust security best practices.
-
-###Author
-
-Krishna Akshath Kasibhatta
-B.Tech – Computer Science and Engineering
-Specialization: Cybersecurity
+MIT License - See LICENSE file for details.

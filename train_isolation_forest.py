@@ -1,23 +1,17 @@
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 import joblib
 
-# Load dataset
 DATA_PATH = "data/parsed_logs/cicids_processed.csv"
 df = pd.read_csv(DATA_PATH)
 
-print("[INFO] Original dataset size:", df.shape)
+print("[INFO] Training data shape:", df.shape)
 
-# Sample data for efficient training
-df_sample = df.sample(n=200000, random_state=42)
-print("[INFO] Sampled dataset size:", df_sample.shape)
-
-# Scale features
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(df_sample)
+X_scaled = scaler.fit_transform(df)
 
-# Train Isolation Forest
 model = IsolationForest(
     n_estimators=150,
     contamination=0.05,
@@ -27,9 +21,9 @@ model = IsolationForest(
 
 model.fit(X_scaled)
 
-# Save model and scaler
-joblib.dump(model, "ml_engine/isolation_forest_model.pkl")
-joblib.dump(scaler, "ml_engine/scaler.pkl")
+joblib.dump(model, "isolation_forest_model.pkl")
+joblib.dump(scaler, "scaler.pkl")
 
-print("[✔] Isolation Forest trained and saved successfully")
-
+print("[✔] Isolation Forest model trained successfully")
+print("[✔] Model saved to: isolation_forest_model.pkl")
+print("[✔] Scaler saved to: scaler.pkl")
