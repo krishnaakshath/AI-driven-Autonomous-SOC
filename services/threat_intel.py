@@ -7,14 +7,26 @@ import time
 
 CACHE_FILE = ".threat_intel_cache.json"
 CACHE_DURATION = 3600
+CONFIG_FILE = ".soc_config.json"
+
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
 
 
 class ThreatIntelligence:
     
     def __init__(self):
-        self.abuseipdb_key = os.getenv("ABUSEIPDB_API_KEY", "")
-        self.virustotal_key = os.getenv("VIRUSTOTAL_API_KEY", "")
-        self.otx_key = os.getenv("OTX_API_KEY", "")
+        config = load_config()
+        self.abuseipdb_key = config.get('abuseipdb_api_key') or os.getenv("ABUSEIPDB_API_KEY", "")
+        self.virustotal_key = config.get('virustotal_api_key') or os.getenv("VIRUSTOTAL_API_KEY", "")
+        self.otx_key = config.get('otx_api_key') or os.getenv("OTX_API_KEY", "")
         self.cache = self._load_cache()
     
     def _load_cache(self) -> dict:
