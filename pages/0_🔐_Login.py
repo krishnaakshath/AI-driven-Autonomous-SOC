@@ -11,14 +11,11 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     [data-testid="stSidebar"] { display: none; }
-    .login-container {
-        max-width: 420px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
+    .main .block-container { padding-top: 2rem !important; }
+    .stApp > header { display: none; }
     .login-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
     .login-header h1 {
         background: linear-gradient(135deg, #00D4FF 0%, #8B5CF6 100%);
@@ -26,13 +23,6 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         font-size: 2rem;
         margin: 0;
-    }
-    .login-card {
-        background: rgba(26, 31, 46, 0.9);
-        border: 1px solid rgba(0, 212, 255, 0.2);
-        border-radius: 20px;
-        padding: 2rem;
-        backdrop-filter: blur(10px);
     }
     .oauth-btn {
         display: flex;
@@ -108,8 +98,6 @@ st.markdown("""
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login"
 
-st.markdown('<div class="login-card">', unsafe_allow_html=True)
-
 col1, col2 = st.columns(2)
 with col1:
     if st.button("🔑 Login", use_container_width=True, type="primary" if st.session_state.auth_mode == "login" else "secondary"):
@@ -119,8 +107,6 @@ with col2:
     if st.button("📝 Register", use_container_width=True, type="primary" if st.session_state.auth_mode == "register" else "secondary"):
         st.session_state.auth_mode = "register"
         st.rerun()
-
-st.markdown("<br>", unsafe_allow_html=True)
 
 st.markdown("""
     <a href="#" class="oauth-btn oauth-google">
@@ -178,7 +164,7 @@ else:
             else:
                 st.error("❌ " + message)
 
-st.markdown('</div>', unsafe_allow_html=True)
+
 
 st.markdown("""
     <div style="text-align: center; margin-top: 2rem; color: #8B95A5; font-size: 0.8rem;">
