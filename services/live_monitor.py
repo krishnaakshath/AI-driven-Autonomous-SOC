@@ -225,6 +225,106 @@ class LiveNetworkMonitor:
                 })
         
         return threats
+    
+    def analyze_pcap_with_scapy(self, pcap_file: str) -> Dict:
+        try:
+            from scapy.all import rdpcap, IP, TCP, UDP, ICMP
+        except ImportError:
+            return {"error": "scapy not installed"}
+        
+        result = {
+            "timestamp": datetime.now().isoformat(),
+            "total_packets": 0,
+            "unique_sources": set(),
+            "unique_destinations": set(),
+            "protocols": {"TCP": 0, "UDP": 0, "ICMP": 0, "Other": 0},
+            "top_talkers": {},
+            "port_stats": {},
+            "suspicious_activity": [],
+            "syn_flood_check": {},
+            "threats": []
+        }
+        
+        try:
+            packets = rdpcap(pcap_file)
+            result["total_packets"] = len(packets)
+            
+            for pkt in packets:
+                if IP in pkt:
+                    src_ip = pkt[IP].src
+                    dst_ip = pkt[IP].dst
+                    
+                    result["unique_sources"].add(src_ip)
+                    result["unique_destinations"].add(dst_ip)
+                    result["top_talkers"][src_ip] = result["top_talkers"].get(src_ip, 0) + 1
+                    
+                    if TCP in pkt:
+                        result["protocols"]["TCP"] += 1
+                        dst_port = str(pkt[TCP].dport)
+                        src_port = str(pkt[TCP].sport)
+                        result["port_stats"][dst_port] = result["port_stats"].get(dst_port, 0) + 1
+                        
+                        if pkt[TCP].flags == 0x02:
+                            result["syn_flood_check"][src_ip] = result["syn_flood_check"].get(src_ip, 0) + 1
+                        
+                    elif UDP in pkt:
+                        result["protocols"]["UDP"] += 1
+                        dst_port = str(pkt[UDP].dport)
+                        result["port_stats"][dst_port] = result["port_stats"].get(dst_port, 0) + 1
+                        
+                    elif ICMP in pkt:
+                        result["protocols"]["ICMP"] += 1
+                    else:
+                        result["protocols"]["Other"] += 1
+            
+            for ip, syn_count in result["syn_flood_check"].items():
+                if syn_count > 50:
+                    result["threats"].append({
+                        "type": "SYN_FLOOD",
+                        "severity": "CRITICAL",
+                        "source": ip,
+                        "detail": f"Potential SYN flood attack: {syn_count} SYN packets",
+                        "recommendation": "Block this IP immediately"
+                    })
+            
+            for ip, count in result["top_talkers"].items():
+                if count > result["total_packets"] * 0.5:
+                    result["threats"].append({
+                        "type": "TRAFFIC_ANOMALY",
+                        "severity": "HIGH",
+                        "source": ip,
+                        "detail": f"Single IP sending {count}/{result['total_packets']} packets ({(count/result['total_packets']*100):.1f}%)",
+                        "recommendation": "Investigate for DDoS or scanning"
+                    })
+            
+            dangerous_ports = {"23": "Telnet", "445": "SMB", "3389": "RDP", "21": "FTP", "135": "MSRPC"}
+            for port, count in result["port_stats"].items():
+                if port in dangerous_ports:
+                    result["threats"].append({
+                        "type": "DANGEROUS_PORT",
+                        "severity": "HIGH",
+                        "port": port,
+                        "service": dangerous_ports[port],
+                        "count": count,
+                        "detail": f"Traffic on dangerous port {port} ({dangerous_ports[port]})",
+                        "recommendation": f"Review and restrict {dangerous_ports[port]} access"
+                    })
+            
+            result["unique_sources"] = list(result["unique_sources"])
+            result["unique_destinations"] = list(result["unique_destinations"])
+            
+            sorted_talkers = sorted(result["top_talkers"].items(), key=lambda x: x[1], reverse=True)
+            result["top_talkers"] = dict(sorted_talkers[:10])
+            
+            sorted_ports = sorted(result["port_stats"].items(), key=lambda x: x[1], reverse=True)
+            result["port_stats"] = dict(sorted_ports[:10])
+            
+            del result["syn_flood_check"]
+            
+        except Exception as e:
+            result["error"] = str(e)
+        
+        return result
 
 
 monitor = LiveNetworkMonitor()
@@ -250,5 +350,10 @@ def analyze_traffic() -> Dict:
     return monitor.analyze_capture()
 
 
+def analyze_pcap_file(pcap_path: str) -> Dict:
+    return monitor.analyze_pcap_with_scapy(pcap_path)
+
+
 def detect_network_threats(analysis: Dict) -> List[Dict]:
     return monitor.detect_threats(analysis)
+

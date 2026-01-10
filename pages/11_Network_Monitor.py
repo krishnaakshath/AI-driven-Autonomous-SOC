@@ -165,8 +165,9 @@ with tab1:
     
     st.markdown("---")
     st.markdown("### Manual File Analysis")
+    st.markdown("Upload PCAP file for analysis (works without Wireshark)")
     
-    uploaded = st.file_uploader("Upload PCAP or CSV file", type=["pcap", "csv"])
+    uploaded = st.file_uploader("Upload PCAP file", type=["pcap", "pcapng"])
     
     if uploaded:
         file_path = f"uploaded_{uploaded.name}"
@@ -174,6 +175,61 @@ with tab1:
             f.write(uploaded.getbuffer())
         st.success(f"File uploaded: {uploaded.name}")
         st.session_state["uploaded_file"] = file_path
+        
+        if st.button("Analyze Uploaded PCAP", type="primary"):
+            from services.live_monitor import analyze_pcap_file
+            
+            with st.spinner("Analyzing PCAP file with Python..."):
+                analysis = analyze_pcap_file(file_path)
+                
+                if "error" in analysis and analysis.get("total_packets", 0) == 0:
+                    st.error(f"Analysis error: {analysis.get('error')}")
+                else:
+                    st.session_state["last_analysis"] = analysis
+                    
+                    st.markdown("### Analysis Results")
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric("Total Packets", f"{analysis.get('total_packets', 0):,}")
+                    with col2:
+                        st.metric("Unique Sources", len(analysis.get('unique_sources', [])))
+                    with col3:
+                        st.metric("Destinations", len(analysis.get('unique_destinations', [])))
+                    with col4:
+                        st.metric("Threats Found", len(analysis.get('threats', [])))
+                    
+                    st.markdown("#### Protocol Distribution")
+                    protocols = analysis.get("protocols", {})
+                    if protocols:
+                        st.bar_chart(protocols)
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown("#### Top Talkers")
+                        for ip, count in analysis.get("top_talkers", {}).items():
+                            st.markdown(f"**{ip}** - {count:,} packets")
+                    
+                    with col2:
+                        st.markdown("#### Top Ports")
+                        for port, count in analysis.get("port_stats", {}).items():
+                            st.markdown(f"**Port {port}** - {count:,} packets")
+                    
+                    threats = analysis.get("threats", [])
+                    if threats:
+                        st.markdown("---")
+                        st.error(f"### {len(threats)} Threats Detected!")
+                        for threat in threats:
+                            severity_color = "#FF4444" if threat.get("severity") in ["CRITICAL", "HIGH"] else "#FF8C00"
+                            st.markdown(f"""
+                                <div class="threat-alert">
+                                    <strong style="color: {severity_color};">[{threat.get('severity')}] {threat.get('type')}</strong>
+                                    <p style="color: #FAFAFA; margin: 0.5rem 0;">{threat.get('detail')}</p>
+                                    <p style="color: #00D4FF; margin: 0;">{threat.get('recommendation')}</p>
+                                </div>
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.success("No threats detected in this capture.")
 
 with tab2:
     st.markdown("### Traffic Analysis")
