@@ -15,6 +15,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+from auth.auth_manager import check_auth, show_user_info
+
+user = check_auth()
+if not user:
+    st.switch_page("pages/0_🔐_Login.py")
+    st.stop()
+
+show_user_info(user)
+
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
