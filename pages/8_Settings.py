@@ -36,7 +36,7 @@ def save_config(config):
 
 config = load_config()
 
-tab1, tab2, tab3, tab4 = st.tabs(["API Keys", "Notifications", "Thresholds", "About"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["API Keys", "OAuth", "Notifications", "Thresholds", "About"])
 
 with tab1:
     st.markdown(section_title("API Integration"), unsafe_allow_html=True)
@@ -70,6 +70,60 @@ with tab1:
         st.success("API keys saved successfully!")
 
 with tab2:
+    st.markdown(section_title("Google OAuth Configuration"), unsafe_allow_html=True)
+    
+    st.markdown("""
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <h4 style="color: #4285F4; margin: 0 0 0.5rem 0;">Sign in with Google</h4>
+            <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">Enable users to login with their Google account</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    with st.expander("Setup Instructions", expanded=not config.get("google_client_id")):
+        st.markdown("""
+        **To enable Google OAuth:**
+        
+        1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+        2. Create a new project or select existing
+        3. Go to **APIs & Services > Credentials**
+        4. Click **Create Credentials > OAuth 2.0 Client ID**
+        5. Select **Web application**
+        6. Add **Authorized redirect URIs**:
+           - For local: `http://localhost:8501`
+           - For Streamlit Cloud: `https://your-app.streamlit.app`
+        7. Copy the Client ID and Client Secret below
+        """)
+    
+    google_client_id = st.text_input("Google Client ID", value=config.get("google_client_id", ""), key="g_client_id")
+    google_client_secret = st.text_input("Google Client Secret", value=config.get("google_client_secret", ""), type="password", key="g_client_secret")
+    
+    # Auto-detect redirect URI
+    import streamlit.web.bootstrap as bootstrap
+    default_redirect = "http://localhost:8501"
+    if hasattr(st, 'secrets') and 'app_url' in st.secrets:
+        default_redirect = st.secrets['app_url']
+    
+    google_redirect_uri = st.text_input("Redirect URI", value=config.get("google_redirect_uri", default_redirect), key="g_redirect")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    st.markdown("""
+        <div class="glass-card" style="margin-bottom: 1.5rem; opacity: 0.6;">
+            <h4 style="color: #FFFFFF; margin: 0 0 0.5rem 0;">Sign in with Apple</h4>
+            <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">Coming soon - requires Apple Developer account</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    if st.button("Save OAuth Settings", type="primary"):
+        config["google_client_id"] = google_client_id
+        config["google_client_secret"] = google_client_secret
+        config["google_redirect_uri"] = google_redirect_uri
+        save_config(config)
+        st.success("OAuth settings saved! Google Sign-In is now enabled.")
+
+with tab3:
     st.markdown(section_title("Notification Settings"), unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
@@ -106,7 +160,7 @@ with tab2:
         save_config(config)
         st.success("Notification settings saved!")
 
-with tab3:
+with tab4:
     st.markdown(section_title("Alert Thresholds"), unsafe_allow_html=True)
     
     c1, c2 = st.columns(2)
@@ -144,7 +198,7 @@ with tab3:
         save_config(config)
         st.success("Thresholds saved!")
 
-with tab4:
+with tab5:
     st.markdown(section_title("About This Platform"), unsafe_allow_html=True)
     
     st.markdown("""
