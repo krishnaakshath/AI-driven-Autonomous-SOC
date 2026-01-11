@@ -195,5 +195,85 @@ def show_user_info(user: dict):
         st.switch_page("pages/0_Login.py")
 
 
+def get_current_user() -> Optional[dict]:
+    return check_auth()
+
+
+def update_user_profile(email: str, updates: dict) -> bool:
+    data = load_users()
+    email = email.lower().strip()
+    
+    if email not in data["users"]:
+        return False
+    
+    for key, value in updates.items():
+        if key != "password":
+            data["users"][email][key] = value
+    
+    save_users(data)
+    return True
+
+
+def change_password(email: str, current_password: str, new_password: str) -> bool:
+    data = load_users()
+    email = email.lower().strip()
+    
+    if email not in data["users"]:
+        return False
+    
+    user = data["users"][email]
+    
+    if not verify_password(current_password, user["password"]):
+        return False
+    
+    if len(new_password) < 6:
+        return False
+    
+    data["users"][email]["password"] = hash_password(new_password)
+    save_users(data)
+    return True
+
+
+def logout():
+    if "auth_token" in st.session_state:
+        logout_user(st.session_state.auth_token)
+        del st.session_state.auth_token
+
+
+def get_all_users() -> dict:
+    data = load_users()
+    return data.get("users", {})
+
+
+def update_user_role(email: str, new_role: str) -> bool:
+    data = load_users()
+    email = email.lower().strip()
+    
+    if email not in data["users"]:
+        return False
+    
+    data["users"][email]["role"] = new_role
+    save_users(data)
+    return True
+
+
+def delete_user(email: str) -> bool:
+    data = load_users()
+    email = email.lower().strip()
+    
+    if email not in data["users"]:
+        return False
+    
+    del data["users"][email]
+    
+    tokens_to_delete = [t for t, s in data["sessions"].items() if s.get("email") == email]
+    for token in tokens_to_delete:
+        del data["sessions"][token]
+    
+    save_users(data)
+    return True
+
+
 init_default_admin()
+
 
