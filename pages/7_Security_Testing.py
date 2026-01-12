@@ -49,22 +49,79 @@ with tab1:
     
     mac = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0,48,8)][::-1]).upper()
     
-    c1, c2, c3 = st.columns(3)
+    try:
+        hostname = socket.gethostname()
+    except:
+        hostname = "Unknown"
+
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(f'<div class="glass-card"><span style="color: #8B95A5;">Public IP</span><p style="color: #00D4FF; font-weight: 600; margin: 0.3rem 0 0 0;">{public_ip}</p></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="glass-card"><span style="color: #8B95A5;">Public IP</span><p style="color: #00D4FF; font-weight: 600; margin: 0.3rem 0 0 0; font-size: 0.9rem;">{public_ip}</p></div>', unsafe_allow_html=True)
     with c2:
-        st.markdown(f'<div class="glass-card"><span style="color: #8B95A5;">Local IP</span><p style="color: #00C853; font-weight: 600; margin: 0.3rem 0 0 0;">{local_ip}</p></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="glass-card"><span style="color: #8B95A5;">Local IP</span><p style="color: #00C853; font-weight: 600; margin: 0.3rem 0 0 0; font-size: 0.9rem;">{local_ip}</p></div>', unsafe_allow_html=True)
     with c3:
-        st.markdown(f'<div class="glass-card"><span style="color: #8B95A5;">MAC Address</span><p style="color: #8B5CF6; font-weight: 600; margin: 0.3rem 0 0 0; font-size: 0.85rem;">{mac}</p></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="glass-card"><span style="color: #8B95A5;">MAC Address</span><p style="color: #8B5CF6; font-weight: 600; margin: 0.3rem 0 0 0; font-size: 0.9rem;">{mac}</p></div>', unsafe_allow_html=True)
+    with c4:
+        st.markdown(f'<div class="glass-card"><span style="color: #8B95A5;">Hostname</span><p style="color: #FF8C00; font-weight: 600; margin: 0.3rem 0 0 0; font-size: 0.9rem;">{hostname}</p></div>', unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
     attacks = {
-        "DDoS Attack": {"risk": 95, "color": "#FF4444", "steps": ["Initializing botnet...", "Targeting server...", "Launching SYN flood...", "SOC ALERT: DDoS detected!", "BLOCKED - Rate limiting enabled"]},
-        "Port Scan": {"risk": 72, "color": "#FF8C00", "steps": ["Scanning ports...", "Open: 22, 80, 443", "SOC ALERT: Port scan!", "BLOCKED - IP banned"]},
-        "Brute Force": {"risk": 78, "color": "#FF8C00", "steps": ["Target: SSH", "Attempt 1: FAILED", "50+ attempts detected", "SOC ALERT: Brute force!", "BLOCKED - Account locked"]},
-        "SQL Injection": {"risk": 91, "color": "#FF4444", "steps": ["Payload: ' OR 1=1", "Attempting bypass...", "SOC ALERT: SQLi detected!", "BLOCKED - Session terminated"]},
-        "Ransomware": {"risk": 98, "color": "#FF4444", "steps": ["Malware executing...", "Connecting to C2...", "SOC ALERT: Ransomware!", "BLOCKED - Endpoint isolated"]}
+        "DDoS Attack": {
+            "risk": 95, 
+            "color": "#FF4444", 
+            "steps": [
+                "Initializing botnet swarm...", 
+                f"Targeting external interface {public_ip}...", 
+                f"Traffic volume spiking on router gateway...", 
+                "SOC ALERT: Volumetric DDoS detected!", 
+                f"BLOCKED - Traffic to {public_ip} scrubbed and rerouted"
+            ]
+        },
+        "Port Scan": {
+            "risk": 72, 
+            "color": "#FF8C00", 
+            "steps": [
+                f"Enumerating services on {hostname} ({local_ip})...", 
+                "Scanning range 1-1024 (TCP/UDP)...", 
+                "Detected open ports: 22, 80, 443", 
+                "SOC ALERT: Vertical port scan detected!", 
+                f"BLOCKED - Source IP blacklisted on firewall"
+            ]
+        },
+        "Brute Force": {
+            "risk": 78, 
+            "color": "#FF8C00", 
+            "steps": [
+                f"Targeting SSH service on {local_ip}:22...", 
+                "Attempting dictionary attack (admin, root, user)...", 
+                "50+ failed login attempts tracked", 
+                "SOC ALERT: Brute force authentication spike!", 
+                f"BLOCKED - Account locked on {hostname}"
+            ]
+        },
+        "SQL Injection": {
+            "risk": 91, 
+            "color": "#FF4444", 
+            "steps": [
+                f"Injecting payload into web form at {public_ip}...", 
+                "Payload: ' OR 1=1; DROP TABLE users; --", 
+                "WAF Signature Match: SQL Injection", 
+                "SOC ALERT: Malicious SQL query intercepted!", 
+                "BLOCKED - Request dropped by WAF"
+            ]
+        },
+        "Ransomware": {
+            "risk": 98, 
+            "color": "#FF4444", 
+            "steps": [
+                f"Suspicious process execution on {hostname}...", 
+                "Attempting to encrypt drive C:/Users/Docs...", 
+                f"C2 Communication detected to {mac}...", 
+                "SOC ALERT: Ransomware behavior pattern identified!", 
+                f"BLOCKED - Endpoint {local_ip} isolated from network"
+            ]
+        }
     }
     
     attack = st.selectbox("Select Attack Type", list(attacks.keys()))
