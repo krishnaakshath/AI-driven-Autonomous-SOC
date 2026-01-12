@@ -25,8 +25,37 @@ show_user_info(user)
 
 st.markdown(page_header("Threat Intelligence", "Global threat landscape and geographic analysis"), unsafe_allow_html=True)
 
+# Auto-refresh every 30 seconds
+import time
+if 'last_refresh' not in st.session_state:
+    st.session_state.last_refresh = time.time()
+
+# Refresh button and auto-refresh indicator
+col_refresh, col_time = st.columns([1, 3])
+with col_refresh:
+    if st.button("Refresh Now", type="primary"):
+        st.cache_data.clear()
+        st.session_state.last_refresh = time.time()
+        st.rerun()
+
+with col_time:
+    st.markdown(f'''
+        <div style="display: flex; align-items: center; gap: 0.5rem; height: 38px;">
+            <span style="color: #00C853;">●</span>
+            <span style="color: #8B95A5;">Auto-refreshing every 30s</span>
+        </div>
+    ''', unsafe_allow_html=True)
+
+# Auto-refresh logic
+if time.time() - st.session_state.last_refresh > 30:
+    st.cache_data.clear()
+    st.session_state.last_refresh = time.time()
+    st.rerun()
+
+st.markdown("<br>", unsafe_allow_html=True)
+
 # Generate threat data
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=30)
 def get_threat_data():
     countries = {
         "China": {"lat": 35.86, "lon": 104.19, "threats": random.randint(200, 400)},

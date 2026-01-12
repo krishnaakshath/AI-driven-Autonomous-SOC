@@ -182,8 +182,8 @@ def get_trusted_devices(email: str) -> list:
     return data.get(f"{email}_trusted", [])
 
 
-def add_trusted_device(email: str, device_id: str, days: int = 30):
-    """Add device to trusted list"""
+def add_trusted_device(email: str, device_id: str, days: int = 365):
+    """Add device to trusted list - lasts 365 days (until explicit logout)"""
     data = load_otp_data()
     key = f"{email}_trusted"
     
@@ -192,6 +192,9 @@ def add_trusted_device(email: str, device_id: str, days: int = 30):
     
     # Clean expired devices
     data[key] = [d for d in data[key] if datetime.fromisoformat(d["expires"]) > datetime.now()]
+    
+    # Remove existing entry for this device if exists
+    data[key] = [d for d in data[key] if d["device_id"] != device_id]
     
     # Add new device
     data[key].append({
@@ -203,6 +206,26 @@ def add_trusted_device(email: str, device_id: str, days: int = 30):
     save_otp_data(data)
 
 
+def remove_trusted_device(email: str, device_id: str):
+    """Remove device from trusted list (on logout)"""
+    data = load_otp_data()
+    key = f"{email}_trusted"
+    
+    if key in data:
+        data[key] = [d for d in data[key] if d["device_id"] != device_id]
+        save_otp_data(data)
+
+
+def clear_all_trusted_devices(email: str):
+    """Clear all trusted devices for user (force re-verification)"""
+    data = load_otp_data()
+    key = f"{email}_trusted"
+    
+    if key in data:
+        del data[key]
+        save_otp_data(data)
+
+
 def is_device_trusted(email: str, device_id: str) -> bool:
     """Check if device is trusted"""
     devices = get_trusted_devices(email)
@@ -211,3 +234,4 @@ def is_device_trusted(email: str, device_id: str) -> bool:
             if datetime.fromisoformat(d["expires"]) > datetime.now():
                 return True
     return False
+

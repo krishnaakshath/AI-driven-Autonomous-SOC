@@ -161,9 +161,9 @@ with col2:
 # OTP Verification
 if st.session_state.otp_sent and st.session_state.pending_user:
     st.markdown('<p style="color: #00D4FF; text-align: center;">Enter verification code</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #8B95A5; text-align: center; font-size: 0.85rem;">After verification, this device will be trusted until you logout</p>', unsafe_allow_html=True)
     
     otp_code = st.text_input("6-Digit Code", placeholder="000000", max_chars=6, key="otp")
-    trust = st.checkbox("Trust this device", value=True)
     
     c1, c2 = st.columns(2)
     with c1:
@@ -172,8 +172,8 @@ if st.session_state.otp_sent and st.session_state.pending_user:
                 success, msg = verify_otp(st.session_state.pending_user['email'], otp_code)
                 if success:
                     st.session_state.auth_token = st.session_state.pending_user['token']
-                    if trust:
-                        add_trusted_device(st.session_state.pending_user['email'], get_device_id())
+                    # Always trust device after successful 2FA
+                    add_trusted_device(st.session_state.pending_user['email'], get_device_id())
                     st.session_state.otp_sent = False
                     st.switch_page("pages/1_Dashboard.py")
                 else:
