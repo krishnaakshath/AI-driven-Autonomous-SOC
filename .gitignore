@@ -1,0 +1,14 @@
+.soc_config.json
+.formatted_soc_config.json
+__pycache__/
+*.pyc
+.DS_Store
+.env
+soc-env/
+.venv/
+.threat_intel_cache.json
+isolation_forest_model.pkl
+scaler.pkl
+*.pcapng.gz
+live_capture.csv
+soc_monitor.log
