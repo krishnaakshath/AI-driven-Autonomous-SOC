@@ -87,7 +87,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-from auth.auth_manager import login_user, register_user, check_auth
+from auth.auth_manager import login_user, register_user, check_auth, persist_token
 from auth.two_factor import create_otp, verify_otp, send_otp_email, is_device_trusted, add_trusted_device
 
 def get_device_id():
@@ -172,6 +172,9 @@ if st.session_state.otp_sent and st.session_state.pending_user:
                 success, msg = verify_otp(st.session_state.pending_user['email'], otp_code)
                 if success:
                     st.session_state.auth_token = st.session_state.pending_user['token']
+                    # Keep signed in
+                    persist_token(st.session_state.auth_token)
+                    
                     # Always trust device after successful 2FA
                     add_trusted_device(st.session_state.pending_user['email'], get_device_id())
                     st.session_state.otp_sent = False
@@ -182,7 +185,6 @@ if st.session_state.otp_sent and st.session_state.pending_user:
         if st.button("Resend", use_container_width=True):
             otp = create_otp(st.session_state.pending_user['email'])
             send_otp_email(st.session_state.pending_user['email'], otp)
-            send_otp_telegram(otp)
             st.success("Code sent!")
 
 elif st.session_state.auth_mode == 'login':
@@ -195,6 +197,7 @@ elif st.session_state.auth_mode == 'login':
             if success and user:
                 if is_device_trusted(email, get_device_id()):
                     st.session_state.auth_token = user['token']
+                    persist_token(user['token'])
                     st.switch_page("pages/1_Dashboard.py")
                 else:
                     otp = create_otp(email)

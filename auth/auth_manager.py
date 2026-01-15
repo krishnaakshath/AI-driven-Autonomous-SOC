@@ -9,6 +9,33 @@ import streamlit as st
 
 AUTH_FILE = ".soc_users.json"
 SESSION_DURATION = 2592000  # 30 days in seconds
+PERSISTENT_TOKEN_FILE = ".local_session"
+
+def persist_token(token: str):
+    """Save token locally for auto-login"""
+    try:
+        with open(PERSISTENT_TOKEN_FILE, 'w') as f:
+            f.write(token)
+    except:
+        pass
+
+def clear_persistent_token():
+    """Remove local auto-login token"""
+    if os.path.exists(PERSISTENT_TOKEN_FILE):
+        try:
+            os.remove(PERSISTENT_TOKEN_FILE)
+        except:
+            pass
+
+def load_persistent_token() -> Optional[str]:
+    """Load and verify persistent token"""
+    if os.path.exists(PERSISTENT_TOKEN_FILE):
+        try:
+            with open(PERSISTENT_TOKEN_FILE, 'r') as f:
+                return f.read().strip()
+        except:
+            pass
+    return None
 
 
 def hash_password(password: str) -> str:
@@ -137,6 +164,7 @@ def logout_user(token: str):
     if token in data["sessions"]:
         del data["sessions"][token]
         save_users(data)
+    clear_persistent_token()
 
 
 def init_default_admin():
@@ -153,10 +181,24 @@ def init_default_admin():
 
 
 def check_auth() -> Optional[dict]:
-    if "auth_token" not in st.session_state:
-        return None
+    # 1. Check in-memory session
+    if "auth_token" in st.session_state:
+        user = verify_session(st.session_state.auth_token)
+        if user:
+            return user
+        else:
+            # Token invalid/expired
+            del st.session_state.auth_token
+            clear_persistent_token()
+            return None
+            
+    # 2. Check persistent local file (Auto-Login)
+    token = load_persistent_token()
+    if token:
+        st.session_state.auth_token = token
+        return verify_session(token)
     
-    return verify_session(st.session_state.auth_token)
+    return None
 
 
 def require_auth():
