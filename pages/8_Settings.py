@@ -72,10 +72,22 @@ with tab1:
     vt_key = st.text_input("VirusTotal API Key", value=config.get("virustotal_api_key", ""), type="password", key="vt")
     
     st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown("""
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <h4 style="color: #00C853; margin: 0 0 0.5rem 0;">AlienVault OTX</h4>
+            <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">For real-time global threat intelligence feed</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    otx_key = st.text_input("OTX API Key", value=config.get("otx_api_key", ""), type="password", key="otx")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
     
     if st.button("Save API Keys", type="primary"):
         config["gemini_api_key"] = gemini_key
         config["virustotal_api_key"] = vt_key
+        config["otx_api_key"] = otx_key
         save_config(config)
         st.success("API keys saved successfully!")
 
