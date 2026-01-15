@@ -172,11 +172,7 @@ if is_admin:
         
         email_alerts = st.checkbox("Email Alerts", value=user.get('email_alerts', True), key="admin_email_alerts")
         
-        st.markdown('<p style="font-size:0.9rem; color:#8B95A5; margin-bottom:0.2rem;">Telegram Chat ID (for personal alerts)</p>', unsafe_allow_html=True)
-        telegram_chat_id = st.text_input("Telegram Chat ID", value=user.get('telegram_chat_id', ''), key="admin_telegram_id", label_visibility="collapsed")
-        if not telegram_chat_id:
-            st.caption("Start a chat with the bot to get your ID.")
-            
+        
         critical_only = st.checkbox("Critical Alerts Only", value=user.get('critical_only', False), key="admin_critical_only")
         
         if st.button("Save Preferences", type="primary", key="admin_save_pref"):
@@ -237,11 +233,7 @@ else:
         
         email_alerts = st.checkbox("Email Alerts", value=user.get('email_alerts', True), key="user_email_alerts")
         
-        st.markdown('<p style="font-size:0.9rem; color:#8B95A5; margin-bottom:0.2rem;">Telegram Chat ID (for personal alerts)</p>', unsafe_allow_html=True)
-        telegram_chat_id = st.text_input("Telegram Chat ID", value=user.get('telegram_chat_id', ''), key="user_telegram_id", label_visibility="collapsed")
-        if not telegram_chat_id:
-            st.caption("Start a chat with the bot to get your ID.")
-            
+        
         critical_only = st.checkbox("Critical Alerts Only", value=user.get('critical_only', False), key="user_critical_only")
         
         if st.button("Save Preferences", type="primary", key="user_save_pref"):

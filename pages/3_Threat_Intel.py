@@ -56,37 +56,64 @@ if time.time() - st.session_state.last_refresh > 30:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Generate threat data
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=60)
 def get_threat_data():
-    countries = {
-        "China": {"lat": 35.86, "lon": 104.19, "threats": random.randint(200, 400)},
-        "Russia": {"lat": 61.52, "lon": 105.31, "threats": random.randint(150, 300)},
-        "United States": {"lat": 37.09, "lon": -95.71, "threats": random.randint(100, 200)},
-        "Iran": {"lat": 32.42, "lon": 53.68, "threats": random.randint(80, 150)},
-        "North Korea": {"lat": 40.33, "lon": 127.51, "threats": random.randint(50, 100)},
-        "Brazil": {"lat": -14.23, "lon": -51.92, "threats": random.randint(40, 80)},
-        "India": {"lat": 20.59, "lon": 78.96, "threats": random.randint(60, 120)},
-        "Ukraine": {"lat": 48.37, "lon": 31.16, "threats": random.randint(30, 70)},
-        "Germany": {"lat": 51.16, "lon": 10.45, "threats": random.randint(20, 50)},
-        "Netherlands": {"lat": 52.13, "lon": 5.29, "threats": random.randint(15, 40)}
+    from services.threat_intel import threat_intel
+    
+    # Base coordinates for major countries
+    coords = {
+        "China": {"lat": 35.86, "lon": 104.19},
+        "Russia": {"lat": 61.52, "lon": 105.31},
+        "United States": {"lat": 37.09, "lon": -95.71},
+        "Iran": {"lat": 32.42, "lon": 53.68},
+        "North Korea": {"lat": 40.33, "lon": 127.51},
+        "Brazil": {"lat": -14.23, "lon": -51.92},
+        "India": {"lat": 20.59, "lon": 78.96},
+        "Ukraine": {"lat": 48.37, "lon": 31.16},
+        "Germany": {"lat": 51.16, "lon": 10.45},
+        "Netherlands": {"lat": 52.13, "lon": 5.29},
+        "Vietnam": {"lat": 14.05, "lon": 108.27},
+        "France": {"lat": 46.22, "lon": 2.21},
+        "Israel": {"lat": 31.04, "lon": 34.85},
+        "United Kingdom": {"lat": 55.37, "lon": -3.43}
     }
-    return countries
+    
+    # Fetch real counts
+    counts = threat_intel.get_country_threat_counts()
+    
+    results = {}
+    for country, params in coords.items():
+        count = counts.get(country, 0)
+        # Visual scaling: even 1 result should be visible
+        display_threats = count * 10 if count > 0 else 0 
+        
+        results[country] = {
+            "lat": params["lat"],
+            "lon": params["lon"], 
+            "threats": display_threats,
+            "real_count": count
+        }
+    return results
 
 threats = get_threat_data()
 
 # Stats
-total = sum([c["threats"] for c in threats.values()])
-top_country = max(threats.items(), key=lambda x: x[1]["threats"])
+total = sum([c["real_count"] for c in threats.values()])
+if total == 0:
+    top_country = ("None", {"threats": 0, "real_count": 0})
+else:
+    top_country = max(threats.items(), key=lambda x: x[1]["real_count"])
 
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF4444;">{total:,}</p><p class="metric-label">Total Threats</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF4444;">{total:,}</p><p class="metric-label">Active Threats (OTX)</p></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF8C00;">{len(threats)}</p><p class="metric-label">Active Countries</p></div>', unsafe_allow_html=True)
+    active_countries = len([c for c in threats.values() if c["real_count"] > 0])
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF8C00;">{active_countries}</p><p class="metric-label">Affected Countries</p></div>', unsafe_allow_html=True)
 with c3:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00D4FF;">{top_country[0][:8]}</p><p class="metric-label">Top Source</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00D4FF;">{top_country[0][:10]}</p><p class="metric-label">Top Source</p></div>', unsafe_allow_html=True)
 with c4:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #8B5CF6;">{top_country[1]["threats"]}</p><p class="metric-label">Top Threats</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #8B5CF6;">{top_country[1]["real_count"]}</p><p class="metric-label">Top Threats</p></div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -95,9 +122,9 @@ st.markdown(section_title("Global Threat Map"), unsafe_allow_html=True)
 
 lats = [c["lat"] for c in threats.values()]
 lons = [c["lon"] for c in threats.values()]
-sizes = [c["threats"]/5 for c in threats.values()]
+sizes = [c["threats"]/2 for c in threats.values()] # Scaled size
 names = list(threats.keys())
-counts = [c["threats"] for c in threats.values()]
+real_counts = [c["real_count"] for c in threats.values()]
 
 fig = go.Figure()
 
@@ -106,12 +133,12 @@ fig.add_trace(go.Scattergeo(
     mode='markers',
     marker=dict(
         size=sizes,
-        color=counts,
+        color=real_counts,
         colorscale=[[0, '#FF8C00'], [0.5, '#FF4444'], [1, '#8B0000']],
         opacity=0.8,
         line=dict(width=1, color='white')
     ),
-    text=[f"{n}: {c} threats" for n, c in zip(names, counts)],
+    text=[f"{n}: {c} active threats" for n, c in zip(names, real_counts)],
     hoverinfo='text'
 ))
 
@@ -136,14 +163,17 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.markdown(section_title("Top Threat Sources"), unsafe_allow_html=True)
-    sorted_threats = sorted(threats.items(), key=lambda x: x[1]["threats"], reverse=True)
+    sorted_threats = sorted(threats.items(), key=lambda x: x[1]["real_count"], reverse=True)
     for country, data in sorted_threats[:6]:
-        pct = (data["threats"] / total) * 100
+        if total > 0:
+            pct = (data["real_count"] / total) * 100
+        else:
+            pct = 0
         st.markdown(f"""
             <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: #FAFAFA; font-weight: 600;">{country}</span>
-                    <span style="color: #FF8C00; font-weight: 700;">{data['threats']:,}</span>
+                    <span style="color: #FF8C00; font-weight: 700;">{data['real_count']:,}</span>
                 </div>
                 <div style="background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; margin-top: 0.5rem; overflow: hidden;">
                     <div style="background: linear-gradient(90deg, #FF8C00, #FF4444); width: {pct}%; height: 100%;"></div>

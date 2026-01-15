@@ -137,43 +137,7 @@ def send_otp_email(email: str, otp: str, recipient_email: str = None) -> Tuple[b
         return False, f"Failed to send email: {str(e)}"
 
 
-def send_otp_telegram(otp: str) -> Tuple[bool, str]:
-    """Send OTP via Telegram"""
-    try:
-        config = {}
-        if os.path.exists('.soc_config.json'):
-            with open('.soc_config.json', 'r') as f:
-                config = json.load(f)
-        
-        token = config.get('telegram_token', '')
-        chat_id = config.get('telegram_chat_id', '')
-        
-        if not token or not chat_id:
-            return False, "Telegram not configured"
-        
-        message = f"""
-🔐 *SOC Login Verification*
 
-Your one-time code is:
-`{otp}`
-
-⏱ Expires in {OTP_EXPIRY_MINUTES} minutes.
-        """
-        
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        resp = requests.post(url, json={
-            "chat_id": chat_id,
-            "text": message,
-            "parse_mode": "Markdown"
-        }, timeout=10)
-        
-        if resp.status_code == 200:
-            return True, "Code sent to Telegram"
-        else:
-            return False, "Failed to send Telegram message"
-    
-    except Exception as e:
-        return False, f"Telegram error: {str(e)}"
 
 
 def get_trusted_devices(email: str) -> list:

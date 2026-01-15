@@ -4,7 +4,7 @@ import threading
 import time
 from datetime import datetime
 from typing import Optional, Dict, Any
-from alerting.telegram_bot import TelegramNotifier
+from typing import Optional, Dict, Any
 from alerting.email_sender import EmailNotifier
 
 CONFIG_FILE = ".soc_config.json"
@@ -13,10 +13,6 @@ class AlertService:
     
     def __init__(self):
         self.config = self._load_config()
-        self.telegram = TelegramNotifier(
-            bot_token=self.config.get('telegram_token'),
-            chat_id=self.config.get('telegram_chat_id')
-        )
         self.email = EmailNotifier(
             username=self.config.get('gmail_email'),
             password=self.config.get('gmail_password')
@@ -33,10 +29,6 @@ class AlertService:
     
     def reload_config(self):
         self.config = self._load_config()
-        self.telegram = TelegramNotifier(
-            bot_token=self.config.get('telegram_token'),
-            chat_id=self.config.get('telegram_chat_id')
-        )
         self.email = EmailNotifier(
             username=self.config.get('gmail_email'),
             password=self.config.get('gmail_password')
@@ -61,7 +53,7 @@ class AlertService:
         return False
     
     def send_alert(self, event_data: Dict[str, Any]) -> dict:
-        results = {"telegram": False, "email": False}
+        results = {"email": False}
         
         if not self.should_alert(event_data):
             return results
@@ -75,16 +67,12 @@ class AlertService:
             users_data = {}
             
         email_recipients = []
-        telegram_chats = []
 
         # 1. Global Admin Config recipients
         global_recipients = self.config.get('gmail_recipient') or self.config.get('gmail_email')
         if global_recipients:
             email_recipients.extend([r.strip() for r in global_recipients.split(',')])
         
-        if self.config.get('telegram_chat_id'):
-            telegram_chats.append(self.config.get('telegram_chat_id'))
-
         # 2. Add Users based on preferences
         risk_score = event_data.get('risk_score', 0)
         is_critical = risk_score >= 80
@@ -98,27 +86,7 @@ class AlertService:
                      if email not in email_recipients:
                         email_recipients.append(email)
              
-             # Telegram
-             tg_id = u.get('telegram_chat_id')
-             if tg_id:
-                 if u.get('critical_only', False) and not is_critical:
-                     pass
-                 else:
-                     if tg_id not in telegram_chats:
-                         telegram_chats.append(tg_id)
-
         # 3. Send Alerts
-        # Telegram (send individually)
-        if self.config.get('notification_telegram', True) and self.telegram.bot_token:
-            any_success = False
-            # Dedup chats
-            telegram_chats = list(set(telegram_chats))
-            
-            for chat_id in telegram_chats:
-                if self.telegram.send_alert(event_data, chat_id=chat_id):
-                    any_success = True
-            results["telegram"] = any_success
-        
         # Email (batch)
         if self.config.get('notification_email', True) and self.email.is_configured():
             # Dedup emails
@@ -129,10 +97,7 @@ class AlertService:
         return results
     
     def send_daily_summary(self, summary_data: Dict[str, Any]) -> dict:
-        results = {"telegram": False, "email": False}
-        
-        if self.config.get('notification_telegram', True) and self.telegram.is_configured():
-            results["telegram"] = self.telegram.send_daily_summary(summary_data)
+        results = {"email": False}
         
         if self.config.get('notification_email', True) and self.email.is_configured():
             recipients = self.config.get('gmail_recipient') or self.config.get('gmail_email')

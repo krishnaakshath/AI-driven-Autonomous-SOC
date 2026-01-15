@@ -230,12 +230,42 @@ class ThreatIntelligence:
             pass
         
         return {
-            'total_pulses': 0,
-            'attack_types': {},
             'last_updated': datetime.now().isoformat(),
             'source': 'Offline'
         }
     
+    def get_country_threat_counts(self) -> Dict[str, int]:
+        # Basic mapping of country names/codes
+        country_keywords = {
+            "China": ["china", "cn", "chinese"],
+            "Russia": ["russia", "ru", "russian", "soviet"],
+            "United States": ["usa", "united states", "us", "america"],
+            "Iran": ["iran", "ir", "iranian"],
+            "North Korea": ["north korea", "dprk", "korea", "lazarus"],
+            "Brazil": ["brazil", "br"],
+            "India": ["india", "in", "sidewinder"],
+            "Ukraine": ["ukraine", "ua"],
+            "Germany": ["germany", "de"],
+            "Netherlands": ["netherlands", "nl"],
+            "Vietnam": ["vietnam", "vn"],
+            "France": ["france", "fr"],
+            "Israel": ["israel", "il"],
+            "United Kingdom": ["uk", "united kingdom", "britain"]
+        }
+        
+        # Try to get fresh data or cached
+        pulses = self.get_otx_pulses(limit=100)
+        counts = {k: 0 for k in country_keywords.keys()}
+        
+        for p in pulses:
+            text = (p.get('name', '') + ' ' + p.get('description', '') + ' ' + ' '.join(p.get('tags', []))).lower()
+            for country, keywords in country_keywords.items():
+                if any(k in text for k in keywords):
+                    counts[country] += 1
+        
+        # Ensure at least some data (fallback to 1 if found but 0 count, or let it be 0)
+        return counts
+
     def check_ip(self, ip: str) -> Dict:
         results = {
             'ip': ip,

@@ -198,9 +198,7 @@ elif st.session_state.auth_mode == 'login':
                     st.switch_page("pages/1_Dashboard.py")
                 else:
                     otp = create_otp(email)
-                    e_ok, _ = send_otp_email(email, otp, email)
-                    t_ok, _ = send_otp_telegram(otp)
-                    if e_ok or t_ok:
+                    if send_otp_email(email, otp, email)[0]:
                         st.session_state.otp_sent = True
                         st.session_state.pending_user = user
                         st.rerun()
@@ -211,20 +209,14 @@ elif st.session_state.auth_mode == 'login':
                 st.error(msg)
 
 else:
-    name = st.text_input("Name", placeholder="John Doe", key="reg_name")
-    email = st.text_input("Email", placeholder="you@company.com", key="reg_email")
-    password = st.text_input("Password", type="password", placeholder="Min 6 chars", key="reg_pass")
-    
-    if st.button("Create Account", type="primary", use_container_width=True):
-        if name and email and password:
-            if len(password) < 6:
-                st.error("Password: min 6 characters")
-            else:
-                success, msg = register_user(email, password, name)
-                if success:
-                    st.success("Created! Please login.")
-                    st.session_state.auth_mode = 'login'
-                    st.rerun()
-                else:
-                    st.error(msg)
+    st.markdown("""
+        <div style="text-align: center; padding: 2rem;">
+            <h3 style="color: #00D4FF; margin-bottom: 0.5rem;">Access Restricted</h3>
+            <p style="color: #8B95A5; margin-bottom: 1.5rem;">New account creation is currently disabled. This system is for authorized administrators only.</p>
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1rem; border: 1px dashed rgba(255, 255, 255, 0.2);">
+                <p style="margin: 0; color: #FAFAFA; font-weight: 500;">Registration Coming Soon</p>
+                <p style="margin: 0.3rem 0 0 0; color: #8B95A5; font-size: 0.8rem;">We are upgrading our security policies.</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 

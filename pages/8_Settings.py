@@ -114,28 +114,30 @@ with tab2:
 with tab3:
     st.markdown(section_title("Notification Settings"), unsafe_allow_html=True)
     
+    st.markdown("""
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <h4 style="color: #FF4444; margin: 0 0 1rem 0;">Email Alerts (Gmail)</h4>
+            <p style="color: #8B95A5; margin: 0 0 1rem 0; font-size: 0.9rem;">
+                Configure SMTP settings to receive critical security alerts. 
+                Use an App Password for Gmail.
+            </p>
+            
+            <div style="background: rgba(255, 68, 68, 0.1); border-left: 3px solid #FF4444; padding: 0.8rem; border-radius: 4px; margin-bottom: 1rem;">
+                <p style="color: #FAFAFA; margin: 0; font-size: 0.85rem;">🔒 Alerts are sent securely using TLS encryption.</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("""
-            <div class="glass-card">
-                <h4 style="color: #FF4444; margin: 0 0 1rem 0;">Email Alerts (Gmail)</h4>
-            </div>
-        """, unsafe_allow_html=True)
-        
         gmail_email = st.text_input("Gmail Address", value=config.get("gmail_email", ""), key="gmail_email")
         gmail_password = st.text_input("App Password", value=config.get("gmail_password", ""), type="password", key="gmail_pass")
-        gmail_recipient = st.text_input("Alert Recipient", value=config.get("gmail_recipient", ""), key="gmail_to")
     
     with col2:
-        st.markdown("""
-            <div class="glass-card">
-                <h4 style="color: #00D4FF; margin: 0 0 1rem 0;">Telegram Bot</h4>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        telegram_token = st.text_input("Bot Token", value=config.get("telegram_token", ""), type="password", key="tg_token")
-        telegram_chat = st.text_input("Chat ID", value=config.get("telegram_chat_id", ""), key="tg_chat")
+        gmail_recipient = st.text_input("Alert Recipient", value=config.get("gmail_recipient", ""), key="gmail_to")
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.info("Tip: You can add multiple recipients separated by commas.")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -146,8 +148,11 @@ with tab3:
             config["gmail_email"] = gmail_email
             config["gmail_password"] = gmail_password
             config["gmail_recipient"] = gmail_recipient
-            config["telegram_token"] = telegram_token
-            config["telegram_chat_id"] = telegram_chat
+            # Clean up old keys
+            config.pop("telegram_token", None)
+            config.pop("telegram_chat_id", None)
+            config.pop("notification_telegram", None)
+            
             save_config(config)
             st.success("Notification settings saved!")
     
@@ -156,10 +161,10 @@ with tab3:
             try:
                 from alerting.alert_service import send_test_alert
                 result = send_test_alert()
-                if result.get("telegram") or result.get("email"):
-                    st.success(f"Test alert sent! Telegram: {'✅' if result.get('telegram') else '❌'} | Email: {'✅' if result.get('email') else '❌'}")
+                if result.get("email"):
+                    st.success("Test alert sent to email! ✅")
                 else:
-                    st.warning("No alerts sent. Check your configuration.")
+                    st.warning("Failed to send email. Check your credentials.")
             except Exception as e:
                 st.error(f"Error: {e}")
 
