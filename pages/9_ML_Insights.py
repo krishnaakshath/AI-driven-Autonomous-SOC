@@ -74,12 +74,12 @@ if ML_LOADED:
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # Risk distribution chart
+                # Risk distribution chart - FIXED Y-axis
                 risk_data = summary['risk_distribution']
                 fig = go.Figure(data=[
                     go.Bar(
-                        x=list(risk_data.keys()),
-                        y=list(risk_data.values()),
+                        x=['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+                        y=[risk_data.get('CRITICAL', 0), risk_data.get('HIGH', 0), risk_data.get('MEDIUM', 0), risk_data.get('LOW', 0)],
                         marker_color=['#FF4444', '#FF8C00', '#FFD700', '#00C853']
                     )
                 ])
@@ -88,26 +88,69 @@ if ML_LOADED:
                     template="plotly_dark",
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    height=300
+                    height=300,
+                    yaxis=dict(range=[0, max(50, max(risk_data.values()) + 5)], dtick=10)  # Fixed Y-axis
                 )
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # Top anomalies table
+                # Top anomalies with View Details
                 st.markdown(section_title("Top Anomalous Events"), unsafe_allow_html=True)
                 anomalies = [r for r in results if r['is_anomaly']]
                 top_5 = sorted(anomalies, key=lambda x: x['anomaly_score'], reverse=True)[:5]
                 
-                for a in top_5:
+                # Store in session state for expanders
+                if 'anomaly_details' not in st.session_state:
+                    st.session_state.anomaly_details = {}
+                
+                for idx, a in enumerate(top_5):
                     color = "#FF4444" if a['risk_level'] == 'CRITICAL' else "#FF8C00"
-                    st.markdown(f"""
-                    <div class="glass-card" style="margin: 0.5rem 0; border-left: 3px solid {color};">
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: #FAFAFA; font-weight: 600;">{a['id']}</span>
-                            <span style="color: {color}; font-weight: 700;">Score: {a['anomaly_score']}</span>
-                        </div>
-                        <p style="color: #8B95A5; margin: 0.3rem 0;">Type: {a.get('type', 'Unknown')} | IP: {a.get('source_ip', 'N/A')}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    event_type = a.get('type', 'Unknown')
+                    
+                    # Generate detailed explanation
+                    if event_type == 'exfiltration':
+                        why = "Unusually high outbound data transfer detected (500KB+ vs normal 2KB average)"
+                        how = "Large volumes of data being sent to external IP addresses, possibly through encrypted channels"
+                    elif event_type == 'ddos':
+                        why = "Extremely high inbound packet count (10,000+ packets in short burst)"
+                        how = "Multiple sources flooding the network with SYN requests or UDP packets"
+                    elif event_type == 'c2':
+                        why = "Persistent beaconing pattern detected (long-duration connections to unusual ports)"
+                        how = "Regular interval connections to command-and-control servers, typical of malware communication"
+                    else:
+                        why = "Behavior pattern significantly deviates from baseline normal traffic"
+                        how = "Statistical features fall outside normal distribution boundaries"
+                    
+                    st.markdown(f"""<div class="glass-card" style="margin: 0.5rem 0; border-left: 3px solid {color};">
+<div style="display: flex; justify-content: space-between; align-items: center;">
+<div>
+<span style="color: {color}; font-weight: 700;">[{a['risk_level']}]</span>
+<span style="color: #FAFAFA; font-weight: 600; margin-left: 0.5rem;">{a['id']}</span>
+</div>
+<span style="color: {color}; font-weight: 700;">Score: {a['anomaly_score']}</span>
+</div>
+<p style="color: #8B95A5; margin: 0.3rem 0;">Type: {event_type} | IP: {a.get('source_ip', 'N/A')}</p>
+</div>""", unsafe_allow_html=True)
+                    
+                    with st.expander(f"📋 View Details - {a['id']}"):
+                        st.markdown(f"""
+**🕐 When:** Detected in current analysis batch (real-time monitoring)
+
+**❓ Why (Root Cause):**  
+{why}
+
+**⚙️ How (Technical Details):**  
+{how}
+
+**📊 Key Metrics:**
+- Bytes In: `{a.get('bytes_in', 0):,.0f}`
+- Bytes Out: `{a.get('bytes_out', 0):,.0f}`
+- Packets: `{a.get('packets', 0)}`
+- Duration: `{a.get('duration', 0):.1f}s`
+- Port: `{a.get('port', 'N/A')}`
+
+**🎯 Recommended Action:**
+{"🚨 IMMEDIATE BLOCK - Isolate affected system and investigate data loss" if a['risk_level'] == 'CRITICAL' else "⚠️ INVESTIGATE - Monitor closely and prepare containment procedures"}
+                        """)
     
     with tab2:
         st.markdown(section_title("Fuzzy C-Means - Threat Clustering"), unsafe_allow_html=True)
@@ -170,22 +213,84 @@ if ML_LOADED:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown(section_title("Sample Clustered Events"), unsafe_allow_html=True)
                 
-                for r in results[:5]:
+                # Category explanations
+                category_info = {
+                    'Malware/Ransomware': {
+                        'why': 'High inbound traffic with executable patterns, file encryption signatures detected',
+                        'how': 'Malicious payload delivered via phishing or exploit, encrypts files and demands ransom'
+                    },
+                    'Data Exfiltration': {
+                        'why': 'Unusually high outbound data volume to external destinations',
+                        'how': 'Sensitive data being transferred outside the network, possibly compressed/encrypted'
+                    },
+                    'DDoS/DoS Attack': {
+                        'why': 'Massive inbound traffic spike with high packet-per-second rate',
+                        'how': 'Distributed attack flooding network resources, causing service unavailability'
+                    },
+                    'Reconnaissance': {
+                        'why': 'Sequential port scanning activity, network enumeration patterns',
+                        'how': 'Attacker mapping network topology, identifying vulnerable services'
+                    },
+                    'Insider Threat': {
+                        'why': 'Unusual access patterns from internal IP, off-hours activity',
+                        'how': 'Authorized user accessing sensitive resources outside normal behavior'
+                    }
+                }
+                
+                for idx, r in enumerate(results[:5]):
                     memberships = r['cluster_memberships']
                     top_cat = r['primary_category']
                     conf = r['primary_confidence']
+                    cat_info = category_info.get(top_cat, {'why': 'Pattern matches threat category signature', 'how': 'Behavioral analysis indicates threat characteristics'})
                     
-                    st.markdown(f"""
-                    <div class="glass-card" style="margin: 0.5rem 0;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: #FAFAFA; font-weight: 600;">{r['id']}</span>
-                            <span style="color: #8B5CF6;">{top_cat} ({conf}%)</span>
-                        </div>
-                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
-                            {' '.join([f'<span style="color: #8B95A5; font-size: 0.8rem;">{k}: {v}%</span>' for k, v in memberships.items()])}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Color based on category
+                    cat_colors = {
+                        'Malware/Ransomware': '#FF4444',
+                        'Data Exfiltration': '#8B5CF6',
+                        'DDoS/DoS Attack': '#FF8C00',
+                        'Reconnaissance': '#00D4FF',
+                        'Insider Threat': '#00C853'
+                    }
+                    color = cat_colors.get(top_cat, '#8B5CF6')
+                    
+                    st.markdown(f"""<div class="glass-card" style="margin: 0.5rem 0; border-left: 3px solid {color};">
+<div style="display: flex; justify-content: space-between; align-items: center;">
+<div>
+<span style="color: {color}; font-weight: 700;">[{top_cat}]</span>
+<span style="color: #FAFAFA; font-weight: 600; margin-left: 0.5rem;">{r['id']}</span>
+</div>
+<span style="color: {color}; font-weight: 700;">{conf}% Confidence</span>
+</div>
+<p style="color: #8B95A5; margin: 0.3rem 0;">IP: {r.get('source_ip', 'N/A')} | Risk Score: {r.get('risk_score', 'N/A')}</p>
+</div>""", unsafe_allow_html=True)
+                    
+                    with st.expander(f"📋 View Details - {r['id']}"):
+                        st.markdown(f"""
+**🏷️ Primary Category:** {top_cat} ({conf}%)
+
+**❓ Why This Classification:**  
+{cat_info['why']}
+
+**⚙️ Attack Mechanism:**  
+{cat_info['how']}
+
+**📊 Cluster Memberships:**
+""")
+                        for cat, pct in memberships.items():
+                            bar_width = pct
+                            bar_color = cat_colors.get(cat, '#8B5CF6')
+                            st.markdown(f"`{cat}`: {pct}%")
+                        
+                        st.markdown(f"""
+**📈 Event Metrics:**
+- Bytes In: `{r.get('bytes_in', 0):,.0f}`
+- Bytes Out: `{r.get('bytes_out', 0):,.0f}`
+- Packets: `{r.get('packets', 0)}`
+- Duration: `{r.get('duration', 0):.1f}s`
+
+**🎯 Recommended Action:**
+{"🚨 HIGH PRIORITY - Immediate containment required" if conf > 70 else "⚠️ INVESTIGATE - Verify threat and monitor"}
+                        """)
     
     with tab3:
         st.markdown(section_title("Combined ML Analysis"), unsafe_allow_html=True)
