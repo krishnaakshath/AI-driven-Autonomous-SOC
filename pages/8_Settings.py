@@ -11,24 +11,8 @@ st.set_page_config(page_title="Settings | SOC", page_icon="S", layout="wide")
 from ui.theme import PREMIUM_CSS, page_header, section_title
 st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
-from auth.auth_manager import check_auth, show_user_info
 
-user = check_auth()
-if not user:
-    st.switch_page("pages/0_Login.py")
-    st.stop()
-
-if user.get('role') != 'admin':
-    st.error("⛔ Access Denied")
-    st.markdown("""
-        <div style="padding: 1rem; background: rgba(255, 68, 68, 0.1); border-left: 4px solid #FF4444; border-radius: 8px;">
-            <p style="color: #FF4444; margin: 0; font-weight: 600;">System Settings are restricted to Administrators.</p>
-            <p style="color: #8B95A5; margin: 0.5rem 0 0 0;">Please contact your security administrator to request changes.</p>
-        </div>
-    """, unsafe_allow_html=True)
-    st.stop()
-
-show_user_info(user)
+# Authentication removed - public dashboard
 
 st.markdown(page_header("Settings", "Configure integrations, notifications, and thresholds"), unsafe_allow_html=True)
 

@@ -232,14 +232,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-from auth.auth_manager import check_auth, show_user_info
 
-user = check_auth()
-if not user:
-    st.switch_page("pages/0_Login.py")
-    st.stop()
-
-show_user_info(user)
+# Authentication removed - public dashboard
 
 DATA_PATH = "data/parsed_logs/incident_responses.csv"
 FULL_MODE = os.path.exists(DATA_PATH)

@@ -14,14 +14,8 @@ st.set_page_config(page_title="Scanners | SOC", page_icon="S", layout="wide")
 from ui.theme import PREMIUM_CSS, page_header, section_title
 st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
-from auth.auth_manager import check_auth, show_user_info
 
-user = check_auth()
-if not user:
-    st.switch_page("pages/0_Login.py")
-    st.stop()
-
-show_user_info(user)
+# Authentication removed - public dashboard
 
 st.markdown(page_header("Security Scanners", "File, URL, and network analysis tools"), unsafe_allow_html=True)
 
@@ -79,13 +73,16 @@ with tab2:
     st.markdown(section_title("URL Scanner"), unsafe_allow_html=True)
     st.markdown('<p style="color: #8B95A5;">Check URLs for malicious content using VirusTotal.</p>', unsafe_allow_html=True)
     
+    config = {}
     try:
         if os.path.exists('.soc_config.json'):
             with open('.soc_config.json', 'r') as f:
                 config = json.load(f)
+        # Also try Streamlit secrets for cloud deployment
+        elif hasattr(st, 'secrets'):
+            config = dict(st.secrets.get('soc_config', {}))
     except Exception as e:
         st.error(f"Configuration Error: {e}")
-        config = {}
     
     VT_KEY = config.get('virustotal_api_key', '')
     

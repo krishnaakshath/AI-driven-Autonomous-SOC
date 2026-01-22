@@ -14,15 +14,9 @@ st.set_page_config(page_title="Threat Intelligence | SOC", page_icon="T", layout
 from ui.theme import PREMIUM_CSS, page_header, section_title
 st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
-from auth.auth_manager import check_auth, show_user_info
 from services.threat_intel import get_latest_threats
 
-user = check_auth()
-if not user:
-    st.switch_page("pages/0_Login.py")
-    st.stop()
-
-show_user_info(user)
+# Authentication removed - public dashboard
 
 st.markdown(page_header("Threat Intelligence", "Global threat landscape and geographic analysis"), unsafe_allow_html=True)
 

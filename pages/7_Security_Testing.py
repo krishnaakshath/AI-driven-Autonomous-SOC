@@ -16,14 +16,8 @@ st.set_page_config(page_title="Security Testing | SOC", page_icon="T", layout="w
 from ui.theme import PREMIUM_CSS, page_header, section_title
 st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
-from auth.auth_manager import check_auth, show_user_info
 
-user = check_auth()
-if not user:
-    st.switch_page("pages/0_Login.py")
-    st.stop()
-
-show_user_info(user)
+# Authentication removed - public dashboard
 
 st.markdown(page_header("Security Testing", "Attack simulation and penetration testing tools"), unsafe_allow_html=True)
 
@@ -149,9 +143,7 @@ with tab1:
         st.success(f"Attack blocked! Risk Score: {attacks[attack]['risk']}/100")
 
 with tab2:
-    if user.get('role') != 'admin':
-        st.error("Admin access required for penetration testing tools")
-        st.stop()
+    # Admin check removed - public access
     
     st.markdown(section_title("Penetration Testing"), unsafe_allow_html=True)
     st.warning("**Authorized Use Only** - Only test systems you own or have permission to test")

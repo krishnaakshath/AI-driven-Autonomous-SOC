@@ -13,14 +13,8 @@ st.set_page_config(page_title="Alerts | SOC", page_icon="A", layout="wide")
 from ui.theme import PREMIUM_CSS, page_header, alert_card, section_title
 st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
-from auth.auth_manager import check_auth, show_user_info
 
-user = check_auth()
-if not user:
-    st.switch_page("pages/0_Login.py")
-    st.stop()
-
-show_user_info(user)
+# Authentication removed - public dashboard
 
 # Page header
 st.markdown(page_header("Security Alerts", "Real-time threat detection and response"), unsafe_allow_html=True)
