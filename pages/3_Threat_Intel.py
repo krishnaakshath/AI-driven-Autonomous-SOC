@@ -143,10 +143,8 @@ fig.add_trace(go.Choropleth(
     ],
     showscale=True,
     colorbar=dict(
-        title="Threats",
+        title=dict(text="Threats", font=dict(color="#FAFAFA")),
         tickfont=dict(color="#8B95A5"),
-        titlefont=dict(color="#FAFAFA"),
-        bgcolor="rgba(0,0,0,0)",
         x=1.02
     ),
     hovertemplate="<b>%{text}</b><br>Active Threats: %{z}<extra></extra>"
