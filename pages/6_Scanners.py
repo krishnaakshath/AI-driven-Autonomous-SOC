@@ -73,23 +73,35 @@ with tab2:
     st.markdown(section_title("URL Scanner"), unsafe_allow_html=True)
     st.markdown('<p style="color: #8B95A5;">Check URLs for malicious content using VirusTotal.</p>', unsafe_allow_html=True)
     
+    # Load configuration with multiple fallbacks
     config = {}
+    VT_KEY = ''
+    
     try:
+        # Try local config file first
         if os.path.exists('.soc_config.json'):
             with open('.soc_config.json', 'r') as f:
                 config = json.load(f)
-        # Also try Streamlit secrets for cloud deployment
-        elif hasattr(st, 'secrets'):
-            config = dict(st.secrets.get('soc_config', {}))
+                VT_KEY = config.get('virustotal_api_key', '')
+        
+        # Try Streamlit secrets for cloud deployment
+        if not VT_KEY and hasattr(st, 'secrets'):
+            try:
+                VT_KEY = st.secrets.get('virustotal_api_key', '')
+            except:
+                pass
+        
+        # Hardcoded fallback for deployment (your API key)
+        if not VT_KEY:
+            VT_KEY = '6a0b6fa88fa9cc23373b227af1e641af64597a152e6ea37d3a8d5fd1beff1fc7'
+            
     except Exception as e:
         st.error(f"Configuration Error: {e}")
     
-    VT_KEY = config.get('virustotal_api_key', '')
-    
     if not VT_KEY:
-        st.warning("Add VirusTotal API key in Settings to enable URL scanning.")
+        st.warning("VirusTotal API key not found. URL scanning unavailable.")
     else:
-        st.success("VirusTotal API connected")
+        st.markdown('<div style="padding: 0.5rem 1rem; background: rgba(0, 200, 83, 0.1); border-radius: 8px; border-left: 3px solid #00C853;"><span style="color: #00C853;">✓</span> <span style="color: #8B95A5;">VirusTotal API connected</span></div>', unsafe_allow_html=True)
         
         url = st.text_input("Enter URL", placeholder="https://example.com")
         

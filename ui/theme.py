@@ -18,15 +18,9 @@ PREMIUM_CSS = """
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
         background: 
-            radial-gradient(ellipse at 20% 80%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+            radial-gradient(ellipse at 20% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
         pointer-events: none;
-        animation: bgPulse 15s ease-in-out infinite;
-    }
-    
-    @keyframes bgPulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; }
     }
     
     /* Page Header */
@@ -95,16 +89,15 @@ PREMIUM_CSS = """
     .metric-card:hover::before { left: 100%; }
     
     .metric-card:hover {
-        transform: translateY(-5px) scale(1.02);
-        border-color: rgba(0, 212, 255, 0.5);
-        box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
+        transform: translateY(-2px);
+        border-color: rgba(0, 212, 255, 0.3);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
     
     .metric-value {
         font-size: 2.5rem;
         font-weight: 800;
         margin: 0.3rem 0;
-        text-shadow: 0 0 30px currentColor;
     }
     
     .metric-label {
