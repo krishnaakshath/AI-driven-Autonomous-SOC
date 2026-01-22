@@ -111,43 +111,83 @@ with c4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# World Map
+# World Map - Choropleth + Scatter markers
 st.markdown(section_title("Global Threat Map"), unsafe_allow_html=True)
 
-lats = [c["lat"] for c in threats.values()]
-lons = [c["lon"] for c in threats.values()]
-sizes = [c["threats"]/2 for c in threats.values()] # Scaled size
-names = list(threats.keys())
-real_counts = [c["real_count"] for c in threats.values()]
+# ISO country codes for choropleth
+country_codes = {
+    "China": "CHN", "Russia": "RUS", "United States": "USA", "Iran": "IRN",
+    "North Korea": "PRK", "Brazil": "BRA", "India": "IND", "Ukraine": "UKR",
+    "Germany": "DEU", "Netherlands": "NLD", "Vietnam": "VNM", "France": "FRA",
+    "Israel": "ISR", "United Kingdom": "GBR"
+}
+
+# Prepare data for choropleth
+locations = [country_codes.get(c, "") for c in threats.keys()]
+z_values = [threats[c]["real_count"] for c in threats.keys()]
+country_names = list(threats.keys())
 
 fig = go.Figure()
+
+# Layer 1: Choropleth (colored countries)
+fig.add_trace(go.Choropleth(
+    locations=locations,
+    z=z_values,
+    text=country_names,
+    colorscale=[
+        [0, 'rgba(30, 40, 60, 0.8)'],      # No threats - dark
+        [0.2, 'rgba(255, 200, 0, 0.6)'],   # Low - yellow
+        [0.5, 'rgba(255, 140, 0, 0.7)'],   # Medium - orange
+        [0.8, 'rgba(255, 68, 68, 0.8)'],   # High - red
+        [1, 'rgba(139, 0, 0, 0.9)']        # Critical - dark red
+    ],
+    showscale=True,
+    colorbar=dict(
+        title="Threats",
+        tickfont=dict(color="#8B95A5"),
+        titlefont=dict(color="#FAFAFA"),
+        bgcolor="rgba(0,0,0,0)",
+        x=1.02
+    ),
+    hovertemplate="<b>%{text}</b><br>Active Threats: %{z}<extra></extra>"
+))
+
+# Layer 2: Scatter markers for visual impact
+lats = [c["lat"] for c in threats.values()]
+lons = [c["lon"] for c in threats.values()]
+sizes = [max(10, c["real_count"] * 3) for c in threats.values()]
+real_counts = [c["real_count"] for c in threats.values()]
 
 fig.add_trace(go.Scattergeo(
     lat=lats, lon=lons,
     mode='markers',
     marker=dict(
         size=sizes,
-        color=real_counts,
-        colorscale=[[0, '#FF8C00'], [0.5, '#FF4444'], [1, '#8B0000']],
-        opacity=0.8,
-        line=dict(width=1, color='white')
+        color='#FF4444',
+        opacity=0.7,
+        line=dict(width=2, color='white'),
+        sizemode='diameter'
     ),
-    text=[f"{n}: {c} active threats" for n, c in zip(names, real_counts)],
-    hoverinfo='text'
+    text=[f"<b>{n}</b><br>{c} active threats" for n, c in zip(country_names, real_counts)],
+    hoverinfo='text',
+    showlegend=False
 ))
 
 fig.update_layout(
     geo=dict(
-        bgcolor='rgba(0,0,0,0)',
-        showland=True, landcolor='rgba(30, 40, 60, 0.8)',
-        showocean=True, oceancolor='rgba(15, 25, 45, 0.8)',
+        bgcolor='rgba(10, 14, 23, 1)',
+        showland=True, landcolor='rgba(30, 40, 60, 0.6)',
+        showocean=True, oceancolor='rgba(15, 25, 45, 0.9)',
         showlakes=False,
-        showcountries=True, countrycolor='rgba(80, 100, 120, 0.5)',
-        projection_type='natural earth'
+        showcountries=True, countrycolor='rgba(100, 120, 140, 0.4)',
+        showcoastlines=True, coastlinecolor='rgba(100, 120, 140, 0.3)',
+        projection_type='natural earth',
+        showframe=False
     ),
     paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
     margin=dict(l=0, r=0, t=0, b=0),
-    height=450
+    height=500
 )
 
 st.plotly_chart(fig, use_container_width=True)
