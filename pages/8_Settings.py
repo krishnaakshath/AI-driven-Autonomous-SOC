@@ -108,19 +108,16 @@ with tab2:
 with tab3:
     st.markdown(section_title("Notification Settings"), unsafe_allow_html=True)
     
-    st.markdown("""
-<div class="glass-card" style="margin-bottom: 1.5rem;">
-    <h4 style="color: #FF4444; margin: 0 0 1rem 0;">Email Alerts (Gmail)</h4>
-    <p style="color: #8B95A5; margin: 0 0 1rem 0; font-size: 0.9rem;">
-        Configure SMTP settings to receive critical security alerts. 
-        Use an App Password for Gmail.
-    </p>
-    
-    <div style="background: rgba(255, 68, 68, 0.1); border-left: 3px solid #FF4444; padding: 0.8rem; border-radius: 4px; margin-bottom: 1rem;">
-        <p style="color: #FAFAFA; margin: 0; font-size: 0.85rem;">🔒 Alerts are sent securely using TLS encryption.</p>
-    </div>
+    st.markdown("""<div class="glass-card" style="margin-bottom: 1.5rem;">
+<h4 style="color: #FF4444; margin: 0 0 1rem 0;">Email Alerts (Gmail)</h4>
+<p style="color: #8B95A5; margin: 0 0 1rem 0; font-size: 0.9rem;">
+Configure SMTP settings to receive critical security alerts. 
+Use an App Password for Gmail.
+</p>
+<div style="background: rgba(255, 68, 68, 0.1); border-left: 3px solid #FF4444; padding: 0.8rem; border-radius: 4px; margin-bottom: 1rem;">
+<p style="color: #FAFAFA; margin: 0; font-size: 0.85rem;">🔒 Alerts are sent securely using TLS encryption.</p>
 </div>
-""", unsafe_allow_html=True)
+</div>""", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
