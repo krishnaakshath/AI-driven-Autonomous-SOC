@@ -1,401 +1,693 @@
-# Shared Premium CSS for all SOC pages
-# Import this at the top of each page file
+"""
+🔮 CYBERPUNK 2077 THEME - AI-Driven Autonomous SOC
+===================================================
+Ultra-futuristic UI with neon glows, scanlines, glitch effects,
+holographic elements, and interactive particle systems.
+"""
 
-PREMIUM_CSS = """
+import streamlit as st
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MAIN CYBERPUNK CSS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+CYBERPUNK_CSS = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
     
+    /* ═══════════════════════════════════════════════════════════════════════════
+       CSS VARIABLES - NEON COLOR PALETTE
+    ═══════════════════════════════════════════════════════════════════════════ */
+    :root {
+        --neon-cyan: #00f3ff;
+        --neon-purple: #bc13fe;
+        --neon-pink: #ff00ff;
+        --neon-red: #ff003c;
+        --neon-orange: #ff6b00;
+        --neon-green: #0aff0a;
+        --neon-yellow: #f0ff00;
+        --bg-dark: #030303;
+        --bg-darker: #000000;
+        --glass-bg: rgba(5, 5, 15, 0.85);
+        --glass-border: rgba(0, 243, 255, 0.15);
+        --text-primary: #e0e0e0;
+        --text-secondary: #888;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       TYPOGRAPHY
+    ═══════════════════════════════════════════════════════════════════════════ */
     html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Rajdhani', sans-serif;
+        color: var(--text-primary);
     }
     
+    h1, h2, h3, .metric-value, .cyber-title {
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 2px;
+    }
+    
+    code, .mono {
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MAIN BACKGROUND - ANIMATED GRID + SCANLINES
+    ═══════════════════════════════════════════════════════════════════════════ */
     .stApp {
-        background: linear-gradient(135deg, #0a0e17 0%, #151c2c 50%, #0d1320 100%);
+        background-color: var(--bg-dark);
+        background-image: 
+            /* Scanlines overlay */
+            repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            ),
+            /* Animated grid */
+            linear-gradient(0deg, transparent 24%, rgba(0, 243, 255, .03) 25%, rgba(0, 243, 255, .03) 26%, transparent 27%, transparent 74%, rgba(0, 243, 255, .03) 75%, rgba(0, 243, 255, .03) 76%, transparent 77%, transparent),
+            linear-gradient(90deg, transparent 24%, rgba(0, 243, 255, .03) 25%, rgba(0, 243, 255, .03) 26%, transparent 27%, transparent 74%, rgba(0, 243, 255, .03) 75%, rgba(0, 243, 255, .03) 76%, transparent 77%, transparent),
+            /* Radial glow */
+            radial-gradient(ellipse at 50% 0%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(ellipse at 100% 100%, rgba(188, 19, 254, 0.08) 0%, transparent 40%);
+        background-size: 100% 100%, 60px 60px, 60px 60px, 100% 100%, 100% 100%;
     }
     
+    /* Animated scan line effect */
     .stApp::before {
         content: '';
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: 
-            radial-gradient(ellipse at 20% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
-        pointer-events: none;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+        animation: scanline 4s linear infinite;
+        z-index: 9999;
+        opacity: 0.7;
     }
     
-    /* Page Header */
-    .page-header {
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
-        border: 1px solid rgba(0, 212, 255, 0.2);
-        border-radius: 24px;
-        padding: 2rem 2.5rem;
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
+    @keyframes scanline {
+        0% { top: 0%; }
+        100% { top: 100%; }
     }
-    
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: -50%; right: -20%;
-        width: 400px; height: 400px;
-        background: radial-gradient(circle, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
-        animation: float 8s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-        0%, 100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-20px) rotate(5deg); }
-    }
-    
-    .page-header h1 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #FFFFFF 0%, #00D4FF 50%, #8B5CF6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin: 0;
-        position: relative;
-    }
-    
-    .page-header p {
-        color: #8B95A5;
-        margin: 0.5rem 0 0 0;
-        font-size: 1.1rem;
-    }
-    
-    /* Metric Cards */
-    .metric-card {
-        background: linear-gradient(145deg, rgba(26, 31, 46, 0.9) 0%, rgba(15, 20, 30, 0.95) 100%);
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       GLASS CARDS - HOLOGRAPHIC EFFECT
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .glass-card, .metric-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        box-shadow: 
+            0 0 20px rgba(0, 243, 255, 0.05),
+            inset 0 0 30px rgba(0, 243, 255, 0.02),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        border-radius: 2px;
         backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 20px;
-        padding: 1.5rem;
-        text-align: center;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
+        padding: 1.5rem;
     }
     
-    .metric-card::before {
+    /* Top laser line animation */
+    .glass-card::before, .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.8s ease;
+    }
+    
+    /* Corner accent */
+    .glass-card::after, .metric-card::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0;
+        width: 30px; height: 30px;
+        border-top: 2px solid var(--neon-cyan);
+        border-right: 2px solid var(--neon-cyan);
+        opacity: 0.5;
+    }
+    
+    .glass-card:hover::before, .metric-card:hover::before {
+        transform: translateX(100%);
+    }
+    
+    .glass-card:hover, .metric-card:hover {
+        transform: translateY(-8px) scale(1.01);
+        box-shadow: 
+            0 0 40px rgba(0, 243, 255, 0.15),
+            0 20px 40px rgba(0, 0, 0, 0.4),
+            inset 0 0 40px rgba(0, 243, 255, 0.05);
+        border-color: var(--neon-cyan);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       METRIC CARDS - NEON GLOW
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .metric-value {
+        font-size: 3rem;
+        font-weight: 900;
+        text-shadow: 
+            0 0 10px currentColor,
+            0 0 20px currentColor,
+            0 0 40px currentColor;
+        margin: 0.5rem 0;
+        animation: neonFlicker 3s ease-in-out infinite;
+    }
+    
+    .metric-label {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.75rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    @keyframes neonFlicker {
+        0%, 100% { opacity: 1; }
+        92% { opacity: 1; }
+        93% { opacity: 0.8; }
+        94% { opacity: 1; }
+        96% { opacity: 0.9; }
+        97% { opacity: 1; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       GLITCH EFFECT - HEADERS
+    ═══════════════════════════════════════════════════════════════════════════ */
+    @keyframes glitch {
+        0% { 
+            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-cyan);
+            transform: translate(0);
+        }
+        20% { 
+            text-shadow: -2px 0 var(--neon-red), 2px 0 var(--neon-cyan);
+            transform: translate(-2px, 2px);
+        }
+        40% { 
+            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-cyan);
+            transform: translate(2px, -2px);
+        }
+        60% { 
+            text-shadow: -2px 0 var(--neon-red), 2px 0 var(--neon-cyan);
+            transform: translate(-1px, 1px);
+        }
+        80% { 
+            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-cyan);
+            transform: translate(1px, -1px);
+        }
+        100% { 
+            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-cyan);
+            transform: translate(0);
+        }
+    }
+    
+    .glitch-text:hover, .page-header h1:hover {
+        animation: glitch 0.3s ease-in-out infinite;
+        cursor: default;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       BUTTONS - CYBER STYLE
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .stButton > button {
+        background: transparent !important;
+        border: 2px solid var(--neon-cyan) !important;
+        color: var(--neon-cyan) !important;
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 0.85rem !important;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        padding: 0.8rem 2rem !important;
+        transition: all 0.3s ease !important;
+        position: relative;
+        overflow: hidden;
+        clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    }
+    
+    .stButton > button::before {
         content: '';
         position: absolute;
         top: 0; left: -100%;
         width: 100%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-        transition: left 0.6s ease;
-    }
-    
-    .metric-card:hover::before { left: 100%; }
-    
-    .metric-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(0, 212, 255, 0.3);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    }
-    
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin: 0.3rem 0;
-    }
-    
-    .metric-label {
-        color: #8B95A5;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-    }
-    
-    /* Glass Cards */
-    .glass-card {
-        background: rgba(26, 31, 46, 0.7);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 1.5rem;
-        transition: all 0.4s ease;
-    }
-    
-    .glass-card:hover {
-        transform: translateY(-3px);
-        border-color: rgba(0, 212, 255, 0.3);
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-    }
-    
-    /* Alert Cards */
-    .alert-card {
-        background: rgba(26, 31, 46, 0.8);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 1.2rem 1.5rem;
-        margin: 0.5rem 0;
-        border-left: 4px solid;
-        transition: all 0.3s ease;
-        animation: slideIn 0.5s ease-out;
-    }
-    
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateX(-20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-    
-    .alert-critical { border-left-color: #FF4444; }
-    .alert-high { border-left-color: #FF8C00; }
-    .alert-medium { border-left-color: #FFD700; }
-    .alert-low { border-left-color: #00C853; }
-    
-    .alert-card:hover {
-        transform: translateX(10px);
-        background: rgba(30, 36, 52, 0.9);
-    }
-    
-    /* Section Titles */
-    .section-title {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #FAFAFA;
-        margin-bottom: 1.2rem;
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-    }
-    
-    .section-title::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: linear-gradient(90deg, rgba(0, 212, 255, 0.3), transparent);
-    }
-    
-    /* Buttons */
-    .stButton > button {
-        background: linear-gradient(135deg, #00D4FF 0%, #0099CC 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 0.75rem 2rem !important;
-        font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
+        background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+        transition: left 0.5s ease;
     }
     
     .stButton > button:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 8px 30px rgba(0, 212, 255, 0.5) !important;
+        background: rgba(0, 243, 255, 0.1) !important;
+        box-shadow: 
+            0 0 20px var(--neon-cyan),
+            inset 0 0 20px rgba(0, 243, 255, 0.1);
+        text-shadow: 0 0 10px var(--neon-cyan);
     }
     
-    /* Inputs */
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stSelectbox > div > div {
-        background: rgba(26, 31, 46, 0.8) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 12px !important;
-        color: #FAFAFA !important;
-        transition: all 0.3s ease !important;
+    .stButton > button:hover::before {
+        left: 100%;
     }
-    
-    .stTextInput > div > div > input:focus {
-        border-color: #00D4FF !important;
-        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2) !important;
-    }
-    
-    /* Tabs */
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       TABS - CYBER NAVIGATION
+    ═══════════════════════════════════════════════════════════════════════════ */
     .stTabs [data-baseweb="tab-list"] {
-        background: rgba(26, 31, 46, 0.5);
-        border-radius: 14px;
-        padding: 8px;
-        gap: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(0, 243, 255, 0.1);
+        border-radius: 0;
+        padding: 5px;
+        gap: 5px;
     }
     
     .stTabs [data-baseweb="tab"] {
+        color: var(--text-secondary);
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        border: none;
         background: transparent;
-        border-radius: 10px;
-        color: #8B95A5;
-        padding: 0.75rem 1.5rem !important;
-        margin: 0 4px;
+        padding: 0.8rem 1.5rem;
         transition: all 0.3s ease;
-        font-weight: 500;
-        white-space: nowrap;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(0, 212, 255, 0.1);
-        color: #00D4FF;
+        color: var(--neon-cyan);
+        background: rgba(0, 243, 255, 0.05);
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #00D4FF 0%, #0099CC 100%) !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        color: var(--neon-cyan) !important;
+        background: rgba(0, 243, 255, 0.1) !important;
+        border-bottom: 2px solid var(--neon-cyan) !important;
+        text-shadow: 0 0 10px var(--neon-cyan);
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
     }
     
-    .stTabs [data-baseweb="tab-border"] {
+    .stTabs [data-baseweb="tab-border"], .stTabs [data-baseweb="tab-highlight"] {
         display: none;
     }
-    
-    .stTabs [data-baseweb="tab-highlight"] {
-        display: none;
-    }
-    
-    /* Progress bars */
-    .stProgress > div > div > div {
-        background: linear-gradient(90deg, #00D4FF, #8B5CF6, #FF4444);
-        background-size: 200% 100%;
-        animation: gradientFlow 2s linear infinite;
-        border-radius: 10px;
-    }
-    
-    @keyframes gradientFlow {
-        0% { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
-    }
-    
-    /* Sidebar */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, rgba(10, 14, 23, 0.98) 0%, rgba(15, 20, 30, 0.98) 100%);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: rgba(26, 31, 46, 0.5); }
-    ::-webkit-scrollbar-thumb { 
-        background: linear-gradient(135deg, #00D4FF, #8B5CF6); 
-        border-radius: 4px; 
-    }
-    
-    /* Data tables */
-    .stDataFrame {
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    
-    /* Hide Streamlit branding */
-    #MainMenu, footer, header { visibility: hidden; }
-    
-    /* Live badge */
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       LIVE BADGE - PULSING INDICATOR
+    ═══════════════════════════════════════════════════════════════════════════ */
     .live-badge {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        background: rgba(0, 200, 83, 0.15);
-        border: 1px solid rgba(0, 200, 83, 0.4);
-        padding: 0.4rem 1rem;
-        border-radius: 30px;
-        font-size: 0.85rem;
-        color: #00C853;
-        animation: livePulse 2s ease-in-out infinite;
+        gap: 10px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.75rem;
+        letter-spacing: 2px;
+        background: rgba(10, 255, 10, 0.1);
+        border: 1px solid var(--neon-green);
+        color: var(--neon-green);
+        padding: 0.6rem 1.2rem;
+        box-shadow: 
+            0 0 15px rgba(10, 255, 10, 0.3),
+            inset 0 0 15px rgba(10, 255, 10, 0.1);
+        animation: badgePulse 2s ease-in-out infinite;
     }
     
     .live-dot {
-        width: 8px; height: 8px;
-        background: #00C853;
+        width: 8px;
+        height: 8px;
+        background: var(--neon-green);
         border-radius: 50%;
-        animation: dotPulse 1.5s ease-in-out infinite;
+        box-shadow: 0 0 10px var(--neon-green);
+        animation: dotPulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes badgePulse {
+        0%, 100% { box-shadow: 0 0 15px rgba(10, 255, 10, 0.3), inset 0 0 15px rgba(10, 255, 10, 0.1); }
+        50% { box-shadow: 0 0 25px rgba(10, 255, 10, 0.5), inset 0 0 20px rgba(10, 255, 10, 0.15); }
     }
     
     @keyframes dotPulse {
         0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.5); opacity: 0.5; }
-    }
-    
-    @keyframes livePulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.4); }
-        50% { box-shadow: 0 0 0 10px rgba(0, 200, 83, 0); }
-    }
-</style>
-"""
-
-# Admin Override CSS - Darker, Gold/Red Accents
-ADMIN_CSS_OVERRIDE = """
-<style>
-    /* Admin App Background Pulse */
-    .stApp::before {
-        background: 
-            radial-gradient(ellipse at 20% 80%, rgba(255, 68, 68, 0.05) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+        50% { transform: scale(1.5); opacity: 0.7; }
     }
 
-    /* Admin Page Header */
-    .page-header {
-        background: linear-gradient(135deg, rgba(80, 20, 20, 0.3) 0%, rgba(60, 40, 0, 0.3) 100%);
-        border: 1px solid rgba(255, 68, 68, 0.3);
+    /* ═══════════════════════════════════════════════════════════════════════════
+       ALERT CARDS - SEVERITY BASED
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .alert-card {
+        background: var(--glass-bg);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-left: 4px solid;
+        padding: 1rem 1.5rem;
+        margin: 0.5rem 0;
+        transition: all 0.3s ease;
     }
     
-    .page-header h1 {
-        background: linear-gradient(135deg, #FFFFFF 0%, #FFD700 50%, #FF4444 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    .alert-card.critical { 
+        border-left-color: var(--neon-red);
+        box-shadow: inset 3px 0 20px rgba(255, 0, 60, 0.1);
+    }
+    .alert-card.high { 
+        border-left-color: var(--neon-orange);
+        box-shadow: inset 3px 0 20px rgba(255, 107, 0, 0.1);
+    }
+    .alert-card.medium { 
+        border-left-color: var(--neon-yellow);
+        box-shadow: inset 3px 0 20px rgba(240, 255, 0, 0.05);
+    }
+    .alert-card.low { 
+        border-left-color: var(--neon-green);
+        box-shadow: inset 3px 0 20px rgba(10, 255, 10, 0.05);
     }
     
-    /* Admin Sidebar */
+    .alert-card:hover {
+        transform: translateX(10px);
+        background: rgba(10, 10, 20, 0.9);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       INPUTS - CYBER STYLE
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div {
+        background: rgba(0, 0, 0, 0.6) !important;
+        border: 1px solid rgba(0, 243, 255, 0.2) !important;
+        border-radius: 0 !important;
+        color: var(--neon-cyan) !important;
+        font-family: 'Share Tech Mono', monospace !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus {
+        border-color: var(--neon-cyan) !important;
+        box-shadow: 
+            0 0 15px rgba(0, 243, 255, 0.2),
+            inset 0 0 10px rgba(0, 243, 255, 0.05) !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       SCROLLBAR - NEON STYLE
+    ═══════════════════════════════════════════════════════════════════════════ */
+    ::-webkit-scrollbar { 
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track { 
+        background: var(--bg-darker);
+    }
+    ::-webkit-scrollbar-thumb { 
+        background: linear-gradient(180deg, var(--neon-cyan), var(--neon-purple));
+        border-radius: 0;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--neon-cyan);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       SIDEBAR - CYBER NAVIGATION
+    ═══════════════════════════════════════════════════════════════════════════ */
     section[data-testid="stSidebar"] {
-        border-right: 1px solid rgba(255, 68, 68, 0.15);
+        background: linear-gradient(180deg, rgba(5, 5, 15, 0.98) 0%, rgba(0, 0, 0, 0.98) 100%);
+        border-right: 1px solid rgba(0, 243, 255, 0.1);
     }
     
-    /* Admin Buttons */
-    .stButton > button {
-        background: linear-gradient(135deg, #CC0000 0%, #990000 100%) !important;
-        box-shadow: 0 4px 15px rgba(200, 0, 0, 0.3) !important;
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        font-family: 'Rajdhani', sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       DATA FRAMES / TABLES
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .stDataFrame {
+        border: 1px solid rgba(0, 243, 255, 0.1);
     }
     
-    .stButton > button:hover {
-        box-shadow: 0 8px 30px rgba(255, 0, 0, 0.5) !important;
+    .stDataFrame [data-testid="stDataFrameResizable"] {
+        background: var(--glass-bg);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       HIDE STREAMLIT DEFAULTS
+    ═══════════════════════════════════════════════════════════════════════════ */
+    #MainMenu, footer, header { visibility: hidden; }
+    .stDeployButton { display: none; }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       PLOTLY CHART CONTAINERS
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .js-plotly-plot {
+        border: 1px solid rgba(0, 243, 255, 0.1);
+        background: rgba(5, 5, 15, 0.5);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       EXPANDER - CYBER STYLE
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .streamlit-expanderHeader {
+        background: rgba(0, 243, 255, 0.05) !important;
+        border: 1px solid rgba(0, 243, 255, 0.1) !important;
+        border-radius: 0 !important;
+        font-family: 'Orbitron', sans-serif;
     }
     
-    /* Admin Tabs */
-    .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(255, 68, 68, 0.1);
-        color: #FF4444;
+    .streamlit-expanderHeader:hover {
+        border-color: var(--neon-cyan) !important;
     }
-    
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #FF4444 0%, #CC0000 100%) !important;
-        box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
-    }
-    
-    /* Admin Inputs */
-    .stTextInput > div > div > input:focus {
-        border-color: #FFD700 !important;
-        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2) !important;
-    }
+
 </style>
 """
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PARTICLES.JS INJECTION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def inject_particles():
+    """Injects Particles.js for an interactive cyberpunk background"""
+    particles_html = """
+    <div id="particles-js" style="position: fixed; width: 100vw; height: 100vh; top: 0; left: 0; z-index: -1; pointer-events: none;"></div>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        if (typeof particlesJS !== 'undefined') {
+            particlesJS("particles-js", {
+                "particles": {
+                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+                    "color": { "value": ["#00f3ff", "#bc13fe", "#ff00ff"] },
+                    "shape": { "type": "circle" },
+                    "opacity": { "value": 0.4, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1 } },
+                    "size": { "value": 2, "random": true },
+                    "line_linked": { 
+                        "enable": true, 
+                        "distance": 150, 
+                        "color": "#00f3ff", 
+                        "opacity": 0.15, 
+                        "width": 1 
+                    },
+                    "move": { 
+                        "enable": true, 
+                        "speed": 1.5, 
+                        "direction": "none", 
+                        "random": true, 
+                        "straight": false, 
+                        "out_mode": "out", 
+                        "bounce": false 
+                    }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": { 
+                        "onhover": { "enable": true, "mode": "grab" }, 
+                        "onclick": { "enable": true, "mode": "push" }, 
+                        "resize": true 
+                    },
+                    "modes": { 
+                        "grab": { "distance": 140, "line_linked": { "opacity": 0.8 } }, 
+                        "push": { "particles_nb": 4 } 
+                    }
+                },
+                "retina_detect": true
+            });
+        }
+    </script>
+    """
+    st.components.v1.html(particles_html, height=0, width=0)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HELPER FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════════
 
 def page_header(title, subtitle=""):
+    """Creates a cyberpunk-styled page header with glitch effect"""
     return f"""
-    <div class="page-header">
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
+    <div class="page-header" style="
+        margin-bottom: 2rem; 
+        padding: 1.5rem 0;
+        border-bottom: 1px solid rgba(0,243,255,0.2);
+        position: relative;
+    ">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 0.5rem;">
+            <span style="
+                width: 4px; 
+                height: 40px; 
+                background: linear-gradient(180deg, #00f3ff, #bc13fe);
+                box-shadow: 0 0 15px #00f3ff;
+            "></span>
+            <h1 class="glitch-text" style="
+                color: #fff; 
+                font-size: 2.2rem;
+                margin: 0;
+                text-shadow: 
+                    0 0 10px rgba(0, 243, 255, 0.8),
+                    0 0 20px rgba(0, 243, 255, 0.5),
+                    0 0 40px rgba(0, 243, 255, 0.3);
+            ">{title}</h1>
+        </div>
+        <p style="
+            color: #00f3ff; 
+            margin: 0 0 0 19px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        ">&gt; {subtitle}_</p>
     </div>
     """
 
-def metric_card(value, label, color="#00D4FF"):
+def metric_card(value, label, color="#00f3ff"):
+    """Creates a glowing metric card"""
     return f"""
-    <div class="metric-card">
+    <div class="metric-card" style="
+        text-align: center;
+        border-top: 3px solid {color};
+        box-shadow: 0 -5px 20px {color}30;
+    ">
         <p class="metric-value" style="color: {color};">{value}</p>
         <p class="metric-label">{label}</p>
     </div>
     """
 
-def alert_card(severity, title, description, time_str=""):
-    sev_class = f"alert-{severity.lower()}"
-    sev_colors = {"critical": "#FF4444", "high": "#FF8C00", "medium": "#FFD700", "low": "#00C853"}
-    color = sev_colors.get(severity.lower(), "#8B95A5")
+def section_title(text):
+    """Creates a cyberpunk section title with decorative elements"""
     return f"""
-    <div class="alert-card {sev_class}">
+    <div style="
+        display: flex; 
+        align-items: center; 
+        margin: 2rem 0 1.5rem 0;
+        gap: 15px;
+    ">
+        <span style="
+            width: 12px; 
+            height: 12px; 
+            background: #00f3ff;
+            box-shadow: 0 0 15px #00f3ff, 0 0 30px #00f3ff;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        "></span>
+        <h3 style="
+            margin: 0; 
+            color: #fff; 
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            text-transform: uppercase; 
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        ">{text}</h3>
+        <span style="
+            flex: 1; 
+            height: 1px; 
+            background: linear-gradient(90deg, #00f3ff, #bc13fe, transparent);
+            opacity: 0.5;
+        "></span>
+        <span style="
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.7rem;
+            color: #666;
+        ">[SYS]</span>
+    </div>
+    """
+
+def alert_card(severity, title, description, timestamp=""):
+    """Creates a severity-colored alert card"""
+    colors = {
+        "critical": "#ff003c",
+        "high": "#ff6b00", 
+        "medium": "#f0ff00",
+        "low": "#0aff0a"
+    }
+    color = colors.get(severity.lower(), "#00f3ff")
+    
+    return f"""
+    <div class="alert-card {severity.lower()}" style="border-left-color: {color};">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
-                <span style="color: {color}; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px;">{severity}</span>
-                <h4 style="color: #FAFAFA; margin: 0.3rem 0 0.5rem 0; font-size: 1.1rem;">{title}</h4>
-                <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">{description}</p>
+                <span style="
+                    color: {color}; 
+                    font-family: 'Orbitron', sans-serif;
+                    font-size: 0.7rem;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                ">{severity}</span>
+                <h4 style="color: #fff; margin: 0.3rem 0; font-size: 1rem;">{title}</h4>
+                <p style="color: #888; margin: 0; font-size: 0.85rem;">{description}</p>
             </div>
-            <span style="color: #8B95A5; font-size: 0.75rem; white-space: nowrap;">{time_str}</span>
+            <span style="
+                color: #555; 
+                font-family: 'Share Tech Mono', monospace;
+                font-size: 0.7rem;
+            ">{timestamp}</span>
         </div>
     </div>
     """
 
-def section_title(text):
-    return f'<p class="section-title">{text}</p>'
+def cyber_badge(text, color="#00f3ff"):
+    """Creates a cyberpunk-styled badge"""
+    return f"""
+    <span style="
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        background: {color}15;
+        border: 1px solid {color}40;
+        color: {color};
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    ">{text}</span>
+    """
+
+def status_indicator(status="online"):
+    """Creates a status indicator with appropriate color"""
+    colors = {
+        "online": "#0aff0a",
+        "offline": "#ff003c",
+        "warning": "#f0ff00",
+        "processing": "#00f3ff"
+    }
+    color = colors.get(status.lower(), "#00f3ff")
+    
+    return f"""
+    <span style="
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    ">
+        <span style="
+            width: 8px;
+            height: 8px;
+            background: {color};
+            border-radius: 50%;
+            box-shadow: 0 0 10px {color};
+            animation: dotPulse 1s ease-in-out infinite;
+        "></span>
+        <span style="
+            color: {color};
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        ">{status}</span>
+    </span>
+    """
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BACKWARD COMPATIBILITY
+# ═══════════════════════════════════════════════════════════════════════════════
+# Alias for older pages that still use PREMIUM_CSS
+PREMIUM_CSS = CYBERPUNK_CSS
+

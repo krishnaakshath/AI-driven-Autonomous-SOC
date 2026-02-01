@@ -10,8 +10,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 st.set_page_config(page_title="Alerts | SOC", page_icon="A", layout="wide")
 
-from ui.theme import PREMIUM_CSS, page_header, alert_card, section_title
-st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, alert_card, section_title
+st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+inject_particles()
 
 
 # Authentication removed - public dashboard

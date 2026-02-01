@@ -233,6 +233,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+
+# Import advanced UI components
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+
+# Inject Advanced CSS & Particles
+st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+inject_particles()
+
 # Authentication removed - public dashboard
 
 DATA_PATH = "data/parsed_logs/incident_responses.csv"
@@ -338,21 +346,22 @@ if ALERTS_AVAILABLE:
         if result.get("telegram") or result.get("email"):
             st.toast("🚨 Critical alert sent!", icon="🔔")
 
+
 # Premium Header
-st.markdown("""
-    <div class="premium-header">
-        <h1>Security Operations Center</h1>
-        <p style="color: #8B95A5; margin: 0.5rem 0 0 0; font-size: 1.1rem;">
-            Real-time threat monitoring and autonomous response
-        </p>
-        <div style="position: absolute; top: 1.5rem; right: 2rem;">
-            <div class="live-badge">
-                <div class="live-dot"></div>
-                LIVE MONITORING
+c_head, c_live = st.columns([3, 1])
+with c_head:
+    st.markdown(page_header("Security Operations Center", "Real-time threat monitoring and autonomous response"), unsafe_allow_html=True)
+
+with c_live:
+    st.markdown("""
+        <div style="height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-top: 1rem;">
+            <div class="live-badge" style="padding: 0.8rem 1.5rem;">
+                <span class="live-dot"></span>
+                LIVE SYSTEM
             </div>
         </div>
-    </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
 
 # Calculate metrics
 total = len(df)
@@ -377,12 +386,17 @@ metrics_data = [
 for col, value, label, color in metrics_data:
     with col:
         display_value = f"{value:,}" if isinstance(value, (int, np.integer)) else value
-        st.markdown(f"""
-            <div class="metric-card">
-                <p class="metric-value" style="color: {color};">{display_value}</p>
-                <p class="metric-label">{label}</p>
-            </div>
-        """, unsafe_allow_html=True)
+
+    with col:
+        display_value = f"{value:,}" if isinstance(value, (int, np.integer)) else value
+        
+        # Determine color for metric card
+        card_color = color
+        if label == "Total Events": card_color = "#00f3ff"   # Neon Cyan
+        elif label == "Critical": card_color = "#ff003c"     # Neon Red
+        elif label == "Blocked": card_color = "#bc13fe"      # Neon Purple
+        
+        st.markdown(metric_card(display_value, label, card_color), unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -390,7 +404,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 chart1, chart2 = st.columns(2)
 
 with chart1:
-    st.markdown('<p class="section-title">Threat Activity Timeline</p>', unsafe_allow_html=True)
+    st.markdown(section_title("Threat Activity Timeline"), unsafe_allow_html=True)
     if hasattr(df["timestamp"].iloc[0], "hour"):
         df["hour"] = df["timestamp"].apply(lambda x: x.replace(minute=0, second=0, microsecond=0))
         hourly = df.groupby("hour").size().reset_index(name="count")
@@ -414,7 +428,7 @@ with chart1:
         st.info("Timeline data loading...")
 
 with chart2:
-    st.markdown('<p class="section-title">Decision Distribution</p>', unsafe_allow_html=True)
+    st.markdown(section_title("Decision Distribution"), unsafe_allow_html=True)
     decision_counts = df["access_decision"].value_counts()
     fig2 = go.Figure(data=[go.Pie(
         labels=decision_counts.index, values=decision_counts.values, hole=0.6,
@@ -432,7 +446,7 @@ with chart2:
 chart3, chart4 = st.columns(2)
 
 with chart3:
-    st.markdown('<p class="section-title">Top Attack Types</p>', unsafe_allow_html=True)
+    st.markdown(section_title("Top Attack Types"), unsafe_allow_html=True)
     attack_counts = df[df["attack_type"] != "Normal"]["attack_type"].value_counts().head(6)
     fig3 = go.Figure(go.Bar(
         x=attack_counts.values, y=attack_counts.index, orientation="h",
@@ -452,7 +466,7 @@ with chart3:
     st.plotly_chart(fig3, use_container_width=True)
 
 with chart4:
-    st.markdown('<p class="section-title">Attack Sources</p>', unsafe_allow_html=True)
+    st.markdown(section_title("Attack Sources"), unsafe_allow_html=True)
     if "source_country" in df.columns:
         country_counts = df[df["attack_type"] != "Normal"]["source_country"].value_counts().head(6)
         fig4 = go.Figure(go.Bar(
@@ -474,7 +488,7 @@ with chart4:
 st.markdown("---")
 
 # Security Score Gauge
-st.markdown('<p class="section-title">Security Health Score</p>', unsafe_allow_html=True)
+st.markdown(section_title("Security Health Score"), unsafe_allow_html=True)
 
 gauge_col1, gauge_col2, gauge_col3 = st.columns([1, 2, 1])
 

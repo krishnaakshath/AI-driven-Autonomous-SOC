@@ -12,6 +12,14 @@ st.set_page_config(
     layout="wide"
 )
 
+# Import advanced UI components
+try:
+    from ui.theme import CYBERPUNK_CSS, inject_particles
+    st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+    inject_particles()
+except ImportError:
+    pass
+
 # Simple welcome page - this WILL work
 st.title("🛡️ AI-Driven Autonomous SOC")
 st.markdown("### Welcome to your Security Operations Center")
