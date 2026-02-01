@@ -235,7 +235,7 @@ st.markdown("""
 
 
 # Import advanced UI components
-from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card
 
 # Inject Advanced CSS & Particles
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
