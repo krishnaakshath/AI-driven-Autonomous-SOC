@@ -35,20 +35,75 @@ CYBERPUNK_CSS = """
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
-       TYPOGRAPHY
+       TYPOGRAPHY - CYBERPUNK FONTS
     ═══════════════════════════════════════════════════════════════════════════ */
-    html, body, [class*="css"] {
-        font-family: 'Rajdhani', sans-serif;
+    html, body, [class*="css"], .stMarkdown, p, span, div, label {
+        font-family: 'Rajdhani', 'Segoe UI', sans-serif !important;
         color: var(--text-primary);
+        letter-spacing: 0.5px;
     }
     
-    h1, h2, h3, .metric-value, .cyber-title {
-        font-family: 'Orbitron', sans-serif;
+    h1, h2, h3, h4, h5, h6, .metric-value, .cyber-title {
+        font-family: 'Orbitron', sans-serif !important;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+    }
+    
+    /* Sidebar navigation */
+    section[data-testid="stSidebar"] * {
+        font-family: 'Rajdhani', sans-serif !important;
+    }
+    
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] a {
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    
+    /* All text inputs and labels */
+    .stTextInput label, .stSelectbox label, .stNumberInput label,
+    .stSlider label, .stCheckbox label, .stRadio label {
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 0.75rem !important;
         letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--neon-cyan) !important;
     }
     
-    code, .mono {
-        font-family: 'Share Tech Mono', monospace;
+    /* Data displays */
+    .stDataFrame, .stTable, table, th, td {
+        font-family: 'Share Tech Mono', monospace !important;
+    }
+    
+    /* Metric displays */
+    [data-testid="stMetricValue"] {
+        font-family: 'Orbitron', sans-serif !important;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        font-family: 'Rajdhani', sans-serif !important;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    
+    /* Code and monospace */
+    code, pre, .mono, .stCode {
+        font-family: 'Share Tech Mono', 'Fira Code', monospace !important;
+    }
+    
+    /* Expander headers */
+    .streamlit-expanderHeader {
+        font-family: 'Orbitron', sans-serif !important;
+        letter-spacing: 1px;
+    }
+    
+    /* Tab labels */
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Orbitron', sans-serif !important;
+        letter-spacing: 1px;
+        text-transform: uppercase;
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
