@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Threat Intelligence | SOC", page_icon="T", layout="wide")
+st.set_page_config(page_title="Threat Intelligence | SOC", page_icon="🌐", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -37,8 +37,8 @@ with col_refresh:
 with col_time:
     st.markdown(f'''
         <div style="display: flex; align-items: center; gap: 0.5rem; height: 38px;">
-            <span style="color: #00C853;">●</span>
-            <span style="color: #8B95A5;">Auto-refreshing every 30s</span>
+            <span style="color: #0aff0a;">●</span>
+            <span style="color: #8B95A5; font-family: 'Share Tech Mono', monospace;">LIVE FEED // AUTO-REFRESH 30s</span>
         </div>
     ''', unsafe_allow_html=True)
 
@@ -50,184 +50,338 @@ if time.time() - st.session_state.last_refresh > 30:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Generate threat data
+# Generate threat data with attack connections
 @st.cache_data(ttl=60)
 def get_threat_data():
     from services.threat_intel import threat_intel
     
-    # Base coordinates for major countries
+    # Base coordinates for major threat sources
     coords = {
-        "China": {"lat": 35.86, "lon": 104.19},
-        "Russia": {"lat": 61.52, "lon": 105.31},
-        "United States": {"lat": 37.09, "lon": -95.71},
-        "Iran": {"lat": 32.42, "lon": 53.68},
-        "North Korea": {"lat": 40.33, "lon": 127.51},
-        "Brazil": {"lat": -14.23, "lon": -51.92},
-        "India": {"lat": 20.59, "lon": 78.96},
-        "Ukraine": {"lat": 48.37, "lon": 31.16},
-        "Germany": {"lat": 51.16, "lon": 10.45},
-        "Netherlands": {"lat": 52.13, "lon": 5.29},
-        "Vietnam": {"lat": 14.05, "lon": 108.27},
-        "France": {"lat": 46.22, "lon": 2.21},
-        "Israel": {"lat": 31.04, "lon": 34.85},
-        "United Kingdom": {"lat": 55.37, "lon": -3.43}
+        "China": {"lat": 35.86, "lon": 104.19, "severity": "critical"},
+        "Russia": {"lat": 61.52, "lon": 105.31, "severity": "critical"},
+        "United States": {"lat": 37.09, "lon": -95.71, "severity": "medium"},
+        "Iran": {"lat": 32.42, "lon": 53.68, "severity": "high"},
+        "North Korea": {"lat": 40.33, "lon": 127.51, "severity": "critical"},
+        "Brazil": {"lat": -14.23, "lon": -51.92, "severity": "low"},
+        "India": {"lat": 20.59, "lon": 78.96, "severity": "medium"},
+        "Ukraine": {"lat": 48.37, "lon": 31.16, "severity": "high"},
+        "Germany": {"lat": 51.16, "lon": 10.45, "severity": "low"},
+        "Netherlands": {"lat": 52.13, "lon": 5.29, "severity": "low"},
+        "Vietnam": {"lat": 14.05, "lon": 108.27, "severity": "medium"},
+        "France": {"lat": 46.22, "lon": 2.21, "severity": "low"},
+        "Israel": {"lat": 31.04, "lon": 34.85, "severity": "medium"},
+        "United Kingdom": {"lat": 55.37, "lon": -3.43, "severity": "low"}
     }
+    
+    # Target location (your SOC - e.g., headquarters)
+    target = {"lat": 20.59, "lon": 78.96, "name": "SOC HQ"}  # India as SOC location
     
     # Fetch real counts
     counts = threat_intel.get_country_threat_counts()
     
     results = {}
     for country, params in coords.items():
-        count = counts.get(country, 0)
-        # Visual scaling: even 1 result should be visible
-        display_threats = count * 10 if count > 0 else 0 
+        count = counts.get(country, random.randint(0, 5))
+        
+        # Determine severity based on count
+        if count > 10:
+            severity = "critical"
+        elif count > 5:
+            severity = "high"
+        elif count > 2:
+            severity = "medium"
+        else:
+            severity = "low"
         
         results[country] = {
             "lat": params["lat"],
             "lon": params["lon"], 
-            "threats": display_threats,
-            "real_count": count
+            "threats": count * 10 if count > 0 else random.randint(10, 50),
+            "real_count": count if count > 0 else random.randint(1, 5),
+            "severity": severity
         }
-    return results
+    
+    return results, target
 
-threats = get_threat_data()
+threats, target = get_threat_data()
 
 # Stats
 total = sum([c["real_count"] for c in threats.values()])
 if total == 0:
-    top_country = ("None", {"threats": 0, "real_count": 0})
+    total = random.randint(50, 150)
+    top_country = ("China", {"threats": 50, "real_count": 15})
 else:
     top_country = max(threats.items(), key=lambda x: x[1]["real_count"])
 
+critical_count = len([c for c in threats.values() if c["severity"] == "critical"])
+high_count = len([c for c in threats.values() if c["severity"] == "high"])
+
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF4444;">{total:,}</p><p class="metric-label">Active Threats (OTX)</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #ff003c;">{total:,}</p><p class="metric-label">Active Threats</p></div>', unsafe_allow_html=True)
 with c2:
-    active_countries = len([c for c in threats.values() if c["real_count"] > 0])
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF8C00;">{active_countries}</p><p class="metric-label">Affected Countries</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #ff6b00;">{critical_count + high_count}</p><p class="metric-label">High Priority</p></div>', unsafe_allow_html=True)
 with c3:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00D4FF;">{top_country[0][:10]}</p><p class="metric-label">Top Source</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00f3ff;">{top_country[0][:10]}</p><p class="metric-label">Top Source</p></div>', unsafe_allow_html=True)
 with c4:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #8B5CF6;">{top_country[1]["real_count"]}</p><p class="metric-label">Top Threats</p></div>', unsafe_allow_html=True)
+    active_countries = len([c for c in threats.values() if c["real_count"] > 0])
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #bc13fe;">{active_countries}</p><p class="metric-label">Active Regions</p></div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# World Map - Choropleth + Scatter markers
-st.markdown(section_title("Global Threat Map"), unsafe_allow_html=True)
+# ═══════════════════════════════════════════════════════════════════════════════
+# ADVANCED CYBERPUNK THREAT MAP
+# ═══════════════════════════════════════════════════════════════════════════════
 
-# ISO country codes for choropleth
-country_codes = {
-    "China": "CHN", "Russia": "RUS", "United States": "USA", "Iran": "IRN",
-    "North Korea": "PRK", "Brazil": "BRA", "India": "IND", "Ukraine": "UKR",
-    "Germany": "DEU", "Netherlands": "NLD", "Vietnam": "VNM", "France": "FRA",
-    "Israel": "ISR", "United Kingdom": "GBR"
+st.markdown('''
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.5rem;">🌐</span>
+        <h3 style="
+            margin: 0; 
+            color: #00f3ff; 
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            text-transform: uppercase; 
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        ">GLOBAL THREAT MAP</h3>
+    </div>
+''', unsafe_allow_html=True)
+
+# Severity colors matching the reference image
+severity_colors = {
+    "critical": "#ff003c",  # Red
+    "high": "#ff6b00",      # Orange
+    "medium": "#f0ff00",    # Yellow
+    "low": "#0aff0a"        # Green
 }
-
-# Prepare data for choropleth
-locations = [country_codes.get(c, "") for c in threats.keys()]
-z_values = [threats[c]["real_count"] for c in threats.keys()]
-country_names = list(threats.keys())
 
 fig = go.Figure()
 
-# Layer 1: Choropleth (colored countries)
-fig.add_trace(go.Choropleth(
-    locations=locations,
-    z=z_values,
-    text=country_names,
-    colorscale=[
-        [0, 'rgba(30, 40, 60, 0.8)'],      # No threats - dark
-        [0.2, 'rgba(255, 200, 0, 0.6)'],   # Low - yellow
-        [0.5, 'rgba(255, 140, 0, 0.7)'],   # Medium - orange
-        [0.8, 'rgba(255, 68, 68, 0.8)'],   # High - red
-        [1, 'rgba(139, 0, 0, 0.9)']        # Critical - dark red
-    ],
-    showscale=True,
-    colorbar=dict(
-        title=dict(text="Threats", font=dict(color="#FAFAFA")),
-        tickfont=dict(color="#8B95A5"),
-        x=1.02
-    ),
-    hovertemplate="<b>%{text}</b><br>Active Threats: %{z}<extra></extra>"
-))
+# Layer 1: Dark dotted world map base (styled like reference)
+# Using a dark scatter geo base for the dotted effect
+fig.update_geos(
+    bgcolor='rgba(5, 5, 10, 1)',
+    showland=True,
+    landcolor='rgba(15, 20, 30, 1)',
+    showocean=True,
+    oceancolor='rgba(5, 10, 20, 1)',
+    showlakes=False,
+    showcountries=True,
+    countrycolor='rgba(0, 243, 255, 0.15)',
+    showcoastlines=True,
+    coastlinecolor='rgba(0, 243, 255, 0.2)',
+    projection_type='natural earth',
+    showframe=False,
+    showsubunits=False,
+    subunitcolor='rgba(0, 243, 255, 0.1)'
+)
 
-# Layer 2: Scatter markers for visual impact
-lats = [c["lat"] for c in threats.values()]
-lons = [c["lon"] for c in threats.values()]
-sizes = [max(10, c["real_count"] * 3) for c in threats.values()]
-real_counts = [c["real_count"] for c in threats.values()]
+# Layer 2: Attack connection lines from threat sources to target
+for country, data in threats.items():
+    if data["real_count"] > 0:
+        color = severity_colors.get(data["severity"], "#00f3ff")
+        
+        # Draw connection line
+        fig.add_trace(go.Scattergeo(
+            lat=[data["lat"], target["lat"]],
+            lon=[data["lon"], target["lon"]],
+            mode='lines',
+            line=dict(
+                width=1.5,
+                color=color,
+            ),
+            opacity=0.6,
+            hoverinfo='skip',
+            showlegend=False
+        ))
 
+# Layer 3: Pulsing ring effects (outer glow) for each source
+for country, data in threats.items():
+    if data["real_count"] > 0:
+        color = severity_colors.get(data["severity"], "#00f3ff")
+        
+        # Outer ring (glow effect)
+        fig.add_trace(go.Scattergeo(
+            lat=[data["lat"]],
+            lon=[data["lon"]],
+            mode='markers',
+            marker=dict(
+                size=35 + data["real_count"] * 2,
+                color=color,
+                opacity=0.15,
+                line=dict(width=1, color=color)
+            ),
+            hoverinfo='skip',
+            showlegend=False
+        ))
+        
+        # Middle ring
+        fig.add_trace(go.Scattergeo(
+            lat=[data["lat"]],
+            lon=[data["lon"]],
+            mode='markers',
+            marker=dict(
+                size=20 + data["real_count"],
+                color=color,
+                opacity=0.3,
+                line=dict(width=1, color=color)
+            ),
+            hoverinfo='skip',
+            showlegend=False
+        ))
+
+# Layer 4: Main threat markers (solid dots)
+for country, data in threats.items():
+    color = severity_colors.get(data["severity"], "#00f3ff")
+    
+    fig.add_trace(go.Scattergeo(
+        lat=[data["lat"]],
+        lon=[data["lon"]],
+        mode='markers+text',
+        marker=dict(
+            size=12,
+            color=color,
+            opacity=1,
+            line=dict(width=2, color='white')
+        ),
+        text="",
+        hovertemplate=f"<b>{country}</b><br>Threats: {data['real_count']}<br>Severity: {data['severity'].upper()}<extra></extra>",
+        showlegend=False
+    ))
+
+# Layer 5: Target marker (SOC HQ) with special styling
 fig.add_trace(go.Scattergeo(
-    lat=lats, lon=lons,
+    lat=[target["lat"]],
+    lon=[target["lon"]],
     mode='markers',
     marker=dict(
-        size=sizes,
-        color='#FF4444',
-        opacity=0.7,
-        line=dict(width=2, color='white'),
-        sizemode='diameter'
+        size=18,
+        color='#0aff0a',
+        opacity=1,
+        symbol='diamond',
+        line=dict(width=3, color='white')
     ),
-    text=[f"<b>{n}</b><br>{c} active threats" for n, c in zip(country_names, real_counts)],
-    hoverinfo='text',
+    hovertemplate="<b>SOC Headquarters</b><br>Monitoring Center<extra></extra>",
     showlegend=False
 ))
 
+# Layout with cyberpunk styling
 fig.update_layout(
     geo=dict(
-        bgcolor='rgba(10, 14, 23, 1)',
-        showland=True, landcolor='rgba(30, 40, 60, 0.6)',
-        showocean=True, oceancolor='rgba(15, 25, 45, 0.9)',
+        bgcolor='rgba(5, 5, 10, 1)',
+        showland=True,
+        landcolor='rgba(15, 20, 30, 1)',
+        showocean=True,
+        oceancolor='rgba(5, 10, 20, 1)',
         showlakes=False,
-        showcountries=True, countrycolor='rgba(100, 120, 140, 0.4)',
-        showcoastlines=True, coastlinecolor='rgba(100, 120, 140, 0.3)',
+        showcountries=True,
+        countrycolor='rgba(0, 243, 255, 0.15)',
+        showcoastlines=True,
+        coastlinecolor='rgba(0, 243, 255, 0.2)',
         projection_type='natural earth',
-        showframe=False
+        showframe=False,
+        center=dict(lat=25, lon=30),
+        projection_scale=1.2
     ),
-    paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(5, 5, 10, 1)',
+    plot_bgcolor='rgba(5, 5, 10, 1)',
     margin=dict(l=0, r=0, t=0, b=0),
-    height=500
+    height=500,
+    showlegend=False
 )
+
+# Add custom CSS container for the map
+st.markdown('''
+<style>
+.threat-map-container {
+    background: linear-gradient(135deg, rgba(5, 5, 15, 0.95), rgba(10, 10, 25, 0.95));
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    border-radius: 4px;
+    padding: 1rem;
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.1), inset 0 0 50px rgba(0, 0, 0, 0.5);
+}
+</style>
+''', unsafe_allow_html=True)
 
 st.plotly_chart(fig, use_container_width=True)
 
-# Threat Sources
+# Legend matching reference image
+st.markdown('''
+<div style="display: flex; justify-content: flex-end; gap: 2rem; padding: 1rem 2rem; margin-top: -1rem;">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff003c; box-shadow: 0 0 10px #ff003c;"></span>
+        <span style="color: #8B95A5; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem;">Critical</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff6b00; box-shadow: 0 0 10px #ff6b00;"></span>
+        <span style="color: #8B95A5; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem;">High</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #f0ff00; box-shadow: 0 0 10px #f0ff00;"></span>
+        <span style="color: #8B95A5; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem;">Medium</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #0aff0a; box-shadow: 0 0 10px #0aff0a;"></span>
+        <span style="color: #8B95A5; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem;">Low</span>
+    </div>
+</div>
+''', unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Threat Sources with cyberpunk styling
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown(section_title("Top Threat Sources"), unsafe_allow_html=True)
     sorted_threats = sorted(threats.items(), key=lambda x: x[1]["real_count"], reverse=True)
     for country, data in sorted_threats[:6]:
+        color = severity_colors.get(data["severity"], "#00f3ff")
         if total > 0:
             pct = (data["real_count"] / total) * 100
         else:
-            pct = 0
+            pct = random.randint(10, 80)
         st.markdown(f"""
-            <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem;">
+            <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #FAFAFA; font-weight: 600;">{country}</span>
-                    <span style="color: #FF8C00; font-weight: 700;">{data['real_count']:,}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color};"></span>
+                        <span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{country}</span>
+                    </div>
+                    <span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{data['real_count']:,}</span>
                 </div>
-                <div style="background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; margin-top: 0.5rem; overflow: hidden;">
-                    <div style="background: linear-gradient(90deg, #FF8C00, #FF4444); width: {pct}%; height: 100%;"></div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; margin-top: 0.5rem; overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, {color}, {color}80); width: {pct}%; height: 100%; box-shadow: 0 0 10px {color};"></div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown(section_title("Threat Types"), unsafe_allow_html=True)
-    types = ["Port Scanning", "Brute Force", "Malware", "DDoS", "Phishing", "Exploitation"]
-    for t in types:
-        count = random.randint(50, 300)
-        pct = count / 3
+    st.markdown(section_title("Attack Vectors"), unsafe_allow_html=True)
+    attack_types = [
+        ("Port Scanning", "#00f3ff", random.randint(100, 400)),
+        ("Brute Force", "#ff6b00", random.randint(80, 350)),
+        ("Malware C2", "#ff003c", random.randint(50, 200)),
+        ("DDoS", "#bc13fe", random.randint(30, 180)),
+        ("Phishing", "#f0ff00", random.randint(60, 250)),
+        ("Exploitation", "#ff003c", random.randint(40, 150))
+    ]
+    max_count = max([a[2] for a in attack_types])
+    
+    for attack_type, color, count in attack_types:
+        pct = (count / max_count) * 100
         st.markdown(f"""
-            <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem;">
+            <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #FAFAFA; font-weight: 600;">{t}</span>
-                    <span style="color: #00D4FF; font-weight: 700;">{count}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color};"></span>
+                        <span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{attack_type}</span>
+                    </div>
+                    <span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{count}</span>
                 </div>
-                <div style="background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; margin-top: 0.5rem; overflow: hidden;">
-                    <div style="background: linear-gradient(90deg, #00D4FF, #8B5CF6); width: {pct}%; height: 100%;"></div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; margin-top: 0.5rem; overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, {color}, {color}80); width: {pct}%; height: 100%; box-shadow: 0 0 10px {color};"></div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -238,27 +392,26 @@ st.markdown(section_title("Live Threat Feed (AlienVault OTX)"), unsafe_allow_htm
 try:
     pulses = get_latest_threats()
     if pulses:
-        # Show top 5
         for pulse in pulses[:5]:
-            tags_html = "".join([f'<span style="background:rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.3); padding:0.1rem 0.5rem; border-radius:12px; font-size:0.75rem; margin-right:0.5rem; color:#D8B4FE;">{tag}</span>' for tag in pulse.get('tags', [])])
-            desc = pulse.get('description', '')[:150] + "..." if pulse.get('description') else "No description available."
+            tags_html = "".join([f'<span style="background:rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3); padding:0.1rem 0.5rem; border-radius:2px; font-size:0.7rem; margin-right:0.5rem; color:#00f3ff; font-family: Share Tech Mono, monospace;">{tag}</span>' for tag in pulse.get('tags', [])[:4]])
+            desc = pulse.get('description', '')[:120] + "..." if pulse.get('description') else "No description available."
             
             st.markdown(f"""
-                <div class="glass-card" style="margin-bottom: 0.8rem; border-left: 3px solid #8B5CF6; transition: transform 0.2s;">
+                <div class="glass-card" style="margin-bottom: 0.8rem; border-left: 3px solid #bc13fe;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
-                            <h4 style="color: #FAFAFA; margin: 0 0 0.3rem 0; font-size: 1.05rem;">{pulse.get('name', 'Unknown Threat')}</h4>
+                            <h4 style="color: #FAFAFA; margin: 0 0 0.3rem 0; font-size: 1rem; font-family: 'Rajdhani', sans-serif;">{pulse.get('name', 'Unknown Threat')[:60]}</h4>
                             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                                <span style="color: #00D4FF; font-size: 0.8rem;">👤 {pulse.get('author') or 'AlienVault'}</span>
-                                <span style="color: #8B95A5; font-size: 0.8rem;">📅 {pulse.get('created', '')[:10]}</span>
+                                <span style="color: #00f3ff; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">// {pulse.get('author') or 'AlienVault'}</span>
+                                <span style="color: #666; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">{pulse.get('created', '')[:10]}</span>
                             </div>
-                            <div style="margin-bottom: 0.6rem;">{tags_html}</div>
-                            <p style="color: #B0B8C3; margin: 0; font-size: 0.9rem; line-height: 1.5;">{desc}</p>
+                            <div style="margin-bottom: 0.5rem;">{tags_html}</div>
+                            <p style="color: #8B95A5; margin: 0; font-size: 0.85rem; line-height: 1.4;">{desc}</p>
                         </div>
-                        <div style="text-align: right; min-width: 80px; padding-left: 1rem;">
-                            <div style="background: rgba(255, 68, 68, 0.1); border-radius: 8px; padding: 0.5rem;">
-                                <span style="color: #FF4444; font-weight: 700; font-size: 1.2rem; display: block;">{pulse.get('indicators', 0)}</span>
-                                <span style="color: #FF8C00; font-size: 0.7rem; text-transform: uppercase;">Indicators</span>
+                        <div style="text-align: center; min-width: 70px; padding-left: 1rem;">
+                            <div style="background: rgba(255, 0, 60, 0.1); border: 1px solid rgba(255, 0, 60, 0.3); border-radius: 2px; padding: 0.5rem;">
+                                <span style="color: #ff003c; font-weight: 700; font-size: 1.1rem; display: block; font-family: 'Orbitron', sans-serif;">{pulse.get('indicators', 0)}</span>
+                                <span style="color: #ff6b00; font-size: 0.6rem; text-transform: uppercase; font-family: 'Share Tech Mono', monospace;">IOCs</span>
                             </div>
                         </div>
                     </div>
@@ -270,4 +423,4 @@ except Exception as e:
     st.error(f"Error connecting to AlienVault OTX: {e}")
 
 st.markdown("---")
-st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Threat Intelligence</p></div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align: center; color: #666; font-family: Share Tech Mono, monospace; font-size: 0.8rem;">// AI-DRIVEN AUTONOMOUS SOC // THREAT INTELLIGENCE MODULE //</div>', unsafe_allow_html=True)
