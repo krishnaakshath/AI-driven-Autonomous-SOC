@@ -236,10 +236,12 @@ st.markdown("""
 
 # Import advanced UI components
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card
+from ui.chat_interface import render_chat_interface
 
 # Inject Advanced CSS & Particles
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
+render_chat_interface()
 
 # Authentication removed - public dashboard
 
