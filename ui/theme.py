@@ -37,10 +37,20 @@ CYBERPUNK_CSS = """
     /* ═══════════════════════════════════════════════════════════════════════════
        TYPOGRAPHY - CYBERPUNK FONTS
     ═══════════════════════════════════════════════════════════════════════════ */
-    html, body, [class*="css"], .stMarkdown, p, span, div, label {
+    /* IMPORTANT: Exclude icon fonts (Material Icons) from font overrides */
+    html, body, [class*="css"]:not([class*="icon"]):not([data-testid*="Collapse"]):not([aria-label*="sidebar"]), 
+    .stMarkdown, p, div:not([data-testid*="Collapse"]), label {
         font-family: 'Rajdhani', 'Segoe UI', sans-serif !important;
         color: var(--text-primary);
         letter-spacing: 0.5px;
+    }
+    
+    /* Preserve Material Icons font for Streamlit controls */
+    span[class*="material"], 
+    [data-testid="stSidebarCollapseButton"] span,
+    button[aria-label*="sidebar"] span,
+    button[aria-label*="Sidebar"] span {
+        font-family: 'Material Icons', 'Material Symbols Rounded', sans-serif !important;
     }
     
     h1, h2, h3, h4, h5, h6, .metric-value, .cyber-title {
@@ -49,8 +59,8 @@ CYBERPUNK_CSS = """
         text-transform: uppercase;
     }
     
-    /* Sidebar navigation */
-    section[data-testid="stSidebar"] * {
+    /* Sidebar navigation - exclude toggle button */
+    section[data-testid="stSidebar"] *:not(button):not(button *) {
         font-family: 'Rajdhani', sans-serif !important;
     }
     
