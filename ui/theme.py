@@ -139,6 +139,7 @@ CYBERPUNK_CSS = """
         animation: scanline 4s linear infinite;
         z-index: 9999;
         opacity: 0.7;
+        pointer-events: none;
     }
     
     @keyframes scanline {
@@ -484,7 +485,7 @@ CYBERPUNK_CSS = """
     /* ═══════════════════════════════════════════════════════════════════════════
        HIDE STREAMLIT DEFAULTS
     ═══════════════════════════════════════════════════════════════════════════ */
-    #MainMenu, footer, header { visibility: hidden; }
+    #MainMenu, footer { visibility: hidden; }
     .stDeployButton { display: none; }
 
     /* ═══════════════════════════════════════════════════════════════════════════
