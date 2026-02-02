@@ -13,7 +13,7 @@ class AIAssistant:
         self.api_key = self._get_api_key()
         if self.api_key:
             genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            self.model = genai.GenerativeModel('gemini-2.0-flash')
             self.chat_session = None
         else:
             self.model = None
