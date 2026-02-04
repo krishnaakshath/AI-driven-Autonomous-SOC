@@ -31,7 +31,7 @@ except ImportError as e:
     st.error(f"ML modules not loaded: {e}")
 
 if ML_LOADED:
-    tab1, tab2, tab3 = st.tabs(["🌲 Isolation Forest", "🔮 Fuzzy C-Means", "📊 Combined Analysis"])
+    tab1, tab2, tab3 = st.tabs(["Isolation Forest", "Fuzzy C-Means", "Combined Analysis"])
     
     with tab1:
         st.markdown(section_title("Isolation Forest - Anomaly Detection"), unsafe_allow_html=True)
@@ -55,7 +55,7 @@ if ML_LOADED:
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Generate sample data
-        if st.button("🔄 Run Anomaly Detection", type="primary", key="run_if"):
+        if st.button("Run Anomaly Detection", type="primary", key="run_if"):
             with st.spinner("Analyzing events with Isolation Forest..."):
                 # Generate sample events
                 events = gen_if_events(n_normal=100, n_anomalous=15)
@@ -134,7 +134,7 @@ if ML_LOADED:
 <p style="color: #8B95A5; margin: 0.3rem 0;">Type: {event_type} | IP: {a.get('source_ip', 'N/A')}</p>
 </div>""", unsafe_allow_html=True)
                     
-                    with st.expander(f"📋 View Details - {a['id']}"):
+                    with st.expander(f"View Details - {a['id']}"):
                         st.markdown(f"""
 **🕐 When:** Detected in current analysis batch (real-time monitoring)
 
@@ -174,7 +174,7 @@ if ML_LOADED:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button("🔄 Run Threat Clustering", type="primary", key="run_fcm"):
+        if st.button("Run Threat Clustering", type="primary", key="run_fcm"):
             with st.spinner("Clustering events with Fuzzy C-Means..."):
                 events = gen_fcm_events(n_events=100)
                 results = cluster_threats(events)
@@ -267,7 +267,7 @@ if ML_LOADED:
 <p style="color: #8B95A5; margin: 0.3rem 0;">IP: {r.get('source_ip', 'N/A')} | Risk Score: {r.get('risk_score', 'N/A')}</p>
 </div>""", unsafe_allow_html=True)
                     
-                    with st.expander(f"📋 View Details - {r['id']}"):
+                    with st.expander(f"View Details - {r['id']}"):
                         st.markdown(f"""
 **🏷️ Primary Category:** {top_cat} ({conf}%)
 
