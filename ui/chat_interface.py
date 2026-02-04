@@ -7,7 +7,7 @@ def render_chat_interface():
     Renders the AI chat interface in the sidebar or main data area.
     """
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### CORTEX AI CORE")
+    st.sidebar.markdown("### CORTEX AI")
     
     # Initialize chat history
     if "messages" not in st.session_state:
@@ -20,27 +20,37 @@ def render_chat_interface():
     
     # Display chat messages
     with chat_container:
-        # Use a scrollable container for messages if possible, or just list them
-        # In sidebar, we print them directly
         for message in st.session_state.messages:
             if message["role"] == "user":
                 st.sidebar.markdown(f"""
-                <div style="background: rgba(0, 243, 255, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 5px; text-align: right; border-right: 2px solid #00f3ff;">
-                    <span style="color: #00f3ff; font-weight: bold;">YOU:</span> <span style="color: #fff;">{message["content"]}</span>
+                <div style="
+                    background: rgba(0, 243, 255, 0.05); 
+                    padding: 10px; 
+                    border-radius: 4px; 
+                    margin-bottom: 8px; 
+                    text-align: right; 
+                    border-right: 2px solid #00f3ff;
+                ">
+                    <div style="color: #00f3ff; font-size: 0.7rem; margin-bottom: 2px;">COMMANDER</div>
+                    <span style="color: #eee;">{message["content"]}</span>
                 </div>
                 """, unsafe_allow_html=True)
             else:
                 st.sidebar.markdown(f"""
-                <div style="background: rgba(188, 19, 254, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 5px; border-left: 2px solid #bc13fe;">
-                    <span style="color: #bc13fe; font-weight: bold;">CORTEX:</span> <span style="color: #fff;">{message["content"]}</span>
+                <div style="
+                    background: rgba(188, 19, 254, 0.05); 
+                    padding: 10px; 
+                    border-radius: 4px; 
+                    margin-bottom: 8px; 
+                    border-left: 2px solid #bc13fe;
+                ">
+                    <div style="color: #bc13fe; font-size: 0.7rem; margin-bottom: 2px;">CORTEX CORE</div>
+                    <span style="color: #eee;">{message["content"]}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
     # Chat input
-    # Note: st.chat_input doesn't work well in sidebar in some versions, but let's try standard input first
-    # Or use st.chat_input if available (Streamlit > 1.24)
-    
-    prompt = st.sidebar.chat_input("Enter command...", key="sidebar_chat_input")
+    prompt = st.sidebar.chat_input("Input command...", key="sidebar_chat_input")
     
     if prompt:
         # Add user message to state
@@ -48,7 +58,7 @@ def render_chat_interface():
         
         # Get AI response
         with st.sidebar:
-            with st.spinner("PROCESSING..."):
+            with st.spinner("⚡ CORTEX ANALYZING..."):
                 # Gather simple context
                 context = {
                     "Page": st.session_state.get("current_page", "Unknown"),

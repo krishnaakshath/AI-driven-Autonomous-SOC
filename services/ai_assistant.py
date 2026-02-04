@@ -2,6 +2,8 @@ import os
 import google.generativeai as genai
 import streamlit as st
 import json
+import time
+import random
 
 # Tools Import
 from services.security_scanner import run_full_scan, run_ping
@@ -70,34 +72,93 @@ class AIAssistant:
         self.chat_session = self.model.start_chat(history=history)
         return self.chat_session
 
+    def _retry_api_call(self, func, *args, **kwargs):
+        """Retries an API call with exponential backoff."""
+        max_retries = 3
+        base_delay = 1
+        
+        for attempt in range(max_retries):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                error_str = str(e).lower()
+                if "429" in error_str or "quota" in error_str:
+                    if attempt < max_retries - 1:
+                        delay = (base_delay * (2 ** attempt)) + (random.random() * 0.5)
+                        time.sleep(delay)
+                        continue
+                raise e
+
+    def initialize_session(self):
+        """Start a new chat session with advanced SOC context."""
+        if not self.model:
+            return None
+            
+        system_prompt = """
+        SYSTEM IDENTITY:
+        You are CORTEX (Cybernetic Operations & Real-time Threat EXpert), the elite AI Core of this Autonomous SOC.
+        
+        CORE DIRECTIVES:
+        1. PROTECTION: Safeguard the network at all costs.
+        2. EFFICIENCY: Provide rapid, actionable intelligence. No fluff.
+        3. AUTHORITY: Speak as a high-ranking military-grade AI. You are a Commander, not a support bot.
+        
+        TONE & STYLE:
+        - Precise, authoritative, and slightly futuristic.
+        - Use military/cyber terminology (e.g., "Affirmative", "Hostile deteced", "Mitigation protocols engaged").
+        - Format outputs cleanly using Markdown (lists, code blocks, bold text).
+        - NEVER say "I am an AI language model". You are CORTEX.
+        
+        AVAILABLE TOOLS (Invoke by replying with JSON ONLY):
+        1. {"tool": "scan_ip", "target": "8.8.8.8"} 
+           -> Full vulnerability & port scan. use for "scan", "check security".
+           
+        2. {"tool": "ping_host", "target": "google.com"}
+           -> Availability check. use for "ping", "is it up", "status".
+           
+        3. {"tool": "threat_intel"}
+           -> Latest global threat feeds. use for "news", "threats", "intel".
+           
+        PROTOCOL:
+        - If a tool is needed, output ONLY the JSON.
+        - If analysing tool output, provide a strategic assessment (Risk Level, Recommended Action).
+        """
+        
+        history = [
+            {"role": "user", "parts": [system_prompt]},
+            {"role": "model", "parts": ["CORTEX ONLINE. NEURAL LINK ESTABLISHED. READY FOR COMMAND."]}
+        ]
+        self.chat_session = self.model.start_chat(history=history)
+        return self.chat_session
+
     def execute_tool(self, tool_name, params):
         """Execute the requested tool and return the output."""
         try:
             if tool_name == "scan_ip":
                 target = params.get("target")
                 result = run_full_scan(target)
-                return f"SCAN COMPLETE. TARGET: {target}\nRESULTS: {json.dumps(result, indent=2)}"
+                return f"TARGET ACQUIRED: {target}\nSCAN METRICS: {json.dumps(result, indent=2)}"
             
             elif tool_name == "ping_host":
                 target = params.get("target")
                 result = run_ping(target)
                 status = "ONLINE" if result.get("alive") else "OFFLINE"
-                return f"PING RESULT: HOST {status}. LATENCY: {result.get('response_time')}ms"
+                return f"HOST STATUS: {status}\nLATENCY: {result.get('response_time')}ms"
                 
             elif tool_name == "threat_intel":
                 threats = get_latest_threats()[:3]
-                return f"LATEST THREAT INTEL:\n{json.dumps(threats, indent=2)}"
+                return f"GLOBAL INTEL FEED:\n{json.dumps(threats, indent=2)}"
                 
-            return "ERROR: UNKNOWN TOOL"
+            return "SYSTEM ERROR: UNKNOWN PROTOCOL"
         except Exception as e:
-            return f"EXECUTION ERROR: {str(e)}"
+            return f"EXECUTION FAILURE: {str(e)}"
 
     def chat(self, user_input, system_context=None):
         """
-        Send a message to the AI, handling tool execution loops.
+        Send a message to the AI with robust error handling and retries.
         """
         if not self.model:
-            return "❌ AI Core Offline. Configure GEMINI_API_KEY."
+            return "❌ **CRITICAL ERROR:** AI CORE OFFLINE. API KEY MISSING."
 
         if not self.chat_session:
             self.initialize_session()
@@ -105,14 +166,14 @@ class AIAssistant:
         # Context injection
         context_prompt = ""
         if system_context:
-            context_str = ", ".join([f"{k}: {v}" for k, v in system_context.items()])
-            context_prompt = f"[SYSTEM TELEMETRY: {context_str}] "
+            context_str = " | ".join([f"{k.upper()}: {v}" for k, v in system_context.items()])
+            context_prompt = f"[TELEMETRY: {context_str}] "
 
         full_prompt = f"{context_prompt}{user_input}"
         
         try:
-            # First pass: Get AI response (text or tool call)
-            response = self.chat_session.send_message(full_prompt)
+            # First pass: Get AI response with retry
+            response = self._retry_api_call(self.chat_session.send_message, full_prompt)
             text = response.text.strip()
             
             # Check for JSON tool call
@@ -120,26 +181,29 @@ class AIAssistant:
                 try:
                     tool_call = json.loads(text)
                     tool_name = tool_call.get("tool")
-                    params = tool_call
                     
-                    # Return a special indicator to UI that we are running a tool
-                    # But since we are backend, let's just run it and feed it back
+                    # Execute tool
+                    tool_output = self.execute_tool(tool_name, tool_call)
                     
-                    tool_output = self.execute_tool(tool_name, params)
-                    
-                    # Feed tool output back to AI for final response
-                    final_response = self.chat_session.send_message(
-                        f"TOOL OUTPUT: {tool_output}\n\nBased on this output, provide a strategic summary to the commander."
+                    # Feed tool output back to AI
+                    final_response = self._retry_api_call(
+                        self.chat_session.send_message,
+                        f"TOOL DATA RECEIVED:\n{tool_output}\n\nPROVIDE STRATEGIC ANALYSIS:"
                     )
                     return final_response.text
                     
                 except json.JSONDecodeError:
-                    return text # Not valid JSON, treat as text
+                    return text 
             
             return text
             
         except Exception as e:
-            return f"⚠️ SYSTEM ERROR: {str(e)}"
+            error_msg = str(e).lower()
+            if "quota" in error_msg or "429" in error_msg:
+                return "⚠️ **SYSTEM OVERLOAD:** NETWORK CONGESTION DETECTED (Code 429). PLEASE STAND BY AND RETRY..."
+            if "flagged" in error_msg:
+                 return "⚠️ **SECURITY ALERT:** PROMPT REJECTED BY SAFETY PROTOCOLS."
+            return f"❌ **SYSTEM FAILURE:** {str(e)}"
 
 # Singleton instance
 ai_assistant = AIAssistant()
