@@ -11,14 +11,14 @@ from services.threat_intel import get_latest_threats
 
 class AIAssistant:
     def __init__(self):
-        # Initialize DeepSeek API (OpenAI-compatible)
+        # Initialize Groq API (OpenAI-compatible, FREE tier)
         self.api_key = self._get_api_key()
         if self.api_key:
             self.client = OpenAI(
                 api_key=self.api_key,
-                base_url="https://api.deepseek.com/v1"
+                base_url="https://api.groq.com/openai/v1"
             )
-            self.model_name = "deepseek-chat"
+            self.model_name = "llama-3.3-70b-versatile"  # Fast & free on Groq
             self.messages = []  # Chat history
             self._initialize_system()
         else:
@@ -26,14 +26,14 @@ class AIAssistant:
 
     def _get_api_key(self):
         """Retrieve API key from streamlit secrets or local config."""
-        if 'DEEPSEEK_API_KEY' in st.secrets:
-            return st.secrets['DEEPSEEK_API_KEY']
+        if 'GROQ_API_KEY' in st.secrets:
+            return st.secrets['GROQ_API_KEY']
         try:
             config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.soc_config.json')
             if os.path.exists(config_path):
                 with open(config_path, 'r') as f:
                     config = json.load(f)
-                    return config.get('DEEPSEEK_API_KEY')
+                    return config.get('GROQ_API_KEY')
         except:
             pass
         return None
@@ -108,7 +108,7 @@ PROTOCOL:
         Send a message to the AI with robust error handling.
         """
         if not self.client:
-            return "❌ **Error:** AI offline. Configure DEEPSEEK_API_KEY in Settings."
+            return "❌ **Error:** AI offline. Configure GROQ_API_KEY in Settings."
 
         # Context injection
         context_prompt = ""
