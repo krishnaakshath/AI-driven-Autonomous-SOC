@@ -119,60 +119,34 @@ CYBERPUNK_CSS = """
     /* ═══════════════════════════════════════════════════════════════════════════
        MAIN BACKGROUND - ANIMATED GRID + SCANLINES
     ═══════════════════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MAIN BACKGROUND - CLEANER GRID
+    ═══════════════════════════════════════════════════════════════════════════ */
     .stApp {
         background-color: var(--bg-dark);
         background-image: 
-            /* Scanlines overlay */
-            repeating-linear-gradient(
-                0deg,
-                rgba(0, 0, 0, 0.15),
-                rgba(0, 0, 0, 0.15) 1px,
-                transparent 1px,
-                transparent 2px
-            ),
-            /* Animated grid */
-            linear-gradient(0deg, transparent 24%, rgba(0, 243, 255, .03) 25%, rgba(0, 243, 255, .03) 26%, transparent 27%, transparent 74%, rgba(0, 243, 255, .03) 75%, rgba(0, 243, 255, .03) 76%, transparent 77%, transparent),
-            linear-gradient(90deg, transparent 24%, rgba(0, 243, 255, .03) 25%, rgba(0, 243, 255, .03) 26%, transparent 27%, transparent 74%, rgba(0, 243, 255, .03) 75%, rgba(0, 243, 255, .03) 76%, transparent 77%, transparent),
-            /* Radial glow */
-            radial-gradient(ellipse at 50% 0%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
-            radial-gradient(ellipse at 100% 100%, rgba(188, 19, 254, 0.08) 0%, transparent 40%);
-        background-size: 100% 100%, 60px 60px, 60px 60px, 100% 100%, 100% 100%;
+            /* Subtle static grid */
+            linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
     }
     
-    /* Animated scan line effect */
-    .stApp::before {
-        content: '';
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
-        animation: scanline 4s linear infinite;
-        z-index: 9999;
-        opacity: 0.7;
-        pointer-events: none;
-    }
-    
-    @keyframes scanline {
-        0% { top: 0%; }
-        100% { top: 100%; }
-    }
+    /* Removed moving scanline for cleaner professional look */
 
     /* ═══════════════════════════════════════════════════════════════════════════
        GLASS CARDS - HOLOGRAPHIC EFFECT
     ═══════════════════════════════════════════════════════════════════════════ */
     .glass-card, .metric-card {
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-        box-shadow: 
-            0 0 20px rgba(0, 243, 255, 0.05),
-            inset 0 0 30px rgba(0, 243, 255, 0.02),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        border-radius: 2px;
-        backdrop-filter: blur(20px);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(5, 5, 10, 0.6); /* More transparent, cleaner */
+        border: 1px solid rgba(0, 243, 255, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+        backdrop-filter: blur(10px);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
         position: relative;
         overflow: hidden;
-        padding: 1.5rem;
+        padding: 2rem; /* Increased padding */
+        margin-bottom: 1rem;
     }
     
     /* Top laser line animation */
@@ -213,68 +187,38 @@ CYBERPUNK_CSS = """
     /* ═══════════════════════════════════════════════════════════════════════════
        METRIC CARDS - NEON GLOW
     ═══════════════════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════════════════════
+       METRIC CARDS - PROFESSIONAL GLOW
+    ═══════════════════════════════════════════════════════════════════════════ */
     .metric-value {
         font-size: 3rem;
-        font-weight: 900;
-        text-shadow: 
-            0 0 10px currentColor,
-            0 0 20px currentColor,
-            0 0 40px currentColor;
+        font-weight: 700;
+        /* Cleaner text shadow, less bloom */
+        text-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
         margin: 0.5rem 0;
-        animation: neonFlicker 3s ease-in-out infinite;
     }
     
     .metric-label {
         font-family: 'Orbitron', sans-serif;
         font-size: 0.75rem;
-        letter-spacing: 3px;
+        letter-spacing: 2px;
         text-transform: uppercase;
         color: var(--text-secondary);
         margin: 0;
+        opacity: 0.8;
     }
     
-    @keyframes neonFlicker {
-        0%, 100% { opacity: 1; }
-        92% { opacity: 1; }
-        93% { opacity: 0.8; }
-        94% { opacity: 1; }
-        96% { opacity: 0.9; }
-        97% { opacity: 1; }
-    }
+    /* Removed heavy neon flicker animation */
 
     /* ═══════════════════════════════════════════════════════════════════════════
        GLITCH EFFECT - HEADERS
     ═══════════════════════════════════════════════════════════════════════════ */
-    @keyframes glitch {
-        0% { 
-            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-cyan);
-            transform: translate(0);
-        }
-        20% { 
-            text-shadow: -2px 0 var(--neon-red), 2px 0 var(--neon-cyan);
-            transform: translate(-2px, 2px);
-        }
-        40% { 
-            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-cyan);
-            transform: translate(2px, -2px);
-        }
-        60% { 
-            text-shadow: -2px 0 var(--neon-red), 2px 0 var(--neon-cyan);
-            transform: translate(-1px, 1px);
-        }
-        80% { 
-            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-cyan);
-            transform: translate(1px, -1px);
-        }
-        100% { 
-            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-cyan);
-            transform: translate(0);
-        }
-    }
-    
-    .glitch-text:hover, .page-header h1:hover {
-        animation: glitch 0.3s ease-in-out infinite;
-        cursor: default;
+    /* ═══════════════════════════════════════════════════════════════════════════
+       HEADERS - CLEAN TECH LOOK
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .page-header h1 {
+        /* Subtle glow only */
+        text-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════

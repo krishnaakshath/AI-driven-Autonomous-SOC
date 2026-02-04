@@ -7,7 +7,7 @@ def render_chat_interface():
     Renders the AI chat interface in the sidebar or main data area.
     """
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🤖 CORTEX AI CORE")
+    st.sidebar.markdown("### CORTEX AI CORE")
     
     # Initialize chat history
     if "messages" not in st.session_state:
