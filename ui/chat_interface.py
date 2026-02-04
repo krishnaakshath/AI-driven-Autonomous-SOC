@@ -13,7 +13,7 @@ def render_chat_interface():
     if "messages" not in st.session_state:
         st.session_state.messages = []
         # Initial greeting
-        st.session_state.messages.append({"role": "assistant", "content": "INITIALIZING CORTEX... SYSTEMS ONLINE. HOW CAN I ASSIST YOU, COMMANDER?"})
+        st.session_state.messages.append({"role": "assistant", "content": "Security Operations AI online. Systems nominal. How can I assist with your threat analysis today?"})
 
     # Chat container in sidebar
     chat_container = st.sidebar.container()
