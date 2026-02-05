@@ -13,8 +13,8 @@ class EmailNotifier:
                  from_email: Optional[str] = None):
         self.smtp_server = smtp_server or os.getenv("SMTP_SERVER", "smtp.gmail.com")
         self.smtp_port = smtp_port
-        self.username = username or os.getenv("GMAIL_EMAIL")
-        _password = password or os.getenv("GMAIL_PASSWORD")
+        self.username = username or os.getenv("SENDER_EMAIL")
+        _password = password or os.getenv("SENDER_PASSWORD")
         self.password = _password.replace(" ", "") if _password else None
         self.from_email = from_email or self.username
     
@@ -148,3 +148,32 @@ AI-Driven Autonomous SOC
     
     def test_connection(self, to_email: str) -> bool:
         return self.send_email([to_email], "SOC Email Test - Success! ✅", "<h1>🔗 Connection Test Successful</h1><p>Your SOC email alerts are configured correctly.</p>")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SIMPLE HELPER FUNCTION FOR BACKGROUND MONITOR
+# ═══════════════════════════════════════════════════════════════════════════════
+def send_email_alert(subject: str, body: str, to_email: str) -> bool:
+    """
+    Simple function to send an email alert.
+    Used by the background monitor service.
+    """
+    notifier = EmailNotifier()
+    if not notifier.is_configured():
+        print("[WARNING] Email not configured. Check SENDER_EMAIL and SENDER_PASSWORD environment variables.")
+        return False
+    
+    html_body = f"""
+    <html>
+    <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #0E1117; color: #FAFAFA; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #1A1F2E; border-radius: 16px; padding: 30px; border-left: 4px solid #FF4444;">
+            <h2 style="color: #FF4444;">🚨 Security Alert</h2>
+            <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; white-space: pre-wrap; font-family: monospace;">{body}</pre>
+            <p style="color: #8B95A5; margin-top: 20px;">AI-Driven Autonomous SOC</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return notifier.send_email([to_email], subject, html_body, body)
+

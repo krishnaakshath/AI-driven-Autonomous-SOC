@@ -254,8 +254,17 @@ fig.update_layout(
     )
 )
 
-# Render in container
-st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+# Render with FULL INTERACTIVE CONTROLS
+st.plotly_chart(
+    fig, 
+    use_container_width=True, 
+    config={
+        'displayModeBar': True,  # Show the toolbar
+        'scrollZoom': True,       # Enable scroll to zoom
+        'displaylogo': False,     # Hide plotly logo
+        'modeBarButtonsToRemove': ['toImage', 'sendDataToCloud', 'pan2d', 'select2d', 'lasso2d']
+    }
+)
 
 # Legend matching reference image
 st.markdown('''
