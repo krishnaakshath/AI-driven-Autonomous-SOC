@@ -24,9 +24,15 @@ if "cortex_messages" not in st.session_state:
 # Premium Full-Page Styling
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+html, body, [class*="css"], .stMarkdown, .stTextInput input, .stButton button {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
 /* Full dark immersive background */
 .stApp {
-    background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 50%, #0a1a2a 100%);
+    background: linear-gradient(135deg, #0a0e17 0%, #151c2c 50%, #0d1320 100%);
 }
 
 /* Header */
