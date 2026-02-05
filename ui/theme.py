@@ -261,6 +261,53 @@ CYBERPUNK_CSS = """
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
+       COMPACT SIDEBAR
+    ═══════════════════════════════════════════════════════════════════════════ */
+    section[data-testid="stSidebar"] {
+        width: 250px !important; /* Force slimmer width if possible */
+        background-color: var(--bg-darker);
+        border-right: 1px solid var(--glass-border);
+    }
+    
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    /* Compact Navigation Links */
+    .stRadio label {
+        padding: 0.2rem 0.5rem !important; /* Reduce padding */
+        font-family: 'Share Tech Mono', monospace !important;
+        font-size: 0.9rem !important;
+        cursor: pointer;
+        transition: color 0.2s ease, background 0.2s ease;
+        border-radius: 4px;
+        color: #888;
+    }
+    
+    .stRadio label:hover {
+        color: var(--neon-cyan) !important;
+        background: rgba(0, 243, 255, 0.05);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       COMMAND CENTER (CHAT)
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .streamlit-expanderHeader {
+        background-color: rgba(0, 50, 60, 0.8) !important;
+        color: var(--neon-cyan) !important;
+        font-family: 'Orbitron', sans-serif !important;
+        border: 1px solid var(--neon-cyan) !important;
+        border-radius: 4px;
+        letter-spacing: 2px;
+    }
+    
+    .command-center-terminal {
+        border-left: 1px dashed var(--neon-cyan);
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+    /* ═══════════════════════════════════════════════════════════════════════════
        TABS - CYBER NAVIGATION
     ═══════════════════════════════════════════════════════════════════════════ */
     .stTabs [data-baseweb="tab-list"] {
