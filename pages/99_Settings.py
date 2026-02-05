@@ -31,9 +31,128 @@ def save_config(config):
 
 config = load_config()
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["API Keys", "OAuth", "Notifications", "Thresholds", "About"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🤖 CORTEX AI", "API Keys", "OAuth", "Notifications", "Thresholds", "About"])
 
+# CORTEX AI Personality Settings
 with tab1:
+    st.markdown(section_title("CORTEX AI Personality"), unsafe_allow_html=True)
+    
+    st.markdown("""
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">Customize Your AI Assistant</h4>
+            <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">
+                Adjust CORTEX's personality to match your preferences. Changes take effect on next conversation.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Get current preferences
+    try:
+        from services.auth_service import get_user_preferences, is_authenticated, get_current_user
+        from services.auth_service import auth_service
+        
+        if is_authenticated():
+            user = get_current_user()
+            current_prefs = user.get('preferences', {}) if user else {}
+            user_email = st.session_state.get('user_email')
+        else:
+            current_prefs = config.get('ai_preferences', {})
+            user_email = None
+    except ImportError:
+        current_prefs = config.get('ai_preferences', {})
+        user_email = None
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### Humor Level")
+        humor_level = st.slider(
+            "How witty should CORTEX be?",
+            min_value=1,
+            max_value=5,
+            value=current_prefs.get('humor_level', 3),
+            help="1 = Serious, 3 = Balanced, 5 = Witty"
+        )
+        
+        humor_labels = {
+            1: "🎓 **Serious** - Formal and professional",
+            2: "📝 **Dry Wit** - Mostly serious",
+            3: "⚖️ **Balanced** - Professional with charm",
+            4: "😊 **Friendly** - Warm and engaging",
+            5: "🎭 **Witty** - Fun and playful"
+        }
+        st.markdown(humor_labels.get(humor_level, ""))
+        
+        st.markdown("### Verbosity")
+        verbosity = st.selectbox(
+            "Response detail level",
+            options=["concise", "balanced", "detailed"],
+            index=["concise", "balanced", "detailed"].index(current_prefs.get('verbosity', 'balanced'))
+        )
+    
+    with col2:
+        st.markdown("### Formality")
+        formality = st.selectbox(
+            "Communication style",
+            options=["professional", "casual", "friendly"],
+            index=["professional", "casual", "friendly"].index(current_prefs.get('formality', 'professional'))
+        )
+        
+        st.markdown("### Emoji Usage")
+        emoji_usage = st.selectbox(
+            "How many emojis to use",
+            options=["none", "minimal", "expressive"],
+            index=["none", "minimal", "expressive"].index(current_prefs.get('emoji_usage', 'minimal'))
+        )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Preview
+    with st.expander("📝 Preview Response Style"):
+        preview_texts = {
+            (1, "professional"): "I have analyzed the network traffic. The anomaly detection system identified 3 suspicious connections originating from IP 192.168.1.105. Recommended action: immediate isolation and forensic analysis.",
+            (3, "professional"): "Found some interesting activity! 🔍 Our anomaly detector flagged 3 suspicious connections from 192.168.1.105. I'd recommend we isolate that endpoint and take a closer look.",
+            (5, "friendly"): "Whoa, heads up! 🚨 Our digital watchdog just caught some sneaky traffic! 3 fishy connections from 192.168.1.105 - let's quarantine that box before things get spicy! 🌶️",
+            (5, "casual"): "Yo! 👋 Just spotted some weird stuff - 3 sus connections from .105. Might wanna yeet that endpoint off the network real quick! 🏃‍♂️"
+        }
+        
+        key = (humor_level, formality)
+        if key not in preview_texts:
+            key = (3, "professional")
+        
+        st.markdown(f"""
+        <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #00f3ff; padding: 15px; border-radius: 0 8px 8px 0;">
+            <div style="color: #00f3ff; font-size: 0.8rem; margin-bottom: 5px;">CORTEX PREVIEW</div>
+            <div style="color: #fff;">{preview_texts[key]}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    if st.button("💾 Save Personality Settings", type="primary"):
+        new_prefs = {
+            'humor_level': humor_level,
+            'formality': formality,
+            'verbosity': verbosity,
+            'emoji_usage': emoji_usage
+        }
+        
+        if user_email:
+            auth_service.update_preferences(user_email, new_prefs)
+        else:
+            config['ai_preferences'] = new_prefs
+            save_config(config)
+        
+        # Update the AI assistant
+        try:
+            from services.ai_assistant import ai_assistant
+            ai_assistant.update_personality(new_prefs)
+        except:
+            pass
+        
+        st.success("✅ Personality settings saved! CORTEX will use these settings in new conversations.")
+
+with tab2:
     st.markdown(section_title("API Integration"), unsafe_allow_html=True)
     
     st.markdown("""
@@ -76,7 +195,7 @@ with tab1:
         save_config(config)
         st.success("API keys saved successfully!")
 
-with tab2:
+with tab3:
     st.markdown(section_title("Social Login"), unsafe_allow_html=True)
     
     st.markdown("""
@@ -106,7 +225,7 @@ with tab2:
         st.success("OAuth settings saved! Google Login will actiavte if Client ID is present.")
 
 
-with tab3:
+with tab4:
     st.markdown(section_title("Notification Settings"), unsafe_allow_html=True)
     
     st.markdown("""<div class="glass-card" style="margin-bottom: 1.5rem;">
@@ -160,7 +279,7 @@ Use an App Password for Gmail.
             except Exception as e:
                 st.error(f"Error: {e}")
 
-with tab4:
+with tab5:
     st.markdown(section_title("Alert Thresholds"), unsafe_allow_html=True)
     
     c1, c2 = st.columns(2)
@@ -198,7 +317,7 @@ with tab4:
         save_config(config)
         st.success("Thresholds saved!")
 
-with tab5:
+with tab6:
     st.markdown(section_title("About This Platform"), unsafe_allow_html=True)
     
     st.markdown("""

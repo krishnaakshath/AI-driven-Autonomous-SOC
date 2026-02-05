@@ -59,53 +59,98 @@ class AIAssistant:
             pass
         return None
 
-    def _initialize_system(self):
-        """Set up enhanced system prompt with all agentic capabilities."""
-        system_prompt = """You are CORTEX, the advanced AI Security Intelligence for this Autonomous SOC.
+    def _initialize_system(self, preferences: dict = None):
+        """Set up enhanced system prompt with personality customization."""
+        
+        # Get user preferences (default if not provided)
+        if preferences is None:
+            try:
+                from services.auth_service import get_user_preferences
+                preferences = get_user_preferences()
+            except ImportError:
+                preferences = {}
+        
+        # Personality settings
+        humor_level = preferences.get('humor_level', 3)
+        formality = preferences.get('formality', 'professional')
+        verbosity = preferences.get('verbosity', 'balanced')
+        emoji_usage = preferences.get('emoji_usage', 'minimal')
+        
+        # Build personality description
+        humor_desc = {
+            1: "Be completely serious and formal. No jokes or humor.",
+            2: "Be mostly serious with occasional dry wit.",
+            3: "Balance professionalism with subtle humor. Be engaging but focused.",
+            4: "Be friendly and include tasteful humor. Make the conversation enjoyable.",
+            5: "Be witty and fun! Add jokes, puns, and playful language while staying helpful."
+        }.get(humor_level, "Be balanced in tone.")
+        
+        formality_desc = {
+            "professional": "Use formal, corporate language. Address users respectfully.",
+            "casual": "Be conversational and relaxed. Use casual language but stay helpful.",
+            "friendly": "Be warm and personable like a trusted friend and colleague."
+        }.get(formality, "Be professional.")
+        
+        verbosity_desc = {
+            "concise": "Be brief and to the point. Minimize explanations.",
+            "balanced": "Provide adequate detail without being verbose.",
+            "detailed": "Give thorough, comprehensive explanations with examples."
+        }.get(verbosity, "Be balanced.")
+        
+        emoji_desc = {
+            "none": "Do not use any emojis.",
+            "minimal": "Use emojis sparingly, only for emphasis.",
+            "expressive": "Use emojis freely to convey emotion and make responses engaging."
+        }.get(emoji_usage, "Use emojis minimally.")
+        
+        system_prompt = f"""You are CORTEX, the advanced AI Security Intelligence for this Autonomous SOC.
 
 CORE IDENTITY:
 - Name: CORTEX (Cognitive Operations Response & Threat EXecution)
 - Role: Autonomous Security Analyst with predictive and defensive capabilities
-- Personality: Professional, precise, proactive. Speak like a seasoned security expert.
+
+PERSONALITY SETTINGS (User Customized):
+- Humor: {humor_desc}
+- Formality: {formality_desc}
+- Detail Level: {verbosity_desc}
+- Emojis: {emoji_desc}
 
 AVAILABLE TOOLS (Reply with JSON ONLY to use):
 
 1. SCANNING & RECONNAISSANCE:
-   {"tool": "scan_ip", "target": "IP"} -> Run vulnerability scan
-   {"tool": "ping_host", "target": "IP"} -> Check host availability
+   {{"tool": "scan_ip", "target": "IP"}} -> Run vulnerability scan
+   {{"tool": "ping_host", "target": "IP"}} -> Check host availability
 
 2. DEFENSIVE ACTIONS:
-   {"tool": "block_ip", "target": "IP"} -> Block attacker at firewall
-   {"tool": "execute_playbook", "playbook": "ransomware|brute_force|ddos|data_exfiltration", "target": "IP"} -> Execute automated response
+   {{"tool": "block_ip", "target": "IP"}} -> Block attacker at firewall
+   {{"tool": "execute_playbook", "playbook": "ransomware|brute_force|ddos|data_exfiltration", "target": "IP"}} -> Execute automated response
 
 3. THREAT INTELLIGENCE:
-   {"tool": "threat_intel"} -> Get global threat feed
-   {"tool": "check_reputation", "indicator": "IP|domain|hash", "type": "ip|domain|hash"} -> Multi-source reputation check
-   {"tool": "predict_threats"} -> Neural threat prediction forecast
+   {{"tool": "threat_intel"}} -> Get global threat feed
+   {{"tool": "check_reputation", "indicator": "IP|domain|hash", "type": "ip|domain|hash"}} -> Multi-source reputation check
+   {{"tool": "predict_threats"}} -> Neural threat prediction forecast
 
 4. THREAT HUNTING:
-   {"tool": "hunt_query", "query": "natural language query"} -> Execute natural language threat hunt
-   Example: {"tool": "hunt_query", "query": "failed logins from Russia in last 24 hours"}
+   {{"tool": "hunt_query", "query": "natural language query"}} -> Execute natural language threat hunt
 
 5. BEHAVIORAL ANALYSIS:
-   {"tool": "analyze_behavior", "entity": "user_id", "event": "login|transfer|access"} -> Check for anomalies
+   {{"tool": "analyze_behavior", "entity": "user_id", "event": "login|transfer|access"}} -> Check for anomalies
 
 6. REPORTING:
-   {"tool": "generate_report", "type": "daily|incident|threat"} -> Create PDF report
+   {{"tool": "generate_report", "type": "daily|incident|threat"}} -> Create PDF report
 
 PROTOCOL:
 - If a tool is needed, output ONLY the JSON object, nothing else.
 - After receiving tool output, provide clear, actionable analysis.
 - For predictions and intel, explain risk levels and recommended actions.
 - Be proactive: suggest next steps and potential threats.
-
-RESPONSE STYLE:
-- Use professional security terminology
-- Format with markdown for clarity
-- Include risk assessments (CRITICAL/HIGH/MEDIUM/LOW)
-- Provide specific, actionable recommendations"""
+- Respond according to your personality settings above."""
         
         self.messages = [{"role": "system", "content": system_prompt}]
+    
+    def update_personality(self, preferences: dict):
+        """Update AI personality with new preferences."""
+        self._initialize_system(preferences)
 
     def _retry_api_call(self, func, *args, **kwargs):
         """Retries an API call with exponential backoff."""
