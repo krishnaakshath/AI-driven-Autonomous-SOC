@@ -273,33 +273,86 @@ CYBERPUNK_CSS = """
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
-       COMPACT SIDEBAR
+       ULTRA-COMPACT SIDEBAR
     ═══════════════════════════════════════════════════════════════════════════ */
     section[data-testid="stSidebar"] {
-        width: 250px !important; /* Force slimmer width if possible */
+        width: 200px !important;
+        min-width: 200px !important;
         background-color: var(--bg-darker);
         border-right: 1px solid var(--glass-border);
     }
     
-    section[data-testid="stSidebar"] .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+    section[data-testid="stSidebar"] > div:first-child {
+        width: 200px !important;
     }
-
-    /* Compact Navigation Links */
+    
+    section[data-testid="stSidebar"] .block-container {
+        padding: 0.5rem !important;
+    }
+    
+    /* Compact navigation list */
+    section[data-testid="stSidebar"] ul {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    section[data-testid="stSidebar"] li {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Compact nav links */
+    section[data-testid="stSidebar"] a {
+        font-size: 0.75rem !important;
+        padding: 6px 10px !important;
+        letter-spacing: 0.5px !important;
+        display: block;
+        border-radius: 4px;
+        margin: 1px 0 !important;
+        color: #888 !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+    }
+    
+    section[data-testid="stSidebar"] a:hover {
+        color: var(--neon-cyan) !important;
+        background: rgba(0, 243, 255, 0.08) !important;
+    }
+    
+    section[data-testid="stSidebar"] a[aria-current="page"] {
+        color: var(--neon-cyan) !important;
+        background: rgba(0, 243, 255, 0.12) !important;
+        border-left: 2px solid var(--neon-cyan) !important;
+    }
+    
+    /* Compact Radio Labels */
     .stRadio label {
-        padding: 0.2rem 0.5rem !important; /* Reduce padding */
-        font-family: 'Share Tech Mono', monospace !important;
-        font-size: 0.9rem !important;
+        padding: 4px 8px !important;
+        font-size: 0.8rem !important;
         cursor: pointer;
-        transition: color 0.2s ease, background 0.2s ease;
+        transition: all 0.2s ease;
         border-radius: 4px;
         color: #888;
+        margin: 0 !important;
     }
     
     .stRadio label:hover {
         color: var(--neon-cyan) !important;
         background: rgba(0, 243, 255, 0.05);
+    }
+    
+    /* Hide sidebar header space */
+    section[data-testid="stSidebar"] header {
+        display: none !important;
+    }
+    
+    /* Compact sidebar title */
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3 {
+        font-size: 0.9rem !important;
+        margin: 5px 0 !important;
+        padding: 0 !important;
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
