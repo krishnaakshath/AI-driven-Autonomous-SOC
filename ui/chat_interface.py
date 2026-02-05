@@ -55,10 +55,59 @@ def render_chat_interface():
         st.markdown('</div>', unsafe_allow_html=True)
 
         # Chat input within the expander
-        col1, col2 = st.columns([6, 1])
+        col1, col2, col3 = st.columns([1, 6, 1])
+        
+        # 🎙️ VOICE COMMAND MODULE
         with col1:
-            prompt = st.text_input("Enter command...", key="main_chat_input", label_visibility="collapsed")
+            voice_js = """
+            <script>
+            function startDictation() {
+                if (window.hasOwnProperty('webkitSpeechRecognition')) {
+                    var recognition = new webkitSpeechRecognition();
+                    recognition.continuous = false;
+                    recognition.interimResults = false;
+                    recognition.lang = "en-US";
+                    recognition.start();
+
+                    recognition.onresult = function(e) {
+                        var text = e.results[0][0].transcript;
+                        // Locate the chat input and set value (Hack via DOM)
+                        var inputs = window.parent.document.querySelectorAll('input[type="text"]');
+                        for (var i = 0; i < inputs.length; i++) {
+                            if (inputs[i].ariaLabel && inputs[i].ariaLabel.includes("command")) {
+                                inputs[i].value = text;
+                                inputs[i].dispatchEvent(new Event('change', { bubbles: true }));
+                                inputs[i].dispatchEvent(new Event('input', { bubbles: true }));
+                                break;
+                            }
+                        }
+                    };
+                    recognition.onerror = function(e) {
+                         console.error("Speech Recognition Error", e);
+                    };
+                }
+            }
+            </script>
+            <button onclick="parent.startDictation()" style="
+                border: 1px solid #00f3ff; 
+                background: rgba(0, 243, 255, 0.1); 
+                color: #00f3ff; 
+                border-radius: 4px; 
+                width: 100%; 
+                height: 42px; 
+                cursor: pointer;
+                font-size: 1.2rem;
+                display: flex; align-items: center; justify-content: center;
+                transition: all 0.2s;
+            " onmouseover="this.style.background='rgba(0,243,255,0.2)'" onmouseout="this.style.background='rgba(0,243,255,0.1)'">
+                🎙️
+            </button>
+            """
+            st.components.v1.html(voice_js, height=50)
+
         with col2:
+            prompt = st.text_input("Enter command...", key="main_chat_input", label_visibility="collapsed", help="Type or use Voice Command")
+        with col3:
             send_btn = st.button("SEND", type="primary", use_container_width=True)
         
         if prompt and (send_btn or st.session_state.get('last_prompt') != prompt):

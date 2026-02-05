@@ -132,7 +132,7 @@ with c4:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ADVANCED CYBERPUNK THREAT MAP
+# 3D HOLOGRAPHIC THREAT GLOBE
 # ═══════════════════════════════════════════════════════════════════════════════
 
 st.markdown('''
@@ -146,7 +146,7 @@ st.markdown('''
             text-transform: uppercase; 
             letter-spacing: 4px;
             text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
-        ">GLOBAL THREAT MAP</h3>
+        ">GLOBAL THREAT HOLOGRAPH</h3>
     </div>
 ''', unsafe_allow_html=True)
 
@@ -160,153 +160,102 @@ severity_colors = {
 
 fig = go.Figure()
 
-# Layer 1: Dark dotted world map base (styled like reference)
-# Using a dark scatter geo base for the dotted effect
-fig.update_geos(
-    bgcolor='rgba(5, 5, 10, 1)',
-    showland=True,
-    landcolor='rgba(15, 20, 30, 1)',
-    showocean=True,
-    oceancolor='rgba(5, 10, 20, 1)',
-    showlakes=False,
-    showcountries=True,
-    countrycolor='rgba(0, 243, 255, 0.15)',
-    showcoastlines=True,
-    coastlinecolor='rgba(0, 243, 255, 0.2)',
-    projection_type='natural earth',
-    showframe=False,
-    showsubunits=False,
-    subunitcolor='rgba(0, 243, 255, 0.1)'
-)
+# Layer 1: The Globe Base (Dark, Holographic)
+fig.add_trace(go.Scattergeo(
+    lon=[], lat=[],
+    mode='markers',
+    marker=dict(size=0, color='rgba(0,0,0,0)')
+))
 
-# Layer 2: Attack connection lines from threat sources to target
+# Layer 2: Attack Arcs (3D Trajectories)
 for country, data in threats.items():
     if data["real_count"] > 0:
         color = severity_colors.get(data["severity"], "#00f3ff")
         
-        # Draw connection line
+        # Add 3D Arcs (Great Circle)
         fig.add_trace(go.Scattergeo(
             lat=[data["lat"], target["lat"]],
             lon=[data["lon"], target["lon"]],
             mode='lines',
             line=dict(
-                width=1.5,
+                width=2,
                 color=color,
             ),
-            opacity=0.6,
+            opacity=0.7,
             hoverinfo='skip',
             showlegend=False
         ))
 
-# Layer 3: Pulsing ring effects (outer glow) for each source
+# Layer 3: Source Markers (Pulsing Orbs)
 for country, data in threats.items():
     if data["real_count"] > 0:
         color = severity_colors.get(data["severity"], "#00f3ff")
         
-        # Outer ring (glow effect)
         fig.add_trace(go.Scattergeo(
             lat=[data["lat"]],
             lon=[data["lon"]],
-            mode='markers',
+            mode='markers+text',
             marker=dict(
-                size=35 + data["real_count"] * 2,
+                size=10 + (data["real_count"] / 5),
                 color=color,
-                opacity=0.15,
-                line=dict(width=1, color=color)
+                opacity=0.9,
+                line=dict(width=2, color='white'),
+                symbol='circle'
             ),
-            hoverinfo='skip',
-            showlegend=False
-        ))
-        
-        # Middle ring
-        fig.add_trace(go.Scattergeo(
-            lat=[data["lat"]],
-            lon=[data["lon"]],
-            mode='markers',
-            marker=dict(
-                size=20 + data["real_count"],
-                color=color,
-                opacity=0.3,
-                line=dict(width=1, color=color)
-            ),
-            hoverinfo='skip',
+            text=country if data["severity"] == "critical" else "",
+            textposition="top center",
+            textfont=dict(family="Orbitron", size=10, color=color),
+            hovertemplate=f"<b>{country}</b><br>Threats: {data['real_count']}<br>Severity: {data['severity'].upper()}<extra></extra>",
             showlegend=False
         ))
 
-# Layer 4: Main threat markers (solid dots)
-for country, data in threats.items():
-    color = severity_colors.get(data["severity"], "#00f3ff")
-    
-    fig.add_trace(go.Scattergeo(
-        lat=[data["lat"]],
-        lon=[data["lon"]],
-        mode='markers+text',
-        marker=dict(
-            size=12,
-            color=color,
-            opacity=1,
-            line=dict(width=2, color='white')
-        ),
-        text="",
-        hovertemplate=f"<b>{country}</b><br>Threats: {data['real_count']}<br>Severity: {data['severity'].upper()}<extra></extra>",
-        showlegend=False
-    ))
-
-# Layer 5: Target marker (SOC HQ) with special styling
+# Layer 4: Target Marker (SOC HQ)
 fig.add_trace(go.Scattergeo(
     lat=[target["lat"]],
     lon=[target["lon"]],
     mode='markers',
     marker=dict(
-        size=18,
+        size=20,
         color='#0aff0a',
         opacity=1,
-        symbol='diamond',
+        symbol='diamond-tall',
         line=dict(width=3, color='white')
     ),
-    hovertemplate="<b>SOC Headquarters</b><br>Monitoring Center<extra></extra>",
+    hovertemplate="<b>SOC HEADQUARTERS</b><br>Status: ONLINE<extra></extra>",
     showlegend=False
 ))
 
-# Layout with cyberpunk styling
-fig.update_layout(
-    geo=dict(
-        bgcolor='rgba(5, 5, 10, 1)',
-        showland=True,
-        landcolor='rgba(15, 20, 30, 1)',
-        showocean=True,
-        oceancolor='rgba(5, 10, 20, 1)',
-        showlakes=False,
-        showcountries=True,
-        countrycolor='rgba(0, 243, 255, 0.15)',
-        showcoastlines=True,
-        coastlinecolor='rgba(0, 243, 255, 0.2)',
-        projection_type='natural earth',
-        showframe=False,
-        center=dict(lat=25, lon=30),
-        projection_scale=1.2
-    ),
-    paper_bgcolor='rgba(5, 5, 10, 1)',
-    plot_bgcolor='rgba(5, 5, 10, 1)',
-    margin=dict(l=0, r=0, t=0, b=0),
-    height=500,
-    showlegend=False
+# 3D Orthographic Layout (The "Iron Man" Look)
+fig.update_geos(
+    projection_type="orthographic",
+    showland=True,
+    landcolor="rgba(10, 20, 40, 0.8)",
+    showocean=True,
+    oceancolor="rgba(2, 5, 10, 0.8)",
+    showcountries=True,
+    countrycolor="rgba(0, 243, 255, 0.3)",
+    showlakes=False,
+    showcoastlines=True,
+    coastlinecolor="rgba(0, 243, 255, 0.5)",
+    projection_rotation=dict(lon=time.time() % 360, lat=20), # Auto-rotation handled by Streamlit rerun
+    bgcolor='rgba(0,0,0,0)'
 )
 
-# Add custom CSS container for the map
-st.markdown('''
-<style>
-.threat-map-container {
-    background: linear-gradient(135deg, rgba(5, 5, 15, 0.95), rgba(10, 10, 25, 0.95));
-    border: 1px solid rgba(0, 243, 255, 0.2);
-    border-radius: 4px;
-    padding: 1rem;
-    box-shadow: 0 0 30px rgba(0, 243, 255, 0.1), inset 0 0 50px rgba(0, 0, 0, 0.5);
-}
-</style>
-''', unsafe_allow_html=True)
+fig.update_layout(
+    margin=dict(l=0, r=0, t=0, b=0),
+    height=600,
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    showlegend=False,
+    scene=dict(
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+        zaxis=dict(visible=False)
+    )
+)
 
-st.plotly_chart(fig, use_container_width=True)
+# Render in container
+st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
 # Legend matching reference image
 st.markdown('''

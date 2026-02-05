@@ -134,19 +134,31 @@ CYBERPUNK_CSS = """
     /* Removed moving scanline for cleaner professional look */
 
     /* ═══════════════════════════════════════════════════════════════════════════
-       GLASS CARDS - HOLOGRAPHIC EFFECT
+       GLASS CARDS - HOLOGRAPHIC 3D TILT
     ═══════════════════════════════════════════════════════════════════════════ */
     .glass-card, .metric-card {
-        background: rgba(5, 5, 10, 0.6); /* More transparent, cleaner */
+        background: rgba(5, 5, 10, 0.6);
         border: 1px solid rgba(0, 243, 255, 0.1);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         border-radius: 4px;
         backdrop-filter: blur(10px);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        /* 3D Transform Properties */
+        transform-style: preserve-3d;
+        perspective: 1000px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         position: relative;
         overflow: hidden;
-        padding: 2rem; /* Increased padding */
+        padding: 2rem;
         margin-bottom: 1rem;
+    }
+    
+    .glass-card:hover, .metric-card:hover {
+        transform: translateY(-5px) scale(1.01);
+        box-shadow: 
+            0 15px 30px rgba(0, 0, 0, 0.5),
+            0 0 20px rgba(0, 243, 255, 0.2);
+        border-color: rgba(0, 243, 255, 0.5);
+        z-index: 10;
     }
     
     /* Top laser line animation */

@@ -373,6 +373,14 @@ allowed = (df["access_decision"] == "ALLOW").sum()
 avg_risk = df["risk_score"].mean()
 critical = (df["risk_score"] >= 80).sum()
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# AUTONOMOUS DEFENSE SIMULATION (IRON MAN UI)
+# ═══════════════════════════════════════════════════════════════════════════════
+from ui.defense_module import render_autonomous_defense_log
+st.markdown("<br>", unsafe_allow_html=True)
+render_autonomous_defense_log(avg_risk)
+st.markdown("<br>", unsafe_allow_html=True)
+
 # Animated Metric Cards
 m1, m2, m3, m4, m5, m6 = st.columns(6)
 
