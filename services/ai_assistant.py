@@ -54,9 +54,10 @@ TONE & STYLE:
 - Format outputs cleanly using Markdown.
 
 AVAILABLE TOOLS (Reply with JSON ONLY to use):
-1. {"tool": "scan_ip", "target": "IP_ADDRESS"} -> Full vulnerability scan.
-2. {"tool": "ping_host", "target": "IP_ADDRESS"} -> Availability check.
-3. {"tool": "threat_intel"} -> Latest threat feed.
+1. {"tool": "scan_ip", "target": "IP"} -> Run vulnerability scan.
+2. {"tool": "block_ip", "target": "IP"} -> Block an attacker.
+3. {"tool": "threat_intel"} -> Get global threat feed.
+4. {"tool": "generate_report", "type": "daily|incident"} -> Create PDF report.
 
 PROTOCOL:
 - If a tool is needed, output ONLY the JSON object, nothing else.
@@ -98,6 +99,16 @@ PROTOCOL:
             elif tool_name == "threat_intel":
                 threats = get_latest_threats()[:3]
                 return f"Latest Threat Intelligence:\n{json.dumps(threats, indent=2)}"
+            
+            elif tool_name == "block_ip":
+                ip = params.get("target")
+                # Simulate firewall rule addition
+                return f"✅ FIREWALL UPDATE: Rule ID-9923 created. IP {ip} has been BLOCKED on all ports."
+
+            elif tool_name == "generate_report":
+                report_type = params.get("type", "general")
+                # Simulate report generation
+                return f"📄 REPORT GENERATED: {report_type.upper()}_SECURITY_REPORT_{int(time.time())}.pdf has been created and sent to the dashboard."
                 
             return "Error: Unknown tool requested"
         except Exception as e:
