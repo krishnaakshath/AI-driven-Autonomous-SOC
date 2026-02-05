@@ -1,60 +1,75 @@
 import streamlit as st
-from services.ai_assistant import ai_assistant
-import streamlit.components.v1 as components
 
-def render_chat_interface():
+def inject_floating_cortex_link():
     """
-    Renders CORTEX as a floating holographic orb with expandable chat.
-    Uses st.popover for reliable interaction + custom styling for premium look.
+    Injects a floating CORTEX orb button that links to the CORTEX AI page.
+    Call this function at the end of any page to show the floating orb.
     """
-    # Initialize chat history
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-        st.session_state.messages.append({"role": "assistant", "content": "CORTEX online. Neural link established. How may I assist you, Commander?"})
-
-    # Premium CSS styling
     st.markdown("""
     <style>
-    /* ============================================
-       CORTEX FLOATING ORB STYLING
-       ============================================ */
-    
-    /* Target the popover trigger button */
-    [data-testid="stPopover"] {
-        position: fixed !important;
-        bottom: 30px !important;
-        right: 30px !important;
-        z-index: 99999 !important;
-    }
-    
-    /* Style the popover button as a glowing orb */
-    [data-testid="stPopover"] > div > button {
-        width: 70px !important;
-        height: 70px !important;
-        border-radius: 50% !important;
-        background: linear-gradient(135deg, #00f3ff 0%, #bc13fe 50%, #ff0080 100%) !important;
-        border: 3px solid rgba(255,255,255,0.4) !important;
+    /* Floating CORTEX Orb - Links to AI Page */
+    .cortex-float-orb {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00f3ff 0%, #bc13fe 50%, #ff0080 100%);
+        border: 3px solid rgba(255,255,255,0.4);
         box-shadow: 
             0 0 30px rgba(0, 243, 255, 0.6),
             0 0 60px rgba(188, 19, 254, 0.4),
-            inset 0 0 20px rgba(255,255,255,0.2) !important;
-        font-size: 32px !important;
-        padding: 0 !important;
-        min-height: unset !important;
-        animation: orb-glow 2s ease-in-out infinite !important;
-        transition: all 0.3s ease !important;
+            inset 0 0 20px rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        cursor: pointer;
+        z-index: 99999;
+        text-decoration: none;
+        animation: orb-glow 2s ease-in-out infinite, orb-float 3s ease-in-out infinite;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    [data-testid="stPopover"] > div > button:hover {
-        transform: scale(1.1) !important;
+    .cortex-float-orb:hover {
+        transform: scale(1.15);
         box-shadow: 
             0 0 50px rgba(0, 243, 255, 0.9),
-            0 0 100px rgba(188, 19, 254, 0.7) !important;
+            0 0 100px rgba(188, 19, 254, 0.7),
+            inset 0 0 30px rgba(255,255,255,0.3);
     }
     
-    [data-testid="stPopover"] > div > button p {
-        margin: 0 !important;
-        font-size: 28px !important;
+    .cortex-float-orb:hover .orb-tooltip {
+        opacity: 1;
+        transform: translateX(-10px);
+    }
+    
+    .orb-tooltip {
+        position: absolute;
+        right: 85px;
+        background: rgba(0, 0, 0, 0.9);
+        border: 1px solid rgba(0, 243, 255, 0.5);
+        padding: 8px 16px;
+        border-radius: 8px;
+        white-space: nowrap;
+        color: #00f3ff;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        opacity: 0;
+        transition: all 0.3s ease;
+        pointer-events: none;
+    }
+    
+    .orb-tooltip::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 6px solid transparent;
+        border-left-color: rgba(0, 243, 255, 0.5);
     }
     
     @keyframes orb-glow {
@@ -66,155 +81,40 @@ def render_chat_interface():
         }
     }
     
-    /* Style the popover content */
-    [data-testid="stPopoverBody"] {
-        background: linear-gradient(145deg, rgba(10, 10, 25, 0.98), rgba(20, 20, 45, 0.95)) !important;
-        border: 1px solid rgba(0, 243, 255, 0.3) !important;
-        border-radius: 16px !important;
-        box-shadow: 
-            0 25px 80px rgba(0, 0, 0, 0.6),
-            0 0 40px rgba(0, 243, 255, 0.2) !important;
-        backdrop-filter: blur(20px) !important;
-        min-width: 380px !important;
-        max-width: 420px !important;
+    @keyframes orb-float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
     }
     
-    /* Chat message styling */
-    .cortex-header {
-        background: linear-gradient(90deg, rgba(0, 243, 255, 0.15), rgba(188, 19, 254, 0.15));
-        padding: 12px 16px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        border: 1px solid rgba(0, 243, 255, 0.2);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    
-    .cortex-icon {
-        font-size: 28px;
-        background: linear-gradient(135deg, #00f3ff, #bc13fe);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    .cortex-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #00f3ff;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-    }
-    
-    .cortex-status {
-        font-size: 10px;
-        color: #0f0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    
-    .cortex-status::before {
+    /* Ring pulse effect */
+    .cortex-float-orb::before {
         content: '';
-        width: 6px;
-        height: 6px;
-        background: #0f0;
+        position: absolute;
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
-        animation: blink 1s infinite;
+        border: 2px solid rgba(0, 243, 255, 0.5);
+        animation: ring-expand 2s ease-out infinite;
     }
     
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
-    }
-    
-    .msg-user {
-        background: linear-gradient(135deg, rgba(0, 243, 255, 0.15), rgba(0, 102, 255, 0.1));
-        border: 1px solid rgba(0, 243, 255, 0.25);
-        border-radius: 12px;
-        padding: 10px 14px;
-        margin: 8px 0;
-        margin-left: 15%;
-        text-align: right;
-    }
-    
-    .msg-ai {
-        background: linear-gradient(135deg, rgba(188, 19, 254, 0.15), rgba(255, 0, 128, 0.1));
-        border: 1px solid rgba(188, 19, 254, 0.25);
-        border-radius: 12px;
-        padding: 10px 14px;
-        margin: 8px 0;
-        margin-right: 15%;
-    }
-    
-    .msg-label {
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        margin-bottom: 4px;
-        text-transform: uppercase;
-    }
-    
-    .msg-user .msg-label { color: #00f3ff; }
-    .msg-ai .msg-label { color: #bc13fe; }
-    
-    .msg-text {
-        font-size: 13px;
-        color: #e8e8e8;
-        line-height: 1.5;
-    }
-    
-    /* Hide default popover arrow */
-    [data-testid="stPopoverBody"]::before {
-        display: none !important;
+    @keyframes ring-expand {
+        0% { transform: scale(0.8); opacity: 1; }
+        100% { transform: scale(1.5); opacity: 0; }
     }
     </style>
+    
+    <a href="/CORTEX_AI" class="cortex-float-orb" target="_self">
+        🤖
+        <span class="orb-tooltip">OPEN CORTEX AI</span>
+    </a>
     """, unsafe_allow_html=True)
 
-    # 🤖 FLOATING CORTEX ORB using st.popover
-    with st.popover("🤖"):
-        # Header
-        st.markdown("""
-        <div class="cortex-header">
-            <span class="cortex-icon">🧠</span>
-            <div>
-                <div class="cortex-title">CORTEX</div>
-                <div class="cortex-status">NEURAL LINK ACTIVE</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Chat Container with scroll
-        chat_container = st.container(height=350)
-        
-        with chat_container:
-            for msg in st.session_state.messages:
-                if msg["role"] == "user":
-                    st.markdown(f'''
-                    <div class="msg-user">
-                        <div class="msg-label">COMMANDER</div>
-                        <div class="msg-text">{msg["content"]}</div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'''
-                    <div class="msg-ai">
-                        <div class="msg-label">CORTEX</div>
-                        <div class="msg-text">{msg["content"]}</div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-        
-        # Input
-        st.markdown("---")
-        prompt = st.chat_input("Command CORTEX...", key="cortex_popover_input")
-        
-        if prompt:
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.spinner("⚡ Processing..."):
-                context = {"Page": st.session_state.get("current_page", "Unknown")}
-                response = ai_assistant.chat(prompt, system_context=context)
-                st.session_state.messages.append({"role": "assistant", "content": response})
-            st.rerun()
+
+def render_chat_interface():
+    """Legacy function - now just injects the floating orb link."""
+    inject_floating_cortex_link()
+
 
 def inject_chat_floating():
-    render_chat_interface()
+    """Legacy function - now just injects the floating orb link."""
+    inject_floating_cortex_link()

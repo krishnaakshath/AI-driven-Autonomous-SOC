@@ -528,3 +528,5 @@ with gauge_col2:
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5; padding: 1rem;"><p style="margin: 0;">AI-Driven Autonomous SOC | Zero Trust Security Platform</p></div>', unsafe_allow_html=True)
+from ui.chat_interface import inject_floating_cortex_link
+inject_floating_cortex_link()

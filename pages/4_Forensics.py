@@ -123,3 +123,5 @@ with tab3:
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Forensics</p></div>', unsafe_allow_html=True)
+from ui.chat_interface import inject_floating_cortex_link
+inject_floating_cortex_link()

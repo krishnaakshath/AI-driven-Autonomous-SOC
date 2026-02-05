@@ -4,7 +4,6 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from services.ai_assistant import ai_assistant
-from ui.theme import apply_theme
 
 # Page Config
 st.set_page_config(
@@ -13,8 +12,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-
-apply_theme()
 
 # Initialize chat history
 if "cortex_messages" not in st.session_state:
@@ -27,11 +24,6 @@ if "cortex_messages" not in st.session_state:
 # Premium Full-Page Styling
 st.markdown("""
 <style>
-/* Hide sidebar on this page for immersive experience */
-[data-testid="stSidebar"] {
-    display: none;
-}
-
 /* Full dark immersive background */
 .stApp {
     background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 50%, #0a1a2a 100%);
@@ -157,28 +149,6 @@ st.markdown("""
     line-height: 1.7;
 }
 
-/* Back Button */
-.back-btn {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    background: rgba(0,243,255,0.1);
-    border: 1px solid rgba(0,243,255,0.3);
-    color: #00f3ff;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 14px;
-    z-index: 1000;
-    transition: all 0.3s;
-}
-
-.back-btn:hover {
-    background: rgba(0,243,255,0.2);
-    box-shadow: 0 0 20px rgba(0,243,255,0.3);
-}
-
 /* Capabilities Grid */
 .capabilities {
     display: grid;
@@ -207,8 +177,6 @@ st.markdown("""
 .capability-icon { font-size: 24px; margin-bottom: 8px; }
 .capability-text { color: #888; font-size: 11px; letter-spacing: 1px; }
 </style>
-
-<a href="/" class="back-btn">← BACK TO SOC</a>
 
 <div class="cortex-hero">
     <div class="cortex-logo">🧠</div>

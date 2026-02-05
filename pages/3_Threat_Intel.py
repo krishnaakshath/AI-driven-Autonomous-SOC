@@ -382,3 +382,5 @@ except Exception as e:
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #666; font-family: Share Tech Mono, monospace; font-size: 0.8rem;">// AI-DRIVEN AUTONOMOUS SOC // THREAT INTELLIGENCE MODULE //</div>', unsafe_allow_html=True)
+from ui.chat_interface import inject_floating_cortex_link
+inject_floating_cortex_link()
