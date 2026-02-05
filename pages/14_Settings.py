@@ -17,6 +17,16 @@ inject_particles()
 
 st.markdown(page_header("Settings", "Configure integrations, notifications, and thresholds"), unsafe_allow_html=True)
 
+# Session timeout check (30 min inactivity)
+import time
+SESSION_TIMEOUT = 1800  # 30 minutes in seconds
+
+if 'last_activity' not in st.session_state:
+    st.session_state.last_activity = time.time()
+
+# Update last activity
+st.session_state.last_activity = time.time()
+
 CONFIG_FILE = ".soc_config.json"
 
 def load_config():
@@ -31,10 +41,60 @@ def save_config(config):
 
 config = load_config()
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🤖 CORTEX AI", "API Keys", "OAuth", "Notifications", "Thresholds", "About"])
+# Logout function
+def logout():
+    for key in ['authenticated', 'user_email', 'user_name', 'login_step', 'pending_email', 'otp_store', 'cortex_messages']:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.switch_page("pages/_Login.py")
+
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["👤 Account", "🤖 CORTEX AI", "API Keys", "OAuth", "Notifications", "Thresholds", "About"])
+
+# Account Tab with Logout
+with tab1:
+    st.markdown(section_title("Account & Session"), unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+            <div class="glass-card" style="margin-bottom: 1.5rem;">
+                <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">Current Session</h4>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        user_email = st.session_state.get('user_email', 'Guest')
+        user_name = st.session_state.get('user_name', 'Unknown')
+        
+        st.markdown(f"**User:** {user_name}")
+        st.markdown(f"**Email:** {user_email}")
+        
+        # Session time
+        session_start = st.session_state.get('session_start', time.time())
+        session_duration = int((time.time() - session_start) / 60)
+        st.markdown(f"**Session Duration:** {session_duration} minutes")
+        st.markdown(f"**Session Timeout:** 30 minutes of inactivity")
+    
+    with col2:
+        st.markdown("""
+            <div class="glass-card" style="margin-bottom: 1.5rem;">
+                <h4 style="color: #FF4444; margin: 0 0 0.5rem 0;">Session Actions</h4>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        if st.button("🚪 Logout", type="primary", use_container_width=True):
+            logout()
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        if st.button("🔄 Refresh Session", use_container_width=True):
+            st.session_state.last_activity = time.time()
+            st.success("Session refreshed!")
 
 # CORTEX AI Personality Settings
-with tab1:
+with tab2:
     st.markdown(section_title("CORTEX AI Personality"), unsafe_allow_html=True)
     
     st.markdown("""
