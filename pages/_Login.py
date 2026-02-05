@@ -186,7 +186,7 @@ if st.session_state.login_step == 'credentials':
                         user = auth_service.get_user(email)
                         st.session_state.user_name = user.get('name', 'User')
                         st.success("Login successful!")
-                        st.switch_page("pages/1_Dashboard.py")
+                        st.switch_page("pages/01_Dashboard.py")
                 else:
                     st.error(message)
             else:
@@ -298,7 +298,7 @@ elif st.session_state.login_step == '2fa_verify':
                     st.session_state.login_step = 'credentials'
                     st.session_state.pending_email = None
                     st.success("Login successful!")
-                    st.switch_page("pages/1_Dashboard.py")
+                    st.switch_page("pages/01_Dashboard.py")
                 else:
                     st.error(message)
             else:
