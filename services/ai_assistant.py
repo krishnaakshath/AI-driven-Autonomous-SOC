@@ -25,9 +25,19 @@ class AIAssistant:
             self.client = None
 
     def _get_api_key(self):
-        """Retrieve API key from streamlit secrets or local config."""
-        if 'GROQ_API_KEY' in st.secrets:
-            return st.secrets['GROQ_API_KEY']
+        """Retrieve API key from environment variables, streamlit secrets, or local config."""
+        # 1. Check environment variables first (for Docker/Render deployments)
+        if 'GROQ_API_KEY' in os.environ:
+            return os.environ['GROQ_API_KEY']
+        
+        # 2. Check Streamlit secrets (for Streamlit Cloud)
+        try:
+            if 'GROQ_API_KEY' in st.secrets:
+                return st.secrets['GROQ_API_KEY']
+        except:
+            pass
+        
+        # 3. Check local config file
         try:
             config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.soc_config.json')
             if os.path.exists(config_path):
