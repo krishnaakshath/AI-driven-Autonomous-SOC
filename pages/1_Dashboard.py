@@ -406,6 +406,21 @@ for col, value, label, color in metrics_data:
         
         st.markdown(metric_card(display_value, label, card_color), unsafe_allow_html=True)
 
+# Educational Explanations Section
+try:
+    from ui.educational import render_explanation, render_quick_tip
+    
+    with st.expander("📚 **Learn: What do these metrics mean?** (Click to expand)"):
+        col1, col2 = st.columns(2)
+        with col1:
+            render_explanation("active_threats")
+            render_explanation("blocked_ips")
+        with col2:
+            render_explanation("security_score")
+            render_quick_tip("Critical threats (risk > 80) require immediate attention. Check the Alerts page for details.", "warning")
+except ImportError:
+    pass
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Charts
