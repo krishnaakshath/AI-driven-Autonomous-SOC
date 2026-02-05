@@ -1,6 +1,6 @@
 """
 AI-Driven Autonomous SOC
-Simple entry point that works reliably on Streamlit Cloud
+Entry point that redirects to Login or Dashboard based on auth status.
 """
 
 import streamlit as st
@@ -9,35 +9,16 @@ import streamlit as st
 st.set_page_config(
     page_title="AI-Driven Autonomous SOC",
     page_icon="🛡️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# Import advanced UI components
-try:
-    from ui.theme import CYBERPUNK_CSS, inject_particles
-    st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
-    inject_particles()
-except ImportError:
-    pass
+# Check authentication and redirect
+from services.auth_service import is_authenticated
 
-# Simple welcome page - this WILL work
-st.title("🛡️ AI-Driven Autonomous SOC")
-st.markdown("### Welcome to your Security Operations Center")
-
-st.info("👈 **Use the sidebar** to navigate to different modules:")
-
-st.markdown("""
-| Page | Description |
-|------|-------------|
-| **Dashboard** | Real-time threat monitoring |
-| **Alerts** | Security alerts and notifications |
-| **Threat Intel** | Global threat map |
-| **Forensics** | Incident investigation |
-| **Reports** | Generate security reports |
-| **Scanners** | URL and file scanning |
-| **Security Testing** | Penetration testing tools |
-| **Settings** | Configure APIs and alerts |
-| **ML Insights** | Isolation Forest & Fuzzy C-Means |
-""")
-
-st.success("✅ Application loaded successfully!")
+if is_authenticated():
+    # Already logged in - go to Dashboard
+    st.switch_page("pages/1_Dashboard.py")
+else:
+    # Not logged in - go to Login
+    st.switch_page("pages/_Login.py")

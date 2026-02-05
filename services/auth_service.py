@@ -31,7 +31,14 @@ class AuthService:
     def __init__(self):
         self._ensure_data_dir()
         self.users = self._load_users()
-        self.otp_store: Dict[str, Dict] = {}  # email -> {otp, expires, attempts}
+        # OTP store moved to session state for persistence across requests
+    
+    @property
+    def otp_store(self):
+        """Get OTP store from session state (persists across requests)."""
+        if 'otp_store' not in st.session_state:
+            st.session_state.otp_store = {}
+        return st.session_state.otp_store
     
     def _ensure_data_dir(self):
         """Ensure data directory exists."""
@@ -382,4 +389,4 @@ def logout():
 def require_auth():
     """Redirect to login if not authenticated."""
     if not is_authenticated():
-        st.switch_page("pages/0_Login.py")
+        st.switch_page("pages/_Login.py")
