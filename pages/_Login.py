@@ -21,7 +21,7 @@ from services.auth_service import auth_service, is_authenticated
 
 # Check if already logged in
 if is_authenticated():
-    st.switch_page("pages/1_Dashboard.py")
+    st.switch_page("pages/01_Dashboard.py")
 
 # Custom CSS for login page
 st.markdown("""

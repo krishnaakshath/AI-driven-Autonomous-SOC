@@ -18,6 +18,6 @@ st.set_page_config(
 from services.auth_service import is_authenticated
 
 if is_authenticated():
-    st.switch_page("pages/1_Dashboard.py")
+    st.switch_page("pages/01_Dashboard.py")
 else:
     st.switch_page("pages/_Login.py")
