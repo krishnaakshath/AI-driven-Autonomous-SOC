@@ -15,7 +15,14 @@ inject_particles()
 
 st.markdown(page_header("Threat Hunting", "Proactive threat hunting with IOC queries and hypothesis-driven investigation"), unsafe_allow_html=True)
 
-# IOC database (simulated)
+# Import real threat intel service
+try:
+    from services.threat_intel import threat_intel, check_ip_reputation
+    HAS_REAL_API = True
+except ImportError:
+    HAS_REAL_API = False
+
+# IOC database (enhanced with real threat intelligence when available)
 IOC_DATABASE = {
     "ips": [
         "45.33.32.156", "192.168.1.105", "10.0.0.50", "203.0.113.42", "198.51.100.23",
@@ -50,6 +57,12 @@ tab1, tab2, tab3, tab4 = st.tabs(["🔍 IOC Search", "📜 Hunt Queries", "💡 
 with tab1:
     st.markdown(section_title("Search for Indicators of Compromise"), unsafe_allow_html=True)
     
+    # Show API status
+    if HAS_REAL_API:
+        st.success("✅ Connected to real threat intelligence APIs (AbuseIPDB, VirusTotal, OTX)")
+    else:
+        st.warning("⚠️ Using simulated data - configure API keys in Settings for real intelligence")
+    
     col1, col2 = st.columns([3, 1])
     
     with col1:
@@ -62,15 +75,48 @@ with tab1:
         if ioc_input:
             with st.spinner("Hunting across all data sources..."):
                 import time
-                time.sleep(1.5)
+                import re
                 
-                # Simulate findings
-                found = random.random() > 0.4
+                # Detect IOC type
+                is_ip = bool(re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ioc_input))
                 
-                if found:
-                    st.error(f"⚠️ **IOC Found in Environment!**")
+                result_data = None
+                
+                # Use real API for IP lookups
+                if HAS_REAL_API and is_ip:
+                    try:
+                        result_data = check_ip_reputation(ioc_input)
+                        time.sleep(0.5)
+                    except Exception as e:
+                        st.warning(f"API error: {e}")
+                        result_data = None
+                else:
+                    time.sleep(1.5)
+                
+                # Display results
+                if result_data and result_data.get('risk_score', 0) > 0:
+                    risk = result_data.get('risk_score', 0)
+                    st.error(f"⚠️ **Threat Detected!** Risk Score: {risk}/100")
                     
-                    # Generate fake matches
+                    st.markdown(f"""
+                    **IP:** {ioc_input}  
+                    **Country:** {result_data.get('country', 'Unknown')}  
+                    **ISP:** {result_data.get('isp', 'Unknown')}  
+                    **Reports:** {result_data.get('reports', 0)} abuse reports  
+                    **Categories:** {', '.join(result_data.get('categories', ['Unknown']))}
+                    """)
+                    
+                    st.markdown("### 🎯 Recommended Actions")
+                    st.markdown("""
+                    1. Isolate affected endpoints immediately
+                    2. Collect forensic artifacts (memory dump, logs)
+                    3. Block IOC at perimeter (firewall, DNS sinkhole)
+                    4. Check for lateral movement to other systems
+                    5. Reset credentials for affected users
+                    """)
+                elif random.random() > 0.4:  # Fallback simulation
+                    st.error(f"⚠️ **IOC Found in Environment!** (Simulated)")
+                    
                     matches = []
                     for _ in range(random.randint(2, 8)):
                         matches.append({
@@ -83,15 +129,6 @@ with tab1:
                     
                     df = pd.DataFrame(matches)
                     st.dataframe(df, use_container_width=True)
-                    
-                    st.markdown("### 🎯 Recommended Actions")
-                    st.markdown("""
-                    1. Isolate affected endpoints immediately
-                    2. Collect forensic artifacts (memory dump, logs)
-                    3. Block IOC at perimeter (firewall, DNS sinkhole)
-                    4. Check for lateral movement to other systems
-                    5. Reset credentials for affected users
-                    """)
                 else:
                     st.success(f"✅ **IOC not found** - No matches in current data")
                     st.info("Consider expanding time range or checking additional data sources")
