@@ -28,8 +28,135 @@ except ImportError as e:
     ML_LOADED = False
     st.error(f"ML modules not loaded: {e}")
 
+# Import Neural Predictor
+try:
+    from ml_engine.neural_predictor import predict_threats, get_threat_summary
+    NEURAL_LOADED = True
+except ImportError:
+    NEURAL_LOADED = False
+
 if ML_LOADED:
-    tab1, tab2, tab3 = st.tabs(["Isolation Forest", "Fuzzy C-Means", "Combined Analysis"])
+    tab0, tab1, tab2, tab3 = st.tabs(["🧠 Neural Prediction", "🌲 Isolation Forest", "📊 Fuzzy C-Means", "🔄 Combined Analysis"])
+    
+    with tab0:
+        st.markdown(section_title("Neural Threat Prediction Engine"), unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div class="glass-card">
+            <h4 style="color: #00D4FF; margin: 0;">Predictive Threat Intelligence</h4>
+            <p style="color: #8B95A5; margin: 0.5rem 0;">
+                LSTM-style neural engine analyzes <strong>historical attack patterns</strong> to predict 
+                future threats <strong>before they happen</strong>. Monitors precursor events to calculate 
+                probability scores for each attack type.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        if NEURAL_LOADED:
+            # Get predictions
+            predictions = predict_threats()
+            summary = get_threat_summary()
+            
+            # Summary banner
+            if "ALERT" in summary:
+                banner_color = "#ff0040"
+            elif "WATCH" in summary:
+                banner_color = "#ff6600"
+            else:
+                banner_color = "#00ff88"
+            
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, {banner_color}22, {banner_color}11);
+                border: 1px solid {banner_color}66;
+                border-radius: 12px;
+                padding: 20px;
+                text-align: center;
+                margin-bottom: 20px;
+            ">
+                <div style="font-size: 1.3rem; font-weight: 700; color: {banner_color};">{summary}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Threat probability gauges
+            st.markdown("### Threat Probability Forecast")
+            
+            cols = st.columns(5)
+            for i, (threat_type, data) in enumerate(sorted(predictions.items(), key=lambda x: x[1]['probability'], reverse=True)):
+                with cols[i % 5]:
+                    prob = data['probability']
+                    color = data['color']
+                    risk = data['risk_level']
+                    
+                    st.markdown(f"""
+                    <div style="
+                        background: rgba(0,0,0,0.3);
+                        border: 1px solid {color}40;
+                        border-radius: 12px;
+                        padding: 15px;
+                        text-align: center;
+                        margin: 5px 0;
+                    ">
+                        <div style="font-size: 2rem; font-weight: 800; color: {color};">{prob}%</div>
+                        <div style="font-size: 0.75rem; color: #888; letter-spacing: 1px; text-transform: uppercase;">
+                            {threat_type.replace('_', ' ')}
+                        </div>
+                        <div style="
+                            margin-top: 8px;
+                            background: {color}33;
+                            padding: 3px 8px;
+                            border-radius: 4px;
+                            font-size: 0.65rem;
+                            color: {color};
+                            font-weight: 600;
+                        ">{risk}</div>
+                        <div style="font-size: 0.7rem; color: #666; margin-top: 5px;">ETA: {data['eta_text']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # Detailed predictions table
+            st.markdown("### Detailed Analysis")
+            
+            for threat_type, data in sorted(predictions.items(), key=lambda x: x[1]['probability'], reverse=True):
+                with st.expander(f"**{threat_type.replace('_', ' ').title()}** — {data['probability']}% ({data['risk_level']})"):
+                    col1, col2 = st.columns([2, 1])
+                    with col1:
+                        st.markdown(f"**Recommendation:** {data['recommendation']}")
+                        st.markdown(f"**Precursor Events Detected:** {data['precursor_count']}")
+                        st.markdown(f"**Time Window:** {data['time_window_hours']} hours")
+                    with col2:
+                        # Mini gauge
+                        st.markdown(f"""
+                        <div style="text-align: center;">
+                            <div style="
+                                width: 80px;
+                                height: 80px;
+                                border-radius: 50%;
+                                background: conic-gradient({data['color']} {data['probability']}%, #1a1a2e {data['probability']}%);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                margin: 0 auto;
+                            ">
+                                <div style="
+                                    width: 60px;
+                                    height: 60px;
+                                    border-radius: 50%;
+                                    background: #0a0a1a;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 1.2rem;
+                                    font-weight: 700;
+                                    color: {data['color']};
+                                ">{data['probability']}%</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+        else:
+            st.warning("Neural Predictor module not available. Please check installation.")
     
     with tab1:
         st.markdown(section_title("Isolation Forest - Anomaly Detection"), unsafe_allow_html=True)

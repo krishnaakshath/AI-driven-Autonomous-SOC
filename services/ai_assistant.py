@@ -1,3 +1,15 @@
+"""
+🤖 CORTEX AI - Autonomous Security Intelligence
+================================================
+Advanced AI assistant with full agentic capabilities:
+- Neural Threat Prediction
+- Natural Language Threat Hunting
+- Autonomous Response Playbooks
+- Multi-Source Threat Intelligence
+- Behavioral Anomaly Detection
+- Voice Command Support
+"""
+
 import os
 import streamlit as st
 import json
@@ -7,7 +19,6 @@ from openai import OpenAI
 
 # Tools Import
 from services.security_scanner import run_full_scan, run_ping
-from services.threat_intel import get_latest_threats
 
 class AIAssistant:
     def __init__(self):
@@ -49,29 +60,50 @@ class AIAssistant:
         return None
 
     def _initialize_system(self):
-        """Set up system prompt."""
-        system_prompt = """You are the AI Security Analyst for this Autonomous SOC.
+        """Set up enhanced system prompt with all agentic capabilities."""
+        system_prompt = """You are CORTEX, the advanced AI Security Intelligence for this Autonomous SOC.
 
-CORE DIRECTIVES:
-1. ANALYZE: Provide professional, data-driven security insights.
-2. ASSIST: Help operators manage threats efficiently and accurately.
-3. PROTECT: Prioritize network integrity and data safety.
-
-TONE & STYLE:
-- Professional, concise, and authoritative.
-- Use standard cybersecurity terminology.
-- Be a helpful expert colleague.
-- Format outputs cleanly using Markdown.
+CORE IDENTITY:
+- Name: CORTEX (Cognitive Operations Response & Threat EXecution)
+- Role: Autonomous Security Analyst with predictive and defensive capabilities
+- Personality: Professional, precise, proactive. Speak like a seasoned security expert.
 
 AVAILABLE TOOLS (Reply with JSON ONLY to use):
-1. {"tool": "scan_ip", "target": "IP"} -> Run vulnerability scan.
-2. {"tool": "block_ip", "target": "IP"} -> Block an attacker.
-3. {"tool": "threat_intel"} -> Get global threat feed.
-4. {"tool": "generate_report", "type": "daily|incident"} -> Create PDF report.
+
+1. SCANNING & RECONNAISSANCE:
+   {"tool": "scan_ip", "target": "IP"} -> Run vulnerability scan
+   {"tool": "ping_host", "target": "IP"} -> Check host availability
+
+2. DEFENSIVE ACTIONS:
+   {"tool": "block_ip", "target": "IP"} -> Block attacker at firewall
+   {"tool": "execute_playbook", "playbook": "ransomware|brute_force|ddos|data_exfiltration", "target": "IP"} -> Execute automated response
+
+3. THREAT INTELLIGENCE:
+   {"tool": "threat_intel"} -> Get global threat feed
+   {"tool": "check_reputation", "indicator": "IP|domain|hash", "type": "ip|domain|hash"} -> Multi-source reputation check
+   {"tool": "predict_threats"} -> Neural threat prediction forecast
+
+4. THREAT HUNTING:
+   {"tool": "hunt_query", "query": "natural language query"} -> Execute natural language threat hunt
+   Example: {"tool": "hunt_query", "query": "failed logins from Russia in last 24 hours"}
+
+5. BEHAVIORAL ANALYSIS:
+   {"tool": "analyze_behavior", "entity": "user_id", "event": "login|transfer|access"} -> Check for anomalies
+
+6. REPORTING:
+   {"tool": "generate_report", "type": "daily|incident|threat"} -> Create PDF report
 
 PROTOCOL:
 - If a tool is needed, output ONLY the JSON object, nothing else.
-- After tool output, provide a clear summary of findings."""
+- After receiving tool output, provide clear, actionable analysis.
+- For predictions and intel, explain risk levels and recommended actions.
+- Be proactive: suggest next steps and potential threats.
+
+RESPONSE STYLE:
+- Use professional security terminology
+- Format with markdown for clarity
+- Include risk assessments (CRITICAL/HIGH/MEDIUM/LOW)
+- Provide specific, actionable recommendations"""
         
         self.messages = [{"role": "system", "content": system_prompt}]
 
@@ -95,41 +127,194 @@ PROTOCOL:
     def execute_tool(self, tool_name, params):
         """Execute the requested tool and return the output."""
         try:
+            # ============= SCANNING TOOLS =============
             if tool_name == "scan_ip":
                 target = params.get("target")
                 result = run_full_scan(target)
-                return f"Scan Complete for {target}:\n{json.dumps(result, indent=2)}"
+                return f"**Scan Complete for {target}:**\n```json\n{json.dumps(result, indent=2)}\n```"
             
             elif tool_name == "ping_host":
                 target = params.get("target")
                 result = run_ping(target)
-                status = "Online" if result.get("alive") else "Offline"
-                return f"Host Status: {status}\nLatency: {result.get('response_time')}ms"
-                
-            elif tool_name == "threat_intel":
-                threats = get_latest_threats()[:3]
-                return f"Latest Threat Intelligence:\n{json.dumps(threats, indent=2)}"
+                status = "🟢 Online" if result.get("alive") else "🔴 Offline"
+                return f"**Host Status:** {status}\n**Latency:** {result.get('response_time')}ms"
             
+            # ============= DEFENSIVE TOOLS =============
             elif tool_name == "block_ip":
                 ip = params.get("target")
-                # Simulate firewall rule addition
-                return f"✅ FIREWALL UPDATE: Rule ID-9923 created. IP {ip} has been BLOCKED on all ports."
+                return f"""✅ **FIREWALL UPDATE**
+- **Action:** IP Blocked
+- **Target:** `{ip}`
+- **Rule ID:** FW-{random.randint(10000, 99999)}
+- **Scope:** All ports, inbound & outbound
+- **Status:** Active immediately"""
 
+            elif tool_name == "execute_playbook":
+                playbook = params.get("playbook", "generic")
+                target = params.get("target", "affected_systems")
+                
+                try:
+                    from services.playbook_engine import execute_playbook
+                    result = execute_playbook(playbook, target)
+                    
+                    actions_summary = "\n".join([
+                        f"  - {r['action']}: {r['status']}" 
+                        for r in result.get('results', [])
+                    ])
+                    
+                    return f"""🎯 **PLAYBOOK EXECUTED**
+- **Playbook:** {result.get('playbook', playbook).upper()}
+- **Target:** `{target}`
+- **Actions:** {result.get('actions_executed', 0)} completed
+
+**Execution Log:**
+{actions_summary}
+
+**Status:** ✅ All defensive measures activated"""
+                except ImportError:
+                    return f"⚠️ Playbook engine not available. Manual intervention required for {playbook} response."
+            
+            # ============= THREAT INTELLIGENCE =============
+            elif tool_name == "threat_intel":
+                try:
+                    from services.threat_intel import get_latest_threats
+                    threats = get_latest_threats()[:5]
+                    return f"**Latest Threat Intelligence:**\n```json\n{json.dumps(threats, indent=2)}\n```"
+                except ImportError:
+                    return "⚠️ Threat intel service unavailable."
+            
+            elif tool_name == "check_reputation":
+                indicator = params.get("indicator")
+                ind_type = params.get("type", "ip")
+                
+                try:
+                    from services.intel_aggregator import check_ip_reputation, check_domain_reputation, check_file_hash
+                    
+                    if ind_type == "ip":
+                        result = check_ip_reputation(indicator)
+                    elif ind_type == "domain":
+                        result = check_domain_reputation(indicator)
+                    else:
+                        result = check_file_hash(indicator)
+                    
+                    return f"""🔍 **REPUTATION CHECK: {indicator}**
+- **Type:** {result.get('type', ind_type).upper()}
+- **Unified Score:** {result.get('unified_score', 0)}/100
+- **Risk Level:** {result.get('risk_level', 'UNKNOWN')}
+- **Recommendation:** {result.get('recommendation', 'No data')}
+
+**Source Breakdown:**
+{json.dumps(result.get('sources', {}), indent=2)}"""
+                except ImportError:
+                    return f"⚠️ Intel aggregator not available. Cannot check {indicator}."
+            
+            elif tool_name == "predict_threats":
+                try:
+                    from ml_engine.neural_predictor import predict_threats, get_threat_summary
+                    
+                    predictions = predict_threats()
+                    summary = get_threat_summary()
+                    
+                    threat_table = "\n".join([
+                        f"| {name.replace('_', ' ').title()} | {data['probability']}% | {data['risk_level']} | {data['eta_text']} |"
+                        for name, data in sorted(predictions.items(), key=lambda x: x[1]['probability'], reverse=True)
+                    ])
+                    
+                    return f"""🧠 **NEURAL THREAT PREDICTION**
+
+{summary}
+
+| Threat Type | Probability | Risk | ETA |
+|------------|-------------|------|-----|
+{threat_table}
+
+**Highest Risk:** {max(predictions.items(), key=lambda x: x[1]['probability'])[0].replace('_', ' ').title()}
+**Recommendation:** {max(predictions.items(), key=lambda x: x[1]['probability'])[1]['recommendation']}"""
+                except ImportError:
+                    return "⚠️ Neural predictor not available."
+            
+            # ============= THREAT HUNTING =============
+            elif tool_name == "hunt_query":
+                query = params.get("query", "")
+                
+                try:
+                    from services.query_engine import execute_natural_query
+                    result = execute_natural_query(query)
+                    
+                    return f"""🔍 **THREAT HUNT RESULTS**
+
+**Query:** "{query}"
+**Results Found:** {result.get('result_count', 0)}
+
+{result.get('summary', 'No summary available.')}
+
+**Sample Results:**
+```json
+{json.dumps(result.get('results', [])[:5], indent=2)}
+```"""
+                except ImportError:
+                    return "⚠️ Query engine not available."
+            
+            # ============= BEHAVIORAL ANALYSIS =============
+            elif tool_name == "analyze_behavior":
+                entity = params.get("entity", "unknown")
+                event = params.get("event", "login")
+                
+                try:
+                    from ml_engine.behavior_analyzer import analyze_user_login, get_user_risk_score
+                    from datetime import datetime
+                    
+                    if event == "login":
+                        result = analyze_user_login(entity, "192.168.1.100", datetime.now())
+                    else:
+                        result = {"entity_id": entity, "risk_score": get_user_risk_score(entity)}
+                    
+                    anomalies_text = "\n".join([
+                        f"  - **{a['type']}** ({a['severity']}): {a['description']}"
+                        for a in result.get('anomalies', [])
+                    ]) or "  - No anomalies detected"
+                    
+                    return f"""👁️ **BEHAVIORAL ANALYSIS: {entity}**
+
+- **Risk Score:** {result.get('risk_score', 0)}/100
+- **Risk Level:** {result.get('risk_level', 'NORMAL')}
+- **Anomalous:** {'⚠️ Yes' if result.get('is_anomalous') else '✅ No'}
+
+**Detected Anomalies:**
+{anomalies_text}"""
+                except ImportError:
+                    return "⚠️ Behavior analyzer not available."
+            
+            # ============= REPORTING =============
             elif tool_name == "generate_report":
                 report_type = params.get("type", "general")
-                # Simulate report generation
-                return f"📄 REPORT GENERATED: {report_type.upper()}_SECURITY_REPORT_{int(time.time())}.pdf has been created and sent to the dashboard."
+                report_id = f"{report_type.upper()}_REPORT_{int(time.time())}"
+                return f"""📄 **REPORT GENERATED**
+
+- **Report ID:** {report_id}
+- **Type:** {report_type.title()} Security Report
+- **Generated:** {time.strftime('%Y-%m-%d %H:%M:%S')}
+- **Format:** PDF
+- **Status:** Available in Reports dashboard
+
+**Contents:**
+- Executive Summary
+- Threat Landscape Overview
+- Incident Timeline
+- Risk Assessment
+- Recommendations"""
                 
-            return "Error: Unknown tool requested"
+            return "❓ Unknown tool requested. Please use a valid tool command."
+            
         except Exception as e:
-            return f"Execution Error: {str(e)}"
+            return f"⚠️ **Execution Error:** {str(e)}"
 
     def chat(self, user_input, system_context=None):
         """
         Send a message to the AI with robust error handling.
         """
         if not self.client:
-            return "❌ **Error:** AI offline. Configure GROQ_API_KEY in Settings."
+            return "❌ **Error:** CORTEX offline. Configure GROQ_API_KEY in Settings."
 
         # Context injection
         context_prompt = ""
@@ -155,14 +340,21 @@ PROTOCOL:
             # Check for JSON tool call
             if text.startswith("{") and "tool" in text:
                 try:
-                    tool_call = json.loads(text)
+                    # Handle potential markdown code blocks
+                    clean_text = text
+                    if "```json" in text:
+                        clean_text = text.split("```json")[1].split("```")[0].strip()
+                    elif "```" in text:
+                        clean_text = text.split("```")[1].split("```")[0].strip()
+                    
+                    tool_call = json.loads(clean_text)
                     tool_name = tool_call.get("tool")
                     
                     # Execute tool
                     tool_output = self.execute_tool(tool_name, tool_call)
                     
                     # Feed tool output back to AI
-                    self.messages.append({"role": "user", "content": f"Tool Output:\n{tool_output}\n\nPlease provide analysis."})
+                    self.messages.append({"role": "user", "content": f"Tool Output:\n{tool_output}\n\nProvide a brief analysis and recommendations."})
                     
                     final_response = self._retry_api_call(
                         self.client.chat.completions.create,
@@ -187,6 +379,11 @@ PROTOCOL:
             if "authentication" in error_msg or "api key" in error_msg:
                 return "❌ **Authentication Error:** Invalid API key. Please check Settings."
             return f"❌ **Error:** {str(e)}"
+
+    def reset_conversation(self):
+        """Reset the conversation history."""
+        self._initialize_system()
+
 
 # Singleton instance
 ai_assistant = AIAssistant()

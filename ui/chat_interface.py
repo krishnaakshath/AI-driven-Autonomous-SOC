@@ -1,6 +1,13 @@
 import streamlit as st
 from services.ai_assistant import ai_assistant
 
+# Import voice interface
+try:
+    from ui.voice_interface import inject_voice_interface, get_voice_command, parse_voice_command
+    VOICE_AVAILABLE = True
+except ImportError:
+    VOICE_AVAILABLE = False
+
 def inject_floating_cortex_link():
     """
     Injects a floating CORTEX orb with embedded chat interface.
