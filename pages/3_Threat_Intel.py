@@ -12,10 +12,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 st.set_page_config(page_title="Threat Intelligence | SOC", page_icon="🌐", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
-from ui.chat_interface import render_chat_interface
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
-render_chat_interface()
 
 from services.threat_intel import get_latest_threats
 

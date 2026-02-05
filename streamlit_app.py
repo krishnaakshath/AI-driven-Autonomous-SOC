@@ -15,10 +15,8 @@ st.set_page_config(
 # Import advanced UI components
 try:
     from ui.theme import CYBERPUNK_CSS, inject_particles
-    from ui.chat_interface import render_chat_interface
     st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
     inject_particles()
-    render_chat_interface()
 except ImportError:
     pass
 
