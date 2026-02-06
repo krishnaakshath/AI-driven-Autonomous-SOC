@@ -33,6 +33,22 @@ CYBERPUNK_CSS = """
         --text-primary: #e0e0e0;
         --text-secondary: #888;
     }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════
+       HIDE LOGIN/REGISTER FROM SIDEBAR GLOBALLY
+    ═══════════════════════════════════════════════════════════════════════════ */
+    /* Hide Login and Register pages from sidebar navigation */
+    [data-testid="stSidebarNav"] li a[href*="_Login"],
+    [data-testid="stSidebarNav"] li a[href*="_Register"],
+    [data-testid="stSidebarNav"] a[href*="_Login"],
+    [data-testid="stSidebarNav"] a[href*="_Register"],
+    nav[data-testid="stSidebarNav"] ul li:has(a[href*="Login"]),
+    nav[data-testid="stSidebarNav"] ul li:has(a[href*="Register"]) {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
 
     /* ═══════════════════════════════════════════════════════════════════════════
        TYPOGRAPHY - CYBERPUNK FONTS
