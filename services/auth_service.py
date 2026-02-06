@@ -351,6 +351,12 @@ class AuthService:
 # Singleton instance
 auth_service = AuthService()
 
+# Admin email list - add your admin emails here
+ADMIN_EMAILS = ['akshuolv@gmail.com', 'admin@soc.local']
+
+# API Token settings
+API_TOKEN_EXPIRY_SECONDS = 60  # 1 minute to reduce server load
+
 
 # Streamlit session helpers
 def is_authenticated() -> bool:
@@ -379,6 +385,30 @@ def get_user_preferences() -> Dict:
     }
 
 
+def is_admin() -> bool:
+    """Check if current user is an admin."""
+    if not is_authenticated():
+        return False
+    email = st.session_state.get('user_email', '').lower()
+    return email in [e.lower() for e in ADMIN_EMAILS]
+
+
+def require_admin():
+    """Require admin role or show access denied."""
+    if not is_authenticated():
+        st.error("🔒 **Authentication Required**")
+        st.info("Please log in to access this page.")
+        if st.button("Go to Login"):
+            st.switch_page("pages/_Login.py")
+        st.stop()
+    
+    if not is_admin():
+        st.error("🚫 **Admin Access Only**")
+        st.warning("This page is restricted to administrators. Your access has been logged.")
+        st.info(f"Logged in as: {st.session_state.get('user_email', 'Unknown')}")
+        st.stop()
+
+
 def logout():
     """Logout current user."""
     st.session_state['authenticated'] = False
@@ -390,3 +420,9 @@ def require_auth():
     """Redirect to login if not authenticated."""
     if not is_authenticated():
         st.switch_page("pages/_Login.py")
+
+
+def get_api_token_expiry():
+    """Get API token expiry time in seconds."""
+    return API_TOKEN_EXPIRY_SECONDS
+

@@ -11,18 +11,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Security Testing | SOC", page_icon="T", layout="wide")
+st.set_page_config(page_title="Security Testing | SOC", page_icon="🧪", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
 
-
-# Authentication removed - public dashboard
-
 st.markdown(page_header("Security Testing", "Attack simulation and penetration testing tools"), unsafe_allow_html=True)
 
-tab1, tab2 = st.tabs(["Attack Simulation", "Pentest Tools"])
+# Admin-only access
+from services.auth_service import require_admin
+require_admin()
+
+tab1, tab2 = st.tabs(["⚔️ Attack Simulation", "🔧 Pentest Tools"])
 
 with tab1:
     st.markdown(section_title("Attack Simulation Lab"), unsafe_allow_html=True)

@@ -16,9 +16,13 @@ inject_particles()
 
 st.markdown(page_header("REST API", "External tool integration and programmatic access"), unsafe_allow_html=True)
 
-# Generate API key
-if 'api_key' not in st.session_state:
-    st.session_state.api_key = hashlib.sha256(os.urandom(32)).hexdigest()[:32]
+# Admin-only access
+from services.auth_service import require_admin, get_api_token_expiry
+require_admin()
+
+# Generate API key with 1 minute expiry
+API_TOKEN_EXPIRY = get_api_token_expiry()
+
 
 # API Endpoints documentation
 ENDPOINTS = [
@@ -86,6 +90,23 @@ tab1, tab2, tab3, tab4 = st.tabs(["🔑 API Keys", "📖 Endpoints", "🧪 API T
 with tab1:
     st.markdown(section_title("API Authentication"), unsafe_allow_html=True)
     
+    # Generate API key with 1 minute expiry
+    import time
+    current_time = time.time()
+    
+    if 'api_key' not in st.session_state or 'api_key_created' not in st.session_state:
+        st.session_state.api_key = hashlib.sha256(os.urandom(32)).hexdigest()[:32]
+        st.session_state.api_key_created = current_time
+    
+    # Check if key has expired (1 minute = 60 seconds)
+    key_age = current_time - st.session_state.api_key_created
+    time_remaining = max(0, API_TOKEN_EXPIRY - key_age)
+    
+    if time_remaining <= 0:
+        st.session_state.api_key = hashlib.sha256(os.urandom(32)).hexdigest()[:32]
+        st.session_state.api_key_created = current_time
+        time_remaining = API_TOKEN_EXPIRY
+    
     st.markdown("""
         <div class="glass-card" style="margin-bottom: 1.5rem;">
             <p style="color: #8B95A5; margin: 0;">
@@ -97,14 +118,24 @@ with tab1:
     
     st.markdown("### Your API Key")
     
-    col1, col2 = st.columns([3, 1])
+    # Show expiry timer
+    col1, col2, col3 = st.columns([3, 1, 1])
     with col1:
         st.code(st.session_state.api_key)
     with col2:
         if st.button("🔄 Regenerate", use_container_width=True):
             st.session_state.api_key = hashlib.sha256(os.urandom(32)).hexdigest()[:32]
+            st.session_state.api_key_created = current_time
             st.rerun()
+    with col3:
+        st.markdown(f"""
+        <div style="background: rgba(255,68,68,0.2); border: 1px solid #FF4444; border-radius: 8px; padding: 8px; text-align: center;">
+            <div style="color: #FF4444; font-weight: bold; font-size: 1.2rem;">{int(time_remaining)}s</div>
+            <div style="color: #888; font-size: 0.7rem;">EXPIRES</div>
+        </div>
+        """, unsafe_allow_html=True)
     
+    st.info(f"⏱️ **Token expires in {int(time_remaining)} seconds** - Auto-regenerates every {API_TOKEN_EXPIRY}s to reduce server load")
     st.warning("⚠️ Keep your API key secure. Never expose it in client-side code.")
     
     st.markdown("<br>", unsafe_allow_html=True)
