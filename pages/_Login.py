@@ -208,8 +208,11 @@ if st.session_state.login_step == 'credentials':
             else:
                 success, message = auth_service.register(reg_email, reg_password, reg_name)
                 if success:
-                    st.success(message)
-                    st.balloons()
+                    st.success("✅ " + message + " Please login with your credentials.")
+                    st.info("🔄 Redirecting to login...")
+                    import time
+                    time.sleep(1)
+                    st.rerun()  # Redirect to login (will show login tab)
                 else:
                     st.error(message)
 
@@ -270,12 +273,8 @@ elif st.session_state.login_step == '2fa_verify':
     method_icon = {"email": "📧", "sms": "📱", "whatsapp": "💬"}.get(st.session_state.otp_method, "📧")
     st.markdown(f"A 6-digit code was sent via {method_icon} {st.session_state.otp_method}")
     
-    # DEMO MODE: Show OTP if available in session state
-    pending_email = st.session_state.pending_email
-    if pending_email and 'otp_store' in st.session_state:
-        otp_data = st.session_state.otp_store.get(pending_email)
-        if otp_data:
-            st.info(f"🔧 **Demo Mode:** Your verification code is **{otp_data['otp']}**")
+    # OTP expiry warning
+    st.warning("⏱️ **Code expires in 5 minutes.** Check your email inbox and spam folder.")
     
     otp = st.text_input(
         "Verification Code",
