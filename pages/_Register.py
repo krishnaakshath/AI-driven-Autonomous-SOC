@@ -1,7 +1,7 @@
 """
 📝 Registration Page
 ====================
-Clean, dedicated registration page for new users.
+Cyberpunk themed registration page matching SOC platform design.
 """
 
 import streamlit as st
@@ -16,178 +16,123 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Import auth service
+# Import theme and auth
+from ui.theme import CYBERPUNK_CSS, inject_particles
 from services.auth_service import auth_service, is_authenticated
 
 # Check if already logged in
 if is_authenticated():
     st.switch_page("pages/01_Dashboard.py")
 
-# Custom CSS
+# Apply cyberpunk theme
+st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+inject_particles()
+
+# Hide sidebar completely
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap');
-    
-    /* Hide sidebar completely */
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="stSidebarNav"] { display: none !important; }
     .css-1d391kg { display: none !important; }
     
-    /* Dark background with animated gradient */
-    .stApp {
-        background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
-    }
-    
-    /* Register container */
-    .register-container {
-        max-width: 450px;
-        margin: 30px auto;
-        padding: 40px;
-        background: rgba(10, 10, 26, 0.95);
-        border: 1px solid rgba(0, 243, 255, 0.3);
-        border-radius: 20px;
-        box-shadow: 0 0 60px rgba(0, 243, 255, 0.15);
-    }
-    
-    .register-header {
-        text-align: center;
-        margin-bottom: 30px;
-    }
-    
-    .register-logo {
-        font-size: 48px;
-        margin-bottom: 10px;
-    }
-    
-    .register-title {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 1.6rem;
-        color: #00f3ff;
-        letter-spacing: 2px;
-        margin: 0;
-    }
-    
-    .register-subtitle {
-        color: #666;
-        font-size: 0.85rem;
-        letter-spacing: 1px;
-    }
-    
     /* Form styling */
     .stTextInput > div > div {
-        background: rgba(0, 0, 0, 0.4) !important;
-        border: 1px solid rgba(0, 243, 255, 0.2) !important;
-        border-radius: 10px !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(0, 243, 255, 0.3) !important;
+        border-radius: 8px !important;
     }
     
     .stTextInput input {
         color: #fff !important;
-        font-size: 1rem !important;
-    }
-    
-    .stTextInput input::placeholder {
-        color: #666 !important;
     }
     
     .stButton > button {
         width: 100%;
-        background: linear-gradient(135deg, #00f3ff, #bc13fe) !important;
+        background: linear-gradient(135deg, var(--neon-cyan, #00f3ff), var(--neon-purple, #bc13fe)) !important;
         color: #000 !important;
+        font-family: 'Orbitron', sans-serif !important;
         font-weight: 700 !important;
         border: none !important;
         padding: 14px 24px !important;
-        border-radius: 10px !important;
-        font-size: 1.1rem !important;
-        letter-spacing: 1px !important;
+        border-radius: 8px !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
         transition: all 0.3s !important;
     }
     
     .stButton > button:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 8px 25px rgba(0, 243, 255, 0.4) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 20px rgba(0, 243, 255, 0.4) !important;
     }
     
-    /* Link styling */
-    .login-link {
-        text-align: center;
-        margin-top: 25px;
-        padding-top: 20px;
-        border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .login-link a {
-        color: #00f3ff;
-        text-decoration: none;
-    }
-    
-    /* Feature list */
-    .feature-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 0;
-        color: #8B95A5;
-        font-size: 0.9rem;
-    }
-    
-    .check-icon {
-        color: #00C853;
+    .stCheckbox label span {
+        color: #8B95A5 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # Header
 st.markdown("""
-<div class="register-header">
-    <div class="register-logo">🛡️</div>
-    <h1 class="register-title">CREATE ACCOUNT</h1>
-    <p class="register-subtitle">Join the Autonomous SOC Platform</p>
+<div style="text-align: center; padding: 30px 0 20px 0;">
+    <div style="font-size: 3.5rem; margin-bottom: 10px;">🛡️</div>
+    <h1 style="
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 2rem;
+        background: linear-gradient(135deg, #bc13fe, #00f3ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 3px;
+        margin: 0;
+    ">CREATE ACCOUNT</h1>
+    <p style="color: #666; font-family: 'Rajdhani', sans-serif; letter-spacing: 2px; margin-top: 8px;">
+        JOIN THE AUTONOMOUS SOC PLATFORM
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
-# What you get section
+# Features section
 st.markdown("""
-<div style="background: rgba(0,243,255,0.05); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-    <div style="color: #00f3ff; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px;">WHAT YOU GET:</div>
-    <div class="feature-item"><span class="check-icon">✓</span> Real-time threat monitoring</div>
-    <div class="feature-item"><span class="check-icon">✓</span> AI-powered security analysis</div>
-    <div class="feature-item"><span class="check-icon">✓</span> Personal scan & report history</div>
-    <div class="feature-item"><span class="check-icon">✓</span> Custom alert configurations</div>
+<div style="background: rgba(0,243,255,0.05); border: 1px solid rgba(0,243,255,0.2); border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+    <div style="color: #00f3ff; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 12px;">WHAT YOU GET:</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <span style="background: rgba(0,243,255,0.1); color: #00f3ff; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">✓ Real-time Threat Monitoring</span>
+        <span style="background: rgba(188,19,254,0.1); color: #bc13fe; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">✓ AI Security Analysis</span>
+        <span style="background: rgba(0,255,0,0.1); color: #0f0; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">✓ Personal Dashboard</span>
+        <span style="background: rgba(255,107,0,0.1); color: #ff6b00; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">✓ Custom Alerts</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
 # Registration form
-st.markdown("### Account Details")
+st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px; font-size: 1rem;'>ACCOUNT DETAILS</h3>", unsafe_allow_html=True)
 
 reg_name = st.text_input("Full Name", placeholder="John Doe", key="reg_name")
 reg_email = st.text_input("Email Address", placeholder="your@email.com", key="reg_email")
 reg_password = st.text_input("Password", type="password", placeholder="Minimum 8 characters", key="reg_password")
 reg_confirm = st.text_input("Confirm Password", type="password", placeholder="Re-enter password", key="reg_confirm")
 
-# Terms checkbox
 agree_terms = st.checkbox("I agree to the Terms of Service and Privacy Policy", key="agree_terms")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Register button
-if st.button("Create Account", type="primary", key="register_btn"):
+if st.button("INITIALIZE ACCOUNT", type="primary", key="register_btn"):
     if not all([reg_name, reg_email, reg_password, reg_confirm]):
-        st.error("⚠️ Please fill in all fields")
+        st.error("⚠️ All fields required")
     elif not agree_terms:
-        st.error("⚠️ Please agree to the Terms of Service")
+        st.error("⚠️ Accept Terms of Service")
     elif reg_password != reg_confirm:
         st.error("❌ Passwords do not match")
     elif len(reg_password) < 8:
-        st.error("❌ Password must be at least 8 characters")
+        st.error("❌ Password: minimum 8 characters")
     elif '@' not in reg_email or '.' not in reg_email:
-        st.error("❌ Please enter a valid email address")
+        st.error("❌ Invalid email format")
     else:
         success, message = auth_service.register(reg_email, reg_password, reg_name)
         if success:
-            st.success("✅ " + message)
+            st.success("✅ ACCOUNT CREATED")
             st.info("🔄 Redirecting to login...")
             
-            # Log the registration
             try:
                 from services.user_data import log_activity
                 log_activity(reg_email, "account_created", {"name": reg_name})
@@ -202,17 +147,17 @@ if st.button("Create Account", type="primary", key="register_btn"):
 
 # Login link
 st.markdown("""
-<div class="login-link">
-    <p style="color: #8B95A5; margin: 0;">Already have an account?</p>
+<div style="text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(0,243,255,0.2);">
+    <p style="color: #666; font-family: 'Rajdhani', sans-serif;">Already have an account?</p>
 </div>
 """, unsafe_allow_html=True)
 
-if st.button("← Back to Login", key="back_to_login"):
+if st.button("← BACK TO LOGIN", key="back_to_login"):
     st.switch_page("pages/_Login.py")
 
 # Footer
 st.markdown("""
-<div style="text-align: center; margin-top: 40px; color: #444; font-size: 0.75rem;">
-    <p>🔐 Your data is encrypted and secure</p>
+<div style="text-align: center; margin-top: 40px; color: #444; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">
+    <p>🔐 SECURED BY AI-DRIVEN AUTONOMOUS SOC</p>
 </div>
 """, unsafe_allow_html=True)

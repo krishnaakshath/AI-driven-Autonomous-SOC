@@ -1,7 +1,7 @@
 """
 🔐 Login Page
 =============
-Clean, modern login page with 2FA support.
+Cyberpunk themed login page matching SOC platform design.
 """
 
 import streamlit as st
@@ -16,122 +16,59 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Import auth service
+# Import theme and auth
+from ui.theme import CYBERPUNK_CSS, inject_particles
 from services.auth_service import auth_service, is_authenticated
 
 # Check if already logged in
 if is_authenticated():
     st.switch_page("pages/01_Dashboard.py")
 
-# Custom CSS for login page
+# Apply cyberpunk theme
+st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+inject_particles()
+
+# Hide sidebar completely
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap');
-    
-    /* Hide sidebar completely */
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="stSidebarNav"] { display: none !important; }
     .css-1d391kg { display: none !important; }
     
-    /* Dark background */
-    .stApp {
-        background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
-    }
-    
-    /* Login header */
-    .login-header {
-        text-align: center;
-        margin-bottom: 30px;
-        padding-top: 40px;
-    }
-    
-    .login-logo {
-        font-size: 64px;
-        margin-bottom: 10px;
-    }
-    
-    .login-title {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 2rem;
-        color: #00f3ff;
-        letter-spacing: 4px;
-        margin: 0;
-        text-shadow: 0 0 20px rgba(0,243,255,0.5);
-    }
-    
-    .login-subtitle {
-        color: #666;
-        font-size: 0.9rem;
-        letter-spacing: 2px;
-        margin-top: 5px;
-    }
-    
-    /* Form container */
-    .form-container {
-        max-width: 400px;
+    /* Center the login form */
+    .login-container {
+        max-width: 420px;
         margin: 0 auto;
-        background: rgba(10, 10, 26, 0.9);
-        border: 1px solid rgba(0, 243, 255, 0.3);
-        border-radius: 16px;
-        padding: 30px;
-        box-shadow: 0 0 40px rgba(0, 243, 255, 0.1);
     }
     
     /* Form styling */
     .stTextInput > div > div {
-        background: rgba(0, 0, 0, 0.3) !important;
-        border: 1px solid rgba(0, 243, 255, 0.2) !important;
-        border-radius: 10px !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(0, 243, 255, 0.3) !important;
+        border-radius: 8px !important;
     }
     
     .stTextInput input {
         color: #fff !important;
-        font-size: 1rem !important;
     }
     
     .stButton > button {
         width: 100%;
-        background: linear-gradient(135deg, #00f3ff, #bc13fe) !important;
+        background: linear-gradient(135deg, var(--neon-cyan, #00f3ff), var(--neon-purple, #bc13fe)) !important;
         color: #000 !important;
+        font-family: 'Orbitron', sans-serif !important;
         font-weight: 700 !important;
         border: none !important;
         padding: 14px 24px !important;
-        border-radius: 10px !important;
-        font-size: 1.1rem !important;
-        letter-spacing: 1px !important;
+        border-radius: 8px !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
         transition: all 0.3s !important;
     }
     
     .stButton > button:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 5px 20px rgba(0, 243, 255, 0.4) !important;
-    }
-    
-    /* Secondary button */
-    .secondary-btn button {
-        background: transparent !important;
-        border: 1px solid rgba(0, 243, 255, 0.5) !important;
-        color: #00f3ff !important;
-    }
-    
-    /* Divider */
-    .divider {
-        display: flex;
-        align-items: center;
-        text-align: center;
-        margin: 25px 0;
-    }
-    
-    .divider::before, .divider::after {
-        content: '';
-        flex: 1;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .divider span {
-        padding: 0 15px;
-        color: #666;
-        font-size: 0.85rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -144,23 +81,34 @@ if 'pending_email' not in st.session_state:
 
 # Header
 st.markdown("""
-<div class="login-header">
-    <div class="login-logo">🛡️</div>
-    <h1 class="login-title">SOC PLATFORM</h1>
-    <p class="login-subtitle">AUTONOMOUS SECURITY OPERATIONS</p>
+<div style="text-align: center; padding: 40px 0 30px 0;">
+    <div style="font-size: 4rem; margin-bottom: 10px;">🛡️</div>
+    <h1 style="
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, #00f3ff, #bc13fe);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 4px;
+        margin: 0;
+        text-shadow: 0 0 30px rgba(0,243,255,0.5);
+    ">SOC PLATFORM</h1>
+    <p style="color: #666; font-family: 'Rajdhani', sans-serif; letter-spacing: 3px; margin-top: 8px;">
+        AUTONOMOUS SECURITY OPERATIONS
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
 # Main login flow
 if st.session_state.login_step == 'credentials':
-    st.markdown("### Welcome Back")
+    st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px;'>SYSTEM ACCESS</h3>", unsafe_allow_html=True)
     
     email = st.text_input("Email Address", placeholder="your@email.com", key="login_email")
     password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    if st.button("Login", type="primary", key="login_btn"):
+    if st.button("AUTHENTICATE", type="primary", key="login_btn"):
         if email and password:
             success, message, requires_2fa = auth_service.login(email, password)
             
@@ -176,44 +124,43 @@ if st.session_state.login_step == 'credentials':
                     st.session_state.user_name = user.get('name', 'User')
                     st.session_state.session_start = __import__('time').time()
                     
-                    # Log login activity
                     try:
                         from services.user_data import log_activity
                         log_activity(email, "login", {"method": "password"})
                     except:
                         pass
                     
-                    st.success("✅ Login successful!")
+                    st.success("✅ ACCESS GRANTED")
                     st.switch_page("pages/01_Dashboard.py")
             else:
                 st.error("❌ " + message)
         else:
-            st.warning("⚠️ Please enter email and password")
+            st.warning("⚠️ Enter credentials")
     
     # Create account section
     st.markdown("""
-    <div class="divider"><span>New to SOC Platform?</span></div>
+    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(0,243,255,0.2);">
+        <p style="color: #666; font-family: 'Rajdhani', sans-serif;">New to the platform?</p>
+    </div>
     """, unsafe_allow_html=True)
     
-    if st.button("Create Account", key="create_account_btn"):
+    if st.button("CREATE ACCOUNT", key="create_account_btn"):
         st.switch_page("pages/_Register.py")
 
 elif st.session_state.login_step == '2fa_select':
-    st.markdown("### Two-Factor Authentication")
-    st.markdown("Select how you want to receive your verification code:")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px;'>2FA VERIFICATION</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #8B95A5;'>Select verification method:</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
-        <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; border: 1px solid rgba(0,243,255,0.2);">
-            <div style="font-size: 2rem;">📧</div>
-            <div style="color: #8B95A5; font-size: 0.9rem; margin-top: 5px;">Email</div>
+        <div style="text-align: center; padding: 20px; background: rgba(0,243,255,0.1); border-radius: 12px; border: 1px solid rgba(0,243,255,0.3);">
+            <div style="font-size: 2.5rem;">📧</div>
+            <div style="color: #00f3ff; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">EMAIL</div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Send to Email", key="2fa_email", use_container_width=True):
+        if st.button("SEND EMAIL", key="2fa_email", use_container_width=True):
             auth_service.update_2fa_method(st.session_state.pending_email, "email")
             success, message = auth_service.generate_otp(st.session_state.pending_email)
             if success:
@@ -225,23 +172,22 @@ elif st.session_state.login_step == '2fa_select':
     
     with col2:
         st.markdown("""
-        <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; border: 1px solid rgba(0,243,255,0.2);">
-            <div style="font-size: 2rem;">📱</div>
-            <div style="color: #8B95A5; font-size: 0.9rem; margin-top: 5px;">SMS</div>
+        <div style="text-align: center; padding: 20px; background: rgba(188,19,254,0.1); border-radius: 12px; border: 1px solid rgba(188,19,254,0.3);">
+            <div style="font-size: 2.5rem;">📱</div>
+            <div style="color: #bc13fe; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">SMS</div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Phone number input for SMS
         if 'show_sms_input' not in st.session_state:
             st.session_state.show_sms_input = False
         
-        if st.button("Send via SMS", key="2fa_sms_btn", use_container_width=True):
+        if st.button("SEND SMS", key="2fa_sms_btn", use_container_width=True):
             st.session_state.show_sms_input = True
             st.rerun()
         
         if st.session_state.get('show_sms_input'):
-            phone = st.text_input("Phone Number", placeholder="+1234567890", key="sms_phone")
-            if phone and st.button("Send Code", key="send_sms_code"):
+            phone = st.text_input("Phone", placeholder="+1234567890", key="sms_phone")
+            if phone and st.button("SEND CODE", key="send_sms_code"):
                 auth_service.update_2fa_method(st.session_state.pending_email, "sms", phone)
                 success, message = auth_service.generate_otp(st.session_state.pending_email)
                 if success:
@@ -254,40 +200,35 @@ elif st.session_state.login_step == '2fa_select':
     
     with col3:
         st.markdown("""
-        <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 2rem;">💬</div>
-            <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">WhatsApp</div>
+        <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 2.5rem; opacity: 0.5;">💬</div>
+            <div style="color: #666; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">WHATSAPP</div>
         </div>
         """, unsafe_allow_html=True)
-        st.button("Coming Soon", disabled=True, key="2fa_wa", use_container_width=True)
+        st.button("COMING SOON", disabled=True, key="2fa_wa", use_container_width=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("← Back to Login", key="back_from_2fa"):
+    if st.button("← BACK", key="back_from_2fa"):
         st.session_state.login_step = 'credentials'
         st.session_state.pending_email = None
         st.rerun()
 
 elif st.session_state.login_step == '2fa_verify':
-    st.markdown("### Enter Verification Code")
+    st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px;'>ENTER CODE</h3>", unsafe_allow_html=True)
     
     st.markdown("""
-    <div style="background: rgba(0,243,255,0.1); border-left: 3px solid #00f3ff; padding: 12px 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
-        <p style="color: #00f3ff; margin: 0; font-size: 0.9rem;">📧 A 6-digit code was sent to your email</p>
-        <p style="color: #666; margin: 5px 0 0 0; font-size: 0.8rem;">Check your inbox and spam folder. Code expires in 5 minutes.</p>
+    <div style="background: rgba(0,243,255,0.1); border-left: 3px solid #00f3ff; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
+        <p style="color: #00f3ff; margin: 0; font-family: 'Rajdhani', sans-serif;">📧 6-digit code sent. Check your inbox.</p>
+        <p style="color: #666; margin: 5px 0 0 0; font-size: 0.85rem;">Code expires in 5 minutes.</p>
     </div>
     """, unsafe_allow_html=True)
     
-    otp = st.text_input(
-        "Verification Code",
-        placeholder="Enter 6-digit code",
-        max_chars=6,
-        key="otp_input"
-    )
+    otp = st.text_input("Verification Code", placeholder="000000", max_chars=6, key="otp_input")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("Verify & Login", type="primary", use_container_width=True):
+        if st.button("VERIFY", type="primary", use_container_width=True):
             if otp and len(otp) == 6:
                 success, message = auth_service.verify_otp(st.session_state.pending_email, otp)
                 if success:
@@ -298,37 +239,36 @@ elif st.session_state.login_step == '2fa_verify':
                     st.session_state.session_start = __import__('time').time()
                     st.session_state.login_step = 'credentials'
                     
-                    # Log login activity
                     try:
                         from services.user_data import log_activity
-                        log_activity(st.session_state.pending_email, "login", {"method": "2fa_email"})
+                        log_activity(st.session_state.pending_email, "login", {"method": "2fa"})
                     except:
                         pass
                     
                     st.session_state.pending_email = None
-                    st.success("✅ Login successful!")
+                    st.success("✅ ACCESS GRANTED")
                     st.switch_page("pages/01_Dashboard.py")
                 else:
                     st.error("❌ " + message)
             else:
-                st.warning("⚠️ Please enter a 6-digit code")
+                st.warning("⚠️ Enter 6-digit code")
     
     with col2:
-        if st.button("Resend Code", use_container_width=True):
+        if st.button("RESEND", use_container_width=True):
             success, message = auth_service.generate_otp(st.session_state.pending_email)
             if success:
-                st.success("✅ New code sent!")
+                st.success("✅ Code sent!")
             else:
                 st.error(message)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("← Back", key="back_from_verify"):
+    if st.button("← BACK", key="back_from_verify"):
         st.session_state.login_step = '2fa_select'
         st.rerun()
 
 # Footer
 st.markdown("""
-<div style="text-align: center; margin-top: 50px; color: #444; font-size: 0.8rem;">
-    <p>🔐 Secured by AI-Driven Autonomous SOC</p>
+<div style="text-align: center; margin-top: 50px; color: #444; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">
+    <p>🔐 AI-DRIVEN AUTONOMOUS SOC v2.0</p>
 </div>
 """, unsafe_allow_html=True)

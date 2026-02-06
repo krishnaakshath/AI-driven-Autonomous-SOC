@@ -412,7 +412,7 @@ class AuthService:
 auth_service = AuthService()
 
 # Admin email list - add your admin emails here
-ADMIN_EMAILS = ['akshuolv@gmail.com', 'admin@soc.local']
+ADMIN_EMAILS = ['akshuolv@gmail.com']
 
 # API Token settings
 API_TOKEN_EXPIRY_SECONDS = 60  # 1 minute to reduce server load
