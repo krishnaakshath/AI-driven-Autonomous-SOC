@@ -291,29 +291,52 @@ class AuthService:
             return False
     
     def _send_otp_sms(self, phone: str, otp: str) -> bool:
-        """Send OTP via SMS using Twilio (placeholder)."""
-        # Twilio integration placeholder
+        """Send OTP via SMS using Twilio."""
         try:
+            # Try to get Twilio credentials from multiple sources
+            twilio_sid = None
+            twilio_token = None
+            twilio_phone = None
+            
+            # 1. Check environment variables
             twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
             twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
             twilio_phone = os.environ.get('TWILIO_PHONE_NUMBER')
             
-            if not twilio_sid or not twilio_token or not phone:
-                print(f"[DEMO MODE] SMS OTP to {phone}: {otp}")
-                return True
+            # 2. Check .soc_config.json file
+            if not twilio_sid or not twilio_token:
+                try:
+                    config_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.soc_config.json')
+                    if os.path.exists(config_file):
+                        import json
+                        with open(config_file, 'r') as f:
+                            config = json.load(f)
+                        twilio_sid = config.get('twilio_account_sid') or twilio_sid
+                        twilio_token = config.get('twilio_auth_token') or twilio_token
+                        twilio_phone = config.get('twilio_phone_number') or twilio_phone
+                except Exception as e:
+                    print(f"Error loading Twilio config: {e}")
             
-            # Would use Twilio here
-            # from twilio.rest import Client
-            # client = Client(twilio_sid, twilio_token)
-            # message = client.messages.create(
-            #     body=f"Your SOC login code: {otp}",
-            #     from_=twilio_phone,
-            #     to=phone
-            # )
+            if not twilio_sid or not twilio_token or not twilio_phone:
+                print(f"[ERROR] Twilio credentials not configured. Cannot send SMS to {phone}.")
+                return False
             
-            print(f"[PLACEHOLDER] SMS OTP to {phone}: {otp}")
+            # Send SMS using Twilio
+            from twilio.rest import Client
+            client = Client(twilio_sid, twilio_token)
+            
+            message = client.messages.create(
+                body=f"🔐 Your SOC Login Code: {otp}\n\nThis code expires in 5 minutes.",
+                from_=twilio_phone,
+                to=phone
+            )
+            
+            print(f"SMS sent successfully. SID: {message.sid}")
             return True
             
+        except ImportError:
+            print("[ERROR] Twilio library not installed. Run: pip install twilio")
+            return False
         except Exception as e:
             print(f"SMS error: {e}")
             return False
