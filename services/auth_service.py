@@ -131,7 +131,14 @@ class AuthService:
         if not self._verify_password(password, user["password_hash"], user["password_salt"]):
             return False, "Invalid email or password", False
         
-        # Check if 2FA is enabled
+        # ADMIN BYPASS: Admins skip 2FA entirely
+        if email in [e.lower() for e in ADMIN_EMAILS]:
+            # Update last login for admin
+            self.users[email]["last_login"] = datetime.now().isoformat()
+            self._save_users()
+            return True, "Admin login successful!", False  # No 2FA required
+        
+        # Check if 2FA is enabled for regular users
         if user.get("two_factor_enabled", True):
             return True, "Password verified. 2FA required.", True
         
@@ -236,18 +243,26 @@ class AuthService:
                 except:
                     pass
             
-            # 3. Check .soc_config.json file
+            # 3. Check .soc_config.json file (multiple paths for different deployment scenarios)
             if not gmail_user or not gmail_password:
-                try:
-                    config_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.soc_config.json')
-                    if os.path.exists(config_file):
-                        import json
-                        with open(config_file, 'r') as f:
-                            config = json.load(f)
-                        gmail_user = config.get('gmail_email')
-                        gmail_password = config.get('gmail_password')
-                except Exception as e:
-                    print(f"Error loading config: {e}")
+                config_paths = [
+                    '.soc_config.json',  # Current directory
+                    os.path.join(os.path.dirname(os.path.dirname(__file__)), '.soc_config.json'),  # Parent of services/
+                    os.path.join(os.getcwd(), '.soc_config.json'),  # Working directory
+                ]
+                
+                for config_file in config_paths:
+                    try:
+                        if os.path.exists(config_file):
+                            import json
+                            with open(config_file, 'r') as f:
+                                config = json.load(f)
+                            gmail_user = config.get('gmail_email')
+                            gmail_password = config.get('gmail_password')
+                            if gmail_user and gmail_password:
+                                break
+                    except Exception as e:
+                        print(f"Error loading config from {config_file}: {e}")
             
             if not gmail_user or not gmail_password:
                 print(f"[ERROR] No Gmail credentials configured. Cannot send OTP to {email}.")
