@@ -3,6 +3,7 @@ import os
 import sys
 from datetime import datetime
 import re
+import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -14,9 +15,18 @@ inject_particles()
 
 st.markdown(page_header("Custom Detection Rules", "Create and manage YARA and Sigma detection rules"), unsafe_allow_html=True)
 
-# Sample rules
-if 'custom_rules' not in st.session_state:
-    st.session_state.custom_rules = [
+# Persistent storage file
+RULES_FILE = ".detection_rules.json"
+
+def load_rules():
+    """Load rules from persistent file."""
+    if os.path.exists(RULES_FILE):
+        try:
+            with open(RULES_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return [
         {
             "id": "RULE-001",
             "name": "Emotet Dropper Detection",
@@ -59,6 +69,20 @@ detection:
 level: medium"""
         }
     ]
+
+def save_rules(rules):
+    """Save rules to persistent file."""
+    try:
+        with open(RULES_FILE, 'w') as f:
+            json.dump(rules, f, indent=2)
+    except Exception as e:
+        st.error(f"Failed to save rules: {e}")
+
+# Initialize rules from file
+if 'custom_rules' not in st.session_state:
+    st.session_state.custom_rules = load_rules()
+
+st.success("✅ Persistent storage enabled - rules saved to file")
 
 # Tabs
 tab1, tab2, tab3 = st.tabs(["📜 Rule Library", "✏️ Create Rule", "📊 Rule Performance"])
@@ -112,6 +136,7 @@ with tab1:
             with col2:
                 if st.button("🗑️ Delete", key=f"delete_{rule['id']}"):
                     st.session_state.custom_rules.remove(rule)
+                    save_rules(st.session_state.custom_rules)
                     st.rerun()
 
 with tab2:
@@ -211,6 +236,7 @@ level: high"""
                     "rule": rule_content
                 }
                 st.session_state.custom_rules.append(new_rule)
+                save_rules(st.session_state.custom_rules)
                 st.success(f"✅ Rule '{rule_name}' saved!")
                 st.rerun()
             else:

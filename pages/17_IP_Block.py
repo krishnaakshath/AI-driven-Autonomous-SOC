@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime
 import random
 import io
+import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -16,13 +17,36 @@ inject_particles()
 
 st.markdown(page_header("Bulk IP Blocking", "Upload and manage IP blocklists for automated threat blocking"), unsafe_allow_html=True)
 
-# Initialize blocklist in session state
-if 'blocklist' not in st.session_state:
-    st.session_state.blocklist = [
+# Persistent storage file
+BLOCKLIST_FILE = ".ip_blocklist.json"
+
+def load_blocklist():
+    """Load blocklist from persistent file."""
+    if os.path.exists(BLOCKLIST_FILE):
+        try:
+            with open(BLOCKLIST_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return [
         {"ip": "185.220.101.1", "reason": "Known TOR Exit Node", "added": "2024-02-01", "status": "Active"},
         {"ip": "91.219.236.222", "reason": "C2 Server", "added": "2024-02-02", "status": "Active"},
         {"ip": "45.155.205.233", "reason": "Brute Force Source", "added": "2024-02-03", "status": "Active"},
     ]
+
+def save_blocklist(blocklist):
+    """Save blocklist to persistent file."""
+    try:
+        with open(BLOCKLIST_FILE, 'w') as f:
+            json.dump(blocklist, f, indent=2)
+    except Exception as e:
+        st.error(f"Failed to save blocklist: {e}")
+
+# Initialize blocklist from file
+if 'blocklist' not in st.session_state:
+    st.session_state.blocklist = load_blocklist()
+
+st.success("✅ Persistent storage enabled - blocklist saved to file")
 
 # Tabs
 tab1, tab2, tab3 = st.tabs(["📤 Upload Blocklist", "📋 Current Blocklist", "📊 Statistics"])
@@ -79,6 +103,7 @@ with tab1:
                         })
                         added_count += 1
                 
+                save_blocklist(st.session_state.blocklist)
                 st.success(f"✅ Added **{added_count}** IPs to blocklist")
                 st.rerun()
                 
@@ -104,6 +129,7 @@ with tab1:
                         "added": datetime.now().strftime("%Y-%m-%d"),
                         "status": "Active"
                     })
+                    save_blocklist(st.session_state.blocklist)
                     st.success(f"Added {single_ip} to blocklist")
                     st.rerun()
                 else:
