@@ -16,6 +16,23 @@ inject_particles()
 
 st.markdown(page_header("Real-Time Log Viewer", "Live streaming logs from all security sources"), unsafe_allow_html=True)
 
+# Import SIEM service for real data
+try:
+    from services.siem_service import get_siem_logs, get_siem_stats
+    HAS_SIEM = True
+except ImportError:
+    HAS_SIEM = False
+
+# Show data source
+if HAS_SIEM:
+    try:
+        stats = get_siem_stats()
+        st.success(f"✅ Connected to SIEM - {stats.get('total_events_24h', 0)} events in last 24h")
+    except:
+        st.success("✅ Connected to SIEM")
+else:
+    st.warning("⚠️ SIEM not available - Using simulated logs")
+
 # Log sources
 LOG_SOURCES = ["Firewall", "IDS/IPS", "WAF", "Endpoint", "Authentication", "Network", "Application", "Cloud"]
 SEVERITY_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]

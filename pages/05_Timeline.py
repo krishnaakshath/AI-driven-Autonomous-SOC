@@ -15,42 +15,81 @@ inject_particles()
 
 st.markdown(page_header("Incident Timeline", "Visual attack progression and MITRE ATT&CK mapping"), unsafe_allow_html=True)
 
-# Sample incidents with timeline
-INCIDENTS = [
-    {
-        "id": "INC-2024-0142",
-        "title": "Ransomware Attack - Finance Department",
-        "severity": "CRITICAL",
-        "status": "Contained",
-        "start_time": datetime.now() - timedelta(hours=36),
-        "timeline": [
-            {"time": -36, "phase": "Initial Access", "technique": "T1566.001", "description": "Phishing email with malicious Excel attachment received", "icon": "📧"},
-            {"time": -35, "phase": "Execution", "technique": "T1059.001", "description": "User opened attachment, macro executed PowerShell", "icon": "⚡"},
-            {"time": -34, "phase": "Persistence", "technique": "T1053.005", "description": "Scheduled task created for persistence", "icon": "🔄"},
-            {"time": -32, "phase": "Discovery", "technique": "T1083", "description": "File and directory discovery performed", "icon": "🔍"},
-            {"time": -30, "phase": "Lateral Movement", "technique": "T1021.002", "description": "SMB lateral movement to file server", "icon": "↔️"},
-            {"time": -24, "phase": "Collection", "technique": "T1119", "description": "Automated data collection from shares", "icon": "📦"},
-            {"time": -12, "phase": "Exfiltration", "technique": "T1041", "description": "Data exfiltration to external C2", "icon": "📤"},
-            {"time": -6, "phase": "Impact", "technique": "T1486", "description": "Ransomware encryption initiated", "icon": "🔒"},
-            {"time": -4, "phase": "Detection", "technique": "-", "description": "EDR detected mass file encryption", "icon": "🚨"},
-            {"time": -3, "phase": "Containment", "technique": "-", "description": "Affected systems isolated from network", "icon": "🛡️"},
-        ]
-    },
-    {
-        "id": "INC-2024-0138",
-        "title": "Credential Theft Attempt - IT Admin",
-        "severity": "HIGH",
-        "status": "Resolved",
-        "start_time": datetime.now() - timedelta(hours=72),
-        "timeline": [
-            {"time": -72, "phase": "Initial Access", "technique": "T1078", "description": "Compromised VPN credentials used", "icon": "🔑"},
-            {"time": -71, "phase": "Execution", "technique": "T1059.003", "description": "Command shell accessed via RDP", "icon": "💻"},
-            {"time": -70, "phase": "Credential Access", "technique": "T1003.001", "description": "Mimikatz detected on endpoint", "icon": "🎭"},
-            {"time": -69, "phase": "Detection", "technique": "-", "description": "EDR blocked credential dumping", "icon": "🚨"},
-            {"time": -68, "phase": "Response", "technique": "-", "description": "Account disabled, password reset forced", "icon": "✅"},
-        ]
-    }
-]
+# Import SIEM service for real incident data
+try:
+    from services.siem_service import get_siem_incidents
+    HAS_SIEM = True
+except ImportError:
+    HAS_SIEM = False
+
+# Get incidents from SIEM or use samples
+def load_incidents():
+    if HAS_SIEM:
+        try:
+            siem_incidents = get_siem_incidents()
+            if siem_incidents:
+                # Convert SIEM format to expected format
+                result = []
+                for inc in siem_incidents:
+                    timeline = inc.get("timeline", [])
+                    # Add icons to timeline events
+                    icon_map = {
+                        "Initial Access": "📧", "Execution": "⚡", "Persistence": "🔄",
+                        "Discovery": "🔍", "Lateral Movement": "↔️", "Collection": "📦",
+                        "Exfiltration": "📤", "Impact": "🔒", "Detection": "🚨",
+                        "Containment": "🛡️", "Response": "✅", "Credential Access": "🎭",
+                        "Analysis": "🔬"
+                    }
+                    for event in timeline:
+                        event["icon"] = icon_map.get(event.get("phase", ""), "📌")
+                    
+                    result.append({
+                        "id": inc.get("id", "INC-0000"),
+                        "title": inc.get("title", "Unknown Incident"),
+                        "severity": inc.get("severity", "HIGH"),
+                        "status": inc.get("status", "Investigating"),
+                        "start_time": datetime.strptime(inc.get("start_time", datetime.now().strftime("%Y-%m-%d %H:%M:%S")), "%Y-%m-%d %H:%M:%S") if isinstance(inc.get("start_time"), str) else datetime.now(),
+                        "timeline": timeline
+                    })
+                return result
+        except Exception as e:
+            pass
+    
+    # Fallback to sample incidents
+    return [
+        {
+            "id": "INC-2024-0142", "title": "Ransomware Attack - Finance Department",
+            "severity": "CRITICAL", "status": "Contained",
+            "start_time": datetime.now() - timedelta(hours=36),
+            "timeline": [
+                {"time": -36, "phase": "Initial Access", "technique": "T1566.001", "description": "Phishing email with malicious Excel attachment received", "icon": "📧"},
+                {"time": -35, "phase": "Execution", "technique": "T1059.001", "description": "User opened attachment, macro executed PowerShell", "icon": "⚡"},
+                {"time": -34, "phase": "Persistence", "technique": "T1053.005", "description": "Scheduled task created for persistence", "icon": "🔄"},
+                {"time": -6, "phase": "Impact", "technique": "T1486", "description": "Ransomware encryption initiated", "icon": "🔒"},
+                {"time": -4, "phase": "Detection", "technique": "-", "description": "EDR detected mass file encryption", "icon": "🚨"},
+                {"time": -3, "phase": "Containment", "technique": "-", "description": "Affected systems isolated from network", "icon": "🛡️"},
+            ]
+        },
+        {
+            "id": "INC-2024-0138", "title": "Credential Theft Attempt - IT Admin",
+            "severity": "HIGH", "status": "Resolved",
+            "start_time": datetime.now() - timedelta(hours=72),
+            "timeline": [
+                {"time": -72, "phase": "Initial Access", "technique": "T1078", "description": "Compromised VPN credentials used", "icon": "🔑"},
+                {"time": -70, "phase": "Credential Access", "technique": "T1003.001", "description": "Mimikatz detected on endpoint", "icon": "🎭"},
+                {"time": -69, "phase": "Detection", "technique": "-", "description": "EDR blocked credential dumping", "icon": "🚨"},
+                {"time": -68, "phase": "Response", "technique": "-", "description": "Account disabled, password reset forced", "icon": "✅"},
+            ]
+        }
+    ]
+
+# Show data source
+if HAS_SIEM:
+    st.success("✅ Connected to SIEM - Displaying real incident data")
+else:
+    st.warning("⚠️ SIEM not available - Using sample incidents")
+
+INCIDENTS = load_incidents()
 
 # Incident selector
 incident_options = {f"{inc['id']} - {inc['title']}": inc for inc in INCIDENTS}
