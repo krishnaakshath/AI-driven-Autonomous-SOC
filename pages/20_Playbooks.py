@@ -45,7 +45,7 @@ severity_colors = {
 }
 
 # Create tabs
-tab1, tab2, tab3 = st.tabs(["📋 Playbook Library", "▶️ Execute Playbook", "📜 Execution History"])
+tab1, tab2, tab3 = st.tabs(["Playbook Library", "Execute Playbook", "Execution History"])
 
 with tab1:
     st.markdown("### Available Playbooks")
