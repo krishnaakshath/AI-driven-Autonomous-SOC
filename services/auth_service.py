@@ -220,14 +220,38 @@ class AuthService:
     def _send_otp_email(self, email: str, otp: str, name: str) -> bool:
         """Send OTP via email using Gmail SMTP."""
         try:
-            # Get Gmail credentials
-            gmail_user = os.environ.get('GMAIL_USER') or st.secrets.get('GMAIL_USER')
-            gmail_password = os.environ.get('GMAIL_APP_PASSWORD') or st.secrets.get('GMAIL_APP_PASSWORD')
+            # Try to get Gmail credentials from multiple sources
+            gmail_user = None
+            gmail_password = None
+            
+            # 1. Check environment variables
+            gmail_user = os.environ.get('GMAIL_USER')
+            gmail_password = os.environ.get('GMAIL_APP_PASSWORD')
+            
+            # 2. Check Streamlit secrets
+            if not gmail_user or not gmail_password:
+                try:
+                    gmail_user = st.secrets.get('GMAIL_USER')
+                    gmail_password = st.secrets.get('GMAIL_APP_PASSWORD')
+                except:
+                    pass
+            
+            # 3. Check .soc_config.json file
+            if not gmail_user or not gmail_password:
+                try:
+                    config_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.soc_config.json')
+                    if os.path.exists(config_file):
+                        import json
+                        with open(config_file, 'r') as f:
+                            config = json.load(f)
+                        gmail_user = config.get('gmail_email')
+                        gmail_password = config.get('gmail_password')
+                except Exception as e:
+                    print(f"Error loading config: {e}")
             
             if not gmail_user or not gmail_password:
-                # Fallback: just store OTP, user will see it in demo mode
-                print(f"[DEMO MODE] OTP for {email}: {otp}")
-                return True
+                print(f"[ERROR] No Gmail credentials configured. Cannot send OTP to {email}.")
+                return False
             
             # Create email
             msg = MIMEMultipart('alternative')
@@ -264,9 +288,7 @@ class AuthService:
             
         except Exception as e:
             print(f"Email error: {e}")
-            # In demo mode, still return success
-            print(f"[DEMO MODE] OTP for {email}: {otp}")
-            return True
+            return False
     
     def _send_otp_sms(self, phone: str, otp: str) -> bool:
         """Send OTP via SMS using Twilio (placeholder)."""
