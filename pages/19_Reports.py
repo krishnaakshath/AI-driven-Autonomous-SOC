@@ -20,12 +20,25 @@ inject_particles()
 
 st.markdown(page_header("Security Reports", "Generate comprehensive IEEE-format security reports"), unsafe_allow_html=True)
 
-# Stats
+# Get real report stats
+import glob
+report_files = glob.glob("reports/*.pdf") + glob.glob("reports/*.txt")
+total_reports = len(report_files)
+# Count reports from last 7 days
+recent_reports = 0
+for rf in report_files:
+    try:
+        mtime = datetime.fromtimestamp(os.path.getmtime(rf))
+        if mtime > datetime.now() - timedelta(days=7):
+            recent_reports += 1
+    except:
+        pass
+
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.markdown('<div class="metric-card"><p class="metric-value" style="color: #00D4FF;">12</p><p class="metric-label">Reports Generated</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00D4FF;">{total_reports}</p><p class="metric-label">Reports Generated</p></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><p class="metric-value" style="color: #00C853;">3</p><p class="metric-label">This Week</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00C853;">{recent_reports}</p><p class="metric-label">This Week</p></div>', unsafe_allow_html=True)
 with c3:
     st.markdown('<div class="metric-card"><p class="metric-value" style="color: #8B5CF6;">PDF</p><p class="metric-label">Format</p></div>', unsafe_allow_html=True)
 with c4:
@@ -123,11 +136,18 @@ with tab1:
 with tab2:
     st.markdown(section_title("Previous Reports"), unsafe_allow_html=True)
     
-    reports = [
-        {"name": "Weekly_Summary_2024-01-07", "type": "Weekly", "date": "Jan 7, 2024", "size": "2.4 MB"},
-        {"name": "Incident_Report_INC-001", "type": "Incident", "date": "Jan 5, 2024", "size": "1.8 MB"},
-        {"name": "Threat_Intel_Q4", "type": "Threat Intel", "date": "Dec 31, 2023", "size": "3.2 MB"},
-    ]
+    # Show actual report files from disk
+    reports = []
+    for rf in sorted(report_files, key=lambda f: os.path.getmtime(f), reverse=True):
+        fname = os.path.basename(rf)
+        fsize = os.path.getsize(rf)
+        fdate = datetime.fromtimestamp(os.path.getmtime(rf)).strftime("%b %d, %Y")
+        size_str = f"{fsize / 1024:.1f} KB" if fsize < 1048576 else f"{fsize / 1048576:.1f} MB"
+        rtype = "Incident" if "incident" in fname.lower() else "Threat Intel" if "threat" in fname.lower() else "Weekly"
+        reports.append({"name": fname, "type": rtype, "date": fdate, "size": size_str})
+    
+    if not reports:
+        st.info("No reports generated yet. Use the Generate Report tab to create your first report.")
     
     for r in reports:
         st.markdown(f"""

@@ -198,12 +198,15 @@ with tab3:
     
     total = len(st.session_state.blocklist)
     active = len([b for b in st.session_state.blocklist if b['status'] == 'Active'])
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    blocked_today = len([b for b in st.session_state.blocklist if b.get('added', '') == today_str])
+    prevention_rate = f"{int(active / total * 100)}%" if total > 0 else "0%"
     
     metrics = [
         ("Total Blocked IPs", total, "#FF4444"),
         ("Active Blocks", active, "#00C853"),
-        ("Blocked Today", random.randint(50, 200), "#FF8C00"),
-        ("Attack Prevention", f"{random.randint(85, 99)}%", "#00D4FF")
+        ("Blocked Today", blocked_today, "#FF8C00"),
+        ("Attack Prevention", prevention_rate, "#00D4FF")
     ]
     
     for col, (label, value, color) in zip([col1, col2, col3, col4], metrics):

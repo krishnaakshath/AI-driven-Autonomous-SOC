@@ -81,7 +81,7 @@ def get_threat_data():
     
     results = {}
     for country, params in coords.items():
-        count = counts.get(country, random.randint(0, 5))
+        count = counts.get(country, 0)
         
         # Determine severity based on count
         if count > 10:
@@ -96,8 +96,8 @@ def get_threat_data():
         results[country] = {
             "lat": params["lat"],
             "lon": params["lon"], 
-            "threats": count * 10 if count > 0 else random.randint(10, 50),
-            "real_count": count if count > 0 else random.randint(1, 5),
+            "threats": count * 10 if count > 0 else 0,
+            "real_count": count,
             "severity": severity
         }
     
@@ -108,8 +108,7 @@ threats, target = get_threat_data()
 # Stats
 total = sum([c["real_count"] for c in threats.values()])
 if total == 0:
-    total = random.randint(50, 150)
-    top_country = ("China", {"threats": 50, "real_count": 15})
+    top_country = ("N/A", {"threats": 0, "real_count": 0})
 else:
     top_country = max(threats.items(), key=lambda x: x[1]["real_count"])
 
@@ -299,7 +298,7 @@ with col1:
         if total > 0:
             pct = (data["real_count"] / total) * 100
         else:
-            pct = random.randint(10, 80)
+            pct = 0
         st.markdown(f"""
             <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -317,15 +316,36 @@ with col1:
 
 with col2:
     st.markdown(section_title("Attack Vectors"), unsafe_allow_html=True)
+    # Get attack vector counts from SIEM events
+    siem_attack_counts = {}
+    try:
+        from services.siem_service import get_siem_events
+        siem_events = get_siem_events(200)
+        attack_keywords = {
+            "Port Scanning": ["scan", "port", "nmap", "probe"],
+            "Brute Force": ["brute", "login", "failed", "password", "ssh"],
+            "Malware C2": ["malware", "c2", "beacon", "trojan", "ransomware"],
+            "DDoS": ["ddos", "flood", "dos", "syn"],
+            "Phishing": ["phish", "spoof", "email", "credential"],
+            "Exploitation": ["exploit", "vuln", "cve", "injection", "rce"]
+        }
+        for evt in siem_events:
+            evt_text = str(evt).lower()
+            for attack, keywords in attack_keywords.items():
+                if any(kw in evt_text for kw in keywords):
+                    siem_attack_counts[attack] = siem_attack_counts.get(attack, 0) + 1
+    except Exception:
+        pass
+    
     attack_types = [
-        ("Port Scanning", "#00f3ff", random.randint(100, 400)),
-        ("Brute Force", "#ff6b00", random.randint(80, 350)),
-        ("Malware C2", "#ff003c", random.randint(50, 200)),
-        ("DDoS", "#bc13fe", random.randint(30, 180)),
-        ("Phishing", "#f0ff00", random.randint(60, 250)),
-        ("Exploitation", "#ff003c", random.randint(40, 150))
+        ("Port Scanning", "#00f3ff", siem_attack_counts.get("Port Scanning", 0)),
+        ("Brute Force", "#ff6b00", siem_attack_counts.get("Brute Force", 0)),
+        ("Malware C2", "#ff003c", siem_attack_counts.get("Malware C2", 0)),
+        ("DDoS", "#bc13fe", siem_attack_counts.get("DDoS", 0)),
+        ("Phishing", "#f0ff00", siem_attack_counts.get("Phishing", 0)),
+        ("Exploitation", "#ff003c", siem_attack_counts.get("Exploitation", 0))
     ]
-    max_count = max([a[2] for a in attack_types])
+    max_count = max([a[2] for a in attack_types]) if any(a[2] > 0 for a in attack_types) else 1
     
     for attack_type, color, count in attack_types:
         pct = (count / max_count) * 100
