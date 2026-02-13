@@ -14,13 +14,9 @@ from ui.theme import CYBERPUNK_CSS
 import random
 from datetime import datetime, timedelta
 
-st.set_page_config(
-    page_title="Kill Chain | SOC",
-    page_icon="⚔️",
-    layout="wide"
-)
 
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+
 
 # Header
 st.markdown("""
@@ -322,21 +318,69 @@ with tab2:
         """, unsafe_allow_html=True)
 
 with tab3:
-    st.markdown("### Kill Chain Statistics")
+    st.markdown("### Kill Chain Statistics (SIEM-Powered)")
+    
+    # Pull real data from SIEM events
+    try:
+        from services.siem_service import get_siem_events
+        siem_events = get_siem_events(200)
+        siem_loaded = True
+    except:
+        siem_events = []
+        siem_loaded = False
+    
+    # Pull OTX threat pulses for technique enrichment
+    try:
+        from services.threat_intel import get_latest_threats
+        otx_pulses = get_latest_threats()
+        otx_loaded = True
+    except:
+        otx_pulses = []
+        otx_loaded = False
+    
+    if siem_loaded:
+        st.success(f"✅ Connected to SIEM — Analyzing {len(siem_events)} events")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("#### Stage Activity (Last 24h)")
+        st.markdown("#### Stage Activity (from SIEM)")
         
-        # Simulated activity data
+        # Map SIEM event types to kill chain stages
+        stage_mapping = {
+            "Reconnaissance": ["Port Scan", "DNS Query Anomaly", "scan", "probe"],
+            "Initial Access": ["Phishing", "Login", "brute force", "authentication"],
+            "Execution": ["PowerShell", "Script", "execution", "command"],
+            "Persistence": ["Scheduled Task", "Registry", "startup", "service"],
+            "Privilege Escalation": ["Privilege", "elevation", "admin", "root"],
+            "Defense Evasion": ["Disable", "obfuscate", "bypass", "evasion"],
+            "Credential Access": ["Credential", "password", "hash", "mimikatz"],
+            "Discovery": ["Discovery", "enumeration", "network scan", "query"],
+            "Lateral Movement": ["Lateral", "remote", "RDP", "SMB"],
+            "Collection": ["Collection", "exfil", "download", "copy"],
+            "Command & Control": ["C2", "beacon", "callback", "tunnel"],
+            "Exfiltration": ["Exfiltration", "upload", "transfer", "data leak"],
+            "Impact": ["Ransomware", "encryption", "destruction", "wipe"],
+        }
+        
+        stage_counts = {name: 0 for name in stage_mapping}
+        for evt in siem_events:
+            event_type = (evt.get("event_type", "") + " " + evt.get("source", "")).lower()
+            for stage_name, keywords in stage_mapping.items():
+                if any(kw.lower() in event_type for kw in keywords):
+                    stage_counts[stage_name] += 1
+                    break
+        
+        max_count = max(stage_counts.values()) if stage_counts.values() else 1
+        
         for stage in KILL_CHAIN_STAGES[:7]:
-            activity = random.randint(0, 100)
+            count = stage_counts.get(stage['name'], 0)
+            activity = int((count / max(max_count, 1)) * 100) if max_count > 0 else 0
             st.markdown(f"""
             <div style="margin: 8px 0;">
                 <div style="display: flex; justify-content: space-between;">
                     <span>{stage['icon']} {stage['name']}</span>
-                    <span>{activity}%</span>
+                    <span>{count} events ({activity}%)</span>
                 </div>
                 <div style="
                     background: #1a1a2e;
@@ -354,41 +398,30 @@ with tab3:
             """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown("#### Top Techniques Detected")
+        st.markdown("#### Threat Intelligence (OTX)")
         
-        techniques = [
-            ("PowerShell Execution", 45),
-            ("Credential Dumping", 32),
-            ("Remote Service", 28),
-            ("Scheduled Task", 21),
-            ("DNS Tunneling", 15),
-            ("Data Encoding", 12),
-            ("Process Injection", 8),
-        ]
-        
-        for tech, count in techniques:
-            bar_width = (count / 50) * 100
-            st.markdown(f"""
-            <div style="margin: 10px 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                    <span style="font-size: 0.9rem;">{tech}</span>
-                    <span style="color: #00f3ff;">{count} events</span>
+        if otx_loaded and otx_pulses:
+            st.success(f"✅ {len(otx_pulses)} OTX threat pulses active")
+            
+            for pulse in otx_pulses[:7]:
+                name = pulse.get('name', 'Unknown')[:50]
+                modified = pulse.get('modified', 'N/A')[:10]
+                tags = pulse.get('tags', [])[:3]
+                tag_str = ", ".join(tags) if tags else "Untagged"
+                
+                st.markdown(f"""
+                <div style="margin: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                        <span style="font-size: 0.85rem; color: #FAFAFA;">{name}</span>
+                        <span style="color: #00f3ff; font-size: 0.8rem;">{modified}</span>
+                    </div>
+                    <div style="color: #8B95A5; font-size: 0.75rem;">Tags: {tag_str}</div>
                 </div>
-                <div style="
-                    background: #1a1a2e;
-                    border-radius: 4px;
-                    height: 6px;
-                    overflow: hidden;
-                ">
-                    <div style="
-                        width: {bar_width}%;
-                        height: 100%;
-                        background: linear-gradient(90deg, #00f3ff, #bc13fe);
-                    "></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+        else:
+            st.info("OTX threat intel not available")
 
 # Inject floating CORTEX orb
 from ui.chat_interface import inject_floating_cortex_link
 inject_floating_cortex_link()
+
