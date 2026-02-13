@@ -165,6 +165,7 @@ class ThreatIntelligence:
                         'description': pulse.get('description', '')[:200],
                         'author': pulse.get('author_name'),
                         'created': pulse.get('created'),
+                        'modified': pulse.get('modified', pulse.get('created', '')),
                         'tags': pulse.get('tags', [])[:5],
                         'indicators': len(pulse.get('indicators', []))
                     })
@@ -190,6 +191,7 @@ class ThreatIntelligence:
                     'description': p.get('description', '')[:200],
                     'author': p.get('author_name'),
                     'created': p.get('created'),
+                    'modified': p.get('modified', p.get('created', '')),
                     'tags': p.get('tags', [])[:5],
                     'indicators': len(p.get('indicators', []))
                 } for p in pulses]
