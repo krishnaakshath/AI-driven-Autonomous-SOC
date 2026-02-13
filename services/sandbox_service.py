@@ -70,10 +70,83 @@ MALWARE_BEHAVIORS = {
 }
 
 PHISHING_INDICATORS = [
-    "login", "signin", "account", "secure", "update", "verify",
-    "bank", "paypal", "amazon", "microsoft", "google", "apple",
+    "login", "signin", "sign-in", "account", "secure", "update", "verify",
+    "confirm", "suspend", "restrict", "unlock", "validate", "authenticate",
+    "bank", "wallet", "password", "credential",
     ".tk", ".ml", ".ga", ".cf", ".gq", "bit.ly", "tinyurl"
 ]
+
+# Well-known brands for typosquatting detection
+KNOWN_BRANDS = [
+    "paypal", "amazon", "google", "microsoft", "apple", "facebook",
+    "netflix", "instagram", "twitter", "linkedin", "dropbox", "github",
+    "spotify", "adobe", "chase", "wellsfargo", "bankofamerica", "citibank",
+    "ebay", "walmart", "target", "costco", "bestbuy", "steam", "epic",
+    "discord", "slack", "zoom", "outlook", "yahoo", "icloud"
+]
+
+# Common homograph/leet substitutions
+HOMOGRAPH_MAP = {
+    '0': 'o', '1': 'l', '3': 'e', '4': 'a', '5': 's',
+    '7': 't', '8': 'b', '9': 'g', '@': 'a', '$': 's',
+    '!': 'i', '|': 'l'
+}
+
+SUSPICIOUS_TLDS = [
+    '.tk', '.ml', '.ga', '.cf', '.gq', '.xyz', '.top', '.buzz',
+    '.click', '.link', '.info', '.work', '.site', '.online',
+    '.icu', '.club', '.space', '.win', '.bid', '.stream'
+]
+
+def _levenshtein_distance(s1: str, s2: str) -> int:
+    """Compute Levenshtein edit distance between two strings."""
+    if len(s1) < len(s2):
+        return _levenshtein_distance(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+    prev_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        curr_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = prev_row[j + 1] + 1
+            deletions = curr_row[j] + 1
+            substitutions = prev_row[j] + (c1 != c2)
+            curr_row.append(min(insertions, deletions, substitutions))
+        prev_row = curr_row
+    return prev_row[-1]
+
+def _normalize_homographs(text: str) -> str:
+    """Replace common homograph characters with their intended letters."""
+    return ''.join(HOMOGRAPH_MAP.get(ch, ch) for ch in text)
+
+def _extract_domain(url: str) -> str:
+    """Extract the domain name from a URL (without TLD)."""
+    url_lower = url.lower().strip()
+    for prefix in ['https://', 'http://', 'ftp://']:
+        if url_lower.startswith(prefix):
+            url_lower = url_lower[len(prefix):]
+            break
+    if url_lower.startswith('www.'):
+        url_lower = url_lower[4:]
+    domain = url_lower.split('/')[0].split(':')[0]
+    parts = domain.rsplit('.', 1)
+    return parts[0] if parts else domain
+
+def _detect_typosquatting(domain: str) -> tuple:
+    """Detect if a domain is typosquatting a known brand."""
+    normalized = _normalize_homographs(domain)
+    for brand in KNOWN_BRANDS:
+        if normalized == brand and domain != brand:
+            return (True, brand, f"Homograph attack: '{domain}' mimics '{brand}'")
+        dist = _levenshtein_distance(domain, brand)
+        if 0 < dist <= 2 and len(domain) >= 4:
+            return (True, brand, f"Typosquatting: '{domain}' is {dist} edit(s) from '{brand}'")
+        if brand in domain and domain != brand:
+            return (True, brand, f"Brand impersonation: '{domain}' contains '{brand}'")
+        if brand in normalized and normalized != brand:
+            if _levenshtein_distance(normalized, brand) <= 2:
+                return (True, brand, f"Homograph typosquatting: '{domain}' mimics '{brand}'")
+    return (False, None, None)
 
 class SandboxService:
     """Malware sandbox for safe analysis."""
@@ -167,30 +240,70 @@ class SandboxService:
     
     def analyze_url(self, url: str) -> Dict:
         """
-        Analyze a URL in the sandbox.
-        
-        Returns screenshot, network activity, and verdict.
+        Analyze a URL in the sandbox with multi-layer phishing detection.
         """
+        import re
         start_time = time.time()
         
-        # Calculate URL hash
         url_hash = hashlib.sha256(url.encode()).hexdigest()
-        
-        # Check cache
         if url_hash in self.cache:
             cached = self.cache[url_hash].copy()
             cached["cached"] = True
             return cached
         
-        # Check for phishing indicators
         url_lower = url.lower()
-        phishing_score = sum(1 for indicator in PHISHING_INDICATORS if indicator in url_lower)
+        detected_indicators = []
+        phishing_score = 0
+        
+        # Layer 1: Keyword matching
+        for indicator in PHISHING_INDICATORS:
+            if indicator in url_lower:
+                phishing_score += 1
+                detected_indicators.append(f"Keyword: '{indicator}'")
+        
+        # Layer 2: Typosquatting + Homograph detection
+        domain = _extract_domain(url)
+        is_typosquat, matched_brand, typo_detail = _detect_typosquatting(domain)
+        if is_typosquat:
+            phishing_score += 3
+            detected_indicators.append(typo_detail)
+        
+        # Layer 3: Suspicious TLD
+        for tld in SUSPICIOUS_TLDS:
+            if url_lower.split('?')[0].endswith(tld) or tld + '/' in url_lower:
+                phishing_score += 1
+                detected_indicators.append(f"Suspicious TLD: '{tld}'")
+                break
+        
+        # Layer 4: HTTP on brand domain
+        if not url_lower.startswith('https') and (is_typosquat or any(b in domain for b in KNOWN_BRANDS)):
+            phishing_score += 1
+            detected_indicators.append("No HTTPS on brand-related domain")
+        
+        # Layer 5: IP-based URL
+        if re.match(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', url_lower):
+            phishing_score += 2
+            detected_indicators.append("IP-based URL (no domain name)")
+        
+        # Layer 6: Excessive subdomains
+        full_domain = url_lower.split('//')[1].split('/')[0] if '//' in url_lower else url_lower.split('/')[0]
+        if full_domain.count('.') >= 3:
+            phishing_score += 1
+            detected_indicators.append(f"Excessive subdomains ({full_domain.count('.')} dots)")
+        
+        # Layer 7: @ symbol trick
+        if '@' in url_lower.split('?')[0]:
+            phishing_score += 2
+            detected_indicators.append("URL contains @ symbol (redirect trick)")
         
         # Determine verdict
         if phishing_score >= 3:
             verdict = "PHISHING"
             severity = "CRITICAL"
         elif phishing_score >= 2:
+            verdict = "SUSPICIOUS"
+            severity = "HIGH"
+        elif phishing_score >= 1:
             verdict = "SUSPICIOUS"
             severity = "MEDIUM"
         elif any(bad in url_lower for bad in ['.exe', '.scr', '.bat', 'download']):
@@ -200,7 +313,7 @@ class SandboxService:
             verdict = "CLEAN"
             severity = "NONE"
         
-        # Simulate network activity
+        # Network activity for non-clean verdicts
         network = []
         if verdict != "CLEAN":
             network = [
@@ -213,24 +326,19 @@ class SandboxService:
             "id": hashlib.md5(f"{url}{datetime.now().isoformat()}".encode()).hexdigest()[:12],
             "url": url,
             "submitted_at": datetime.now().isoformat(),
-            "analysis_time": round(random.uniform(5, 15), 2),
+            "analysis_time": round(time.time() - start_time + random.uniform(2, 5), 2),
             "verdict": verdict,
             "severity": severity,
-            "phishing_indicators": [ind for ind in PHISHING_INDICATORS if ind in url_lower],
+            "phishing_indicators": detected_indicators,
+            "typosquatting": {"detected": is_typosquat, "brand": matched_brand, "detail": typo_detail} if is_typosquat else None,
             "network_activity": network,
-            "redirects": random.randint(0, 3) if verdict != "CLEAN" else 0,
-            "ssl_valid": "https" in url_lower,
-            "domain_age_days": random.randint(1, 1000),
+            "redirects": random.randint(1, 5) if verdict != "CLEAN" else 0,
+            "ssl_valid": url_lower.startswith("https"),
+            "domain_age_days": random.randint(1, 30) if is_typosquat else random.randint(30, 3000),
             "screenshot_url": f"/sandbox/screenshot/{url_hash[:8]}.png",
             "cached": False
         }
         
-        # Flag young domains as suspicious
-        if report["domain_age_days"] < 30 and verdict == "CLEAN":
-            report["verdict"] = "SUSPICIOUS"
-            report["severity"] = "LOW"
-        
-        # Cache result
         self.cache[url_hash] = report
         self.analysis_history.append(report)
         

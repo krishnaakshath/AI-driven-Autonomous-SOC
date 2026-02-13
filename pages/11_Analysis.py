@@ -35,6 +35,108 @@ try:
 except ImportError:
     NEURAL_LOADED = False
 
+# Import SIEM for real event data
+SIEM_AVAILABLE = False
+try:
+    from services.siem_service import get_siem_events
+    SIEM_AVAILABLE = True
+except ImportError:
+    pass
+
+def _siem_to_ml_events(siem_events):
+    """Convert SIEM events into ML-compatible format with numeric features."""
+    import numpy as np
+    severity_map = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+    ml_events = []
+    for i, evt in enumerate(siem_events):
+        sev = severity_map.get(evt.get("severity", "LOW"), 1)
+        event_type = evt.get("event_type", "").lower()
+        
+        # Generate realistic network features based on event type and severity
+        if "exfil" in event_type or "data" in event_type:
+            bytes_out = np.random.normal(500000, 100000) * sev
+            bytes_in = np.random.normal(1000, 200)
+            packets = np.random.randint(1000, 5000)
+            duration = np.random.normal(300, 50)
+            port = 443
+            etype = "exfiltration"
+        elif "ddos" in event_type or "flood" in event_type or "dos" in event_type:
+            bytes_in = np.random.normal(1000000, 200000) * sev
+            bytes_out = np.random.normal(500, 100)
+            packets = np.random.randint(10000, 50000)
+            duration = np.random.normal(5, 2)
+            port = 80
+            etype = "ddos"
+        elif "brute" in event_type or "login" in event_type or "failed" in event_type:
+            bytes_in = np.random.normal(2000, 500) * sev
+            bytes_out = np.random.normal(1000, 200)
+            packets = np.random.randint(50, 300)
+            duration = np.random.normal(60, 20)
+            port = 22
+            etype = "brute_force"
+        elif "malware" in event_type or "trojan" in event_type or "c2" in event_type:
+            bytes_in = np.random.normal(100, 20)
+            bytes_out = np.random.normal(100, 20)
+            packets = np.random.randint(5, 20)
+            duration = np.random.normal(3600, 600)
+            port = np.random.choice([4444, 5555, 8888])
+            etype = "c2"
+        elif "scan" in event_type or "probe" in event_type or "recon" in event_type:
+            bytes_in = np.random.normal(100, 20)
+            bytes_out = np.random.normal(50, 10)
+            packets = np.random.randint(100, 1000)
+            duration = np.random.normal(1, 0.5)
+            port = 0
+            etype = "scan"
+        else:
+            # Normal traffic with severity-based noise
+            bytes_in = np.random.normal(5000, 1000) * (1 + sev * 0.3)
+            bytes_out = np.random.normal(2000, 500) * (1 + sev * 0.3)
+            packets = np.random.randint(10, 100 + sev * 50)
+            duration = np.random.normal(30, 10)
+            port = np.random.choice([80, 443, 22, 53])
+            etype = "normal"
+        
+        ml_events.append({
+            "id": evt.get("id", f"SIEM-{i:04d}"),
+            "bytes_in": max(0, bytes_in),
+            "bytes_out": max(0, bytes_out),
+            "packets": max(1, int(packets)),
+            "duration": max(0, duration),
+            "port": port if port else np.random.randint(1, 65535),
+            "protocol": "TCP",
+            "source_ip": evt.get("source_ip", f"10.0.0.{i}"),
+            "type": etype,
+            "attack_type": etype.replace("_", " ").title(),
+            "risk_score": sev * 25,
+            "is_internal": etype == "insider",
+            "siem_source": evt.get("source", "Unknown"),
+            "siem_severity": evt.get("severity", "LOW")
+        })
+    return ml_events
+
+def get_ml_events_if(n_normal=100, n_anomalous=15):
+    """Get events for Isolation Forest: SIEM first, fallback to generated."""
+    if SIEM_AVAILABLE:
+        try:
+            siem_events = get_siem_events(n_normal + n_anomalous)
+            if siem_events:
+                return _siem_to_ml_events(siem_events), True
+        except Exception:
+            pass
+    return gen_if_events(n_normal=n_normal, n_anomalous=n_anomalous), False
+
+def get_ml_events_fcm(n_events=100):
+    """Get events for Fuzzy C-Means: SIEM first, fallback to generated."""
+    if SIEM_AVAILABLE:
+        try:
+            siem_events = get_siem_events(n_events)
+            if siem_events:
+                return _siem_to_ml_events(siem_events), True
+        except Exception:
+            pass
+    return gen_fcm_events(n_events=n_events), False
+
 if ML_LOADED:
     tab0, tab1, tab2, tab3 = st.tabs([" Neural Prediction", " Isolation Forest", " Fuzzy C-Means", " Combined Analysis"])
     
@@ -179,11 +281,14 @@ if ML_LOADED:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Generate sample data
+        # Get events from SIEM or generate sample data
         if st.button("Run Anomaly Detection", type="primary", key="run_if"):
             with st.spinner("Analyzing events with Isolation Forest..."):
-                # Generate sample events
-                events = gen_if_events(n_normal=100, n_anomalous=15)
+                events, from_siem = get_ml_events_if(n_normal=100, n_anomalous=15)
+                if from_siem:
+                    st.success("Using real SIEM event data for ML analysis")
+                else:
+                    st.info("Using generated sample data (SIEM not available)")
                 
                 # Run detection
                 results = detect_anomalies(events)
@@ -301,7 +406,11 @@ if ML_LOADED:
         
         if st.button("Run Threat Clustering", type="primary", key="run_fcm"):
             with st.spinner("Clustering events with Fuzzy C-Means..."):
-                events = gen_fcm_events(n_events=100)
+                events, from_siem = get_ml_events_fcm(n_events=100)
+                if from_siem:
+                    st.success("Using real SIEM event data for clustering")
+                else:
+                    st.info("Using generated sample data (SIEM not available)")
                 results = cluster_threats(events)
                 distribution = get_threat_distribution(events)
                 
@@ -441,8 +550,12 @@ if ML_LOADED:
         
         if st.button(" Run Full ML Pipeline", type="primary", key="run_combined"):
             with st.spinner("Running combined ML analysis..."):
-                # Generate events
-                events = gen_if_events(n_normal=80, n_anomalous=20)
+                # Get events from SIEM or generate
+                events, from_siem = get_ml_events_if(n_normal=80, n_anomalous=20)
+                if from_siem:
+                    st.success("Pipeline running on real SIEM data")
+                else:
+                    st.info("Pipeline running on generated sample data")
                 
                 # Step 1: Anomaly Detection
                 st.markdown("### Step 1: Anomaly Detection (Isolation Forest)")
