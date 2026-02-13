@@ -344,7 +344,7 @@ if ALERTS_AVAILABLE:
         }
         result = trigger_alert(alert_data)
         if result.get("telegram") or result.get("email"):
-            st.toast(" Critical alert sent!", icon="")
+            st.toast(" Critical alert sent!", icon="🚨")
 
 
 # Premium Header

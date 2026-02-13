@@ -1,6 +1,7 @@
 """
-Isolation Forest Algorithm for Anomaly Detection in SOC
-========================================================
+# Isolation Forest Algorithm for Anomaly Detection in SOC
+# ========================================================
+# Version: 1.1 (Updated with train_on_dataset)
 This module implements the Isolation Forest algorithm to detect anomalous
 network events that may indicate cyber threats.
 

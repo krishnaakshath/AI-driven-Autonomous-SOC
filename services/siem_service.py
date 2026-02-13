@@ -1,7 +1,7 @@
 """
 SIEM Service - Centralized Security Information and Event Management
-Provides log aggregation, event correlation, and data sharing across pages.
-Now backed by SQLite for persistence.
+# Provides log aggregation, event correlation, and data sharing across pages.
+# Now backed by SQLite for persistence. Version 1.1.
 """
 
 import os
