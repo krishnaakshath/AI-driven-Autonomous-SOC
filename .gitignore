@@ -12,3 +12,4 @@ scaler.pkl
 *.pcapng.gz
 live_capture.csv
 soc_monitor.log
+**/__pycache__/
