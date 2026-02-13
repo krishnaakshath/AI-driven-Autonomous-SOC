@@ -1,5 +1,5 @@
 """
-📝 Registration Page
+ Registration Page
 ====================
 Cyberpunk themed registration page matching SOC platform design.
 """
@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 st.set_page_config(
     page_title="Register | SOC",
-    page_icon="📝",
+    page_icon="",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -74,7 +74,7 @@ st.markdown("""
 # Header
 st.markdown("""
 <div style="text-align: center; padding: 30px 0 20px 0;">
-    <div style="font-size: 3.5rem; margin-bottom: 10px;">🛡️</div>
+    <div style="font-size: 3.5rem; margin-bottom: 10px;"></div>
     <h1 style="
         font-family: 'Orbitron', sans-serif !important;
         font-size: 2rem;
@@ -95,10 +95,10 @@ st.markdown("""
 <div style="background: rgba(0,243,255,0.05); border: 1px solid rgba(0,243,255,0.2); border-radius: 12px; padding: 20px; margin-bottom: 25px;">
     <div style="color: #00f3ff; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 12px;">WHAT YOU GET:</div>
     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-        <span style="background: rgba(0,243,255,0.1); color: #00f3ff; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">✓ Real-time Threat Monitoring</span>
-        <span style="background: rgba(188,19,254,0.1); color: #bc13fe; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">✓ AI Security Analysis</span>
-        <span style="background: rgba(0,255,0,0.1); color: #0f0; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">✓ Personal Dashboard</span>
-        <span style="background: rgba(255,107,0,0.1); color: #ff6b00; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">✓ Custom Alerts</span>
+        <span style="background: rgba(0,243,255,0.1); color: #00f3ff; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;"> Real-time Threat Monitoring</span>
+        <span style="background: rgba(188,19,254,0.1); color: #bc13fe; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;"> AI Security Analysis</span>
+        <span style="background: rgba(0,255,0,0.1); color: #0f0; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;"> Personal Dashboard</span>
+        <span style="background: rgba(255,107,0,0.1); color: #ff6b00; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;"> Custom Alerts</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -118,20 +118,20 @@ st.markdown("<br>", unsafe_allow_html=True)
 # Register button
 if st.button("INITIALIZE ACCOUNT", type="primary", key="register_btn"):
     if not all([reg_name, reg_email, reg_password, reg_confirm]):
-        st.error("⚠️ All fields required")
+        st.error(" All fields required")
     elif not agree_terms:
-        st.error("⚠️ Accept Terms of Service")
+        st.error(" Accept Terms of Service")
     elif reg_password != reg_confirm:
-        st.error("❌ Passwords do not match")
+        st.error(" Passwords do not match")
     elif len(reg_password) < 8:
-        st.error("❌ Password: minimum 8 characters")
+        st.error(" Password: minimum 8 characters")
     elif '@' not in reg_email or '.' not in reg_email:
-        st.error("❌ Invalid email format")
+        st.error(" Invalid email format")
     else:
         success, message = auth_service.register(reg_email, reg_password, reg_name)
         if success:
-            st.success("✅ ACCOUNT CREATED")
-            st.info("🔄 Redirecting to login...")
+            st.success(" ACCOUNT CREATED")
+            st.info(" Redirecting to login...")
             
             try:
                 from services.user_data import log_activity
@@ -143,7 +143,7 @@ if st.button("INITIALIZE ACCOUNT", type="primary", key="register_btn"):
             time.sleep(1.5)
             st.switch_page("pages/_Login.py")
         else:
-            st.error("❌ " + message)
+            st.error(" " + message)
 
 # Login link
 st.markdown("""
@@ -158,6 +158,6 @@ if st.button("← BACK TO LOGIN", key="back_to_login"):
 # Footer
 st.markdown("""
 <div style="text-align: center; margin-top: 40px; color: #444; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">
-    <p>🔐 SECURED BY AI-DRIVEN AUTONOMOUS SOC</p>
+    <p> SECURED BY AI-DRIVEN AUTONOMOUS SOC</p>
 </div>
 """, unsafe_allow_html=True)

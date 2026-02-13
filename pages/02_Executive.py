@@ -8,7 +8,7 @@ import random
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Executive Dashboard | SOC", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Executive Dashboard | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -192,7 +192,7 @@ st.markdown(section_title("Export Executive Report"), unsafe_allow_html=True)
 exp1, exp2, exp3 = st.columns(3)
 
 with exp1:
-    if st.button("📄 Export PDF Report", use_container_width=True):
+    if st.button(" Export PDF Report", use_container_width=True):
         st.info("PDF export coming soon!")
 
 with exp2:
@@ -209,13 +209,13 @@ with exp2:
     })
     
     csv = df.to_csv(index=False)
-    st.download_button("📊 Download CSV", csv, "executive_metrics.csv", "text/csv", use_container_width=True)
+    st.download_button(" Download CSV", csv, "executive_metrics.csv", "text/csv", use_container_width=True)
 
 with exp3:
     # JSON Export
     import json
     json_data = json.dumps(metrics, indent=2)
-    st.download_button("📋 Download JSON", json_data, "executive_metrics.json", "application/json", use_container_width=True)
+    st.download_button(" Download JSON", json_data, "executive_metrics.json", "application/json", use_container_width=True)
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Executive Dashboard</p></div>', unsafe_allow_html=True)

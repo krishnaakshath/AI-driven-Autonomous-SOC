@@ -1,5 +1,5 @@
 """
-📚 Educational Components
+ Educational Components
 =========================
 Reusable components for explanations, remediation, and learning content.
 """
@@ -211,7 +211,7 @@ def render_explanation(key: str, collapsed: bool = True):
     
     info = EXPLANATIONS[key]
     
-    with st.expander(f"ℹ️ **Learn: {info['title']}**", expanded=not collapsed):
+    with st.expander(f" **Learn: {info['title']}**", expanded=not collapsed):
         col1, col2 = st.columns(2)
         
         with col1:
@@ -225,7 +225,7 @@ def render_explanation(key: str, collapsed: bool = True):
             st.markdown("**How it's calculated:**")
             st.markdown(f"<p style='color: #a8b2c1; font-size: 0.9rem;'>{info['how_calculated']}</p>", unsafe_allow_html=True)
             
-            st.markdown("**🔧 Remediation Steps:**")
+            st.markdown("** Remediation Steps:**")
             for i, step in enumerate(info['remediation'], 1):
                 st.markdown(f"<p style='color: #00D4FF; font-size: 0.85rem; margin: 3px 0;'>{i}. {step}</p>", unsafe_allow_html=True)
 
@@ -265,7 +265,7 @@ def render_quick_tip(tip_text: str, tip_type: str = "info"):
         border-radius: 0 8px 8px 0;
         margin: 10px 0;
     ">
-        <div style="color: {border_color}; font-weight: 600; font-size: 0.85rem;">💡 Tip</div>
+        <div style="color: {border_color}; font-weight: 600; font-size: 0.85rem;"> Tip</div>
         <div style="color: #a8b2c1; font-size: 0.9rem; margin-top: 5px;">{tip_text}</div>
     </div>
     """, unsafe_allow_html=True)

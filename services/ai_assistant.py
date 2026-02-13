@@ -1,5 +1,5 @@
 """
-🤖 CORTEX AI - Autonomous Security Intelligence
+ CORTEX AI - Autonomous Security Intelligence
 ================================================
 Advanced AI assistant with full agentic capabilities:
 - Neural Threat Prediction
@@ -181,13 +181,13 @@ PROTOCOL:
             elif tool_name == "ping_host":
                 target = params.get("target")
                 result = run_ping(target)
-                status = "🟢 Online" if result.get("alive") else "🔴 Offline"
+                status = " Online" if result.get("alive") else " Offline"
                 return f"**Host Status:** {status}\n**Latency:** {result.get('response_time')}ms"
             
             # ============= DEFENSIVE TOOLS =============
             elif tool_name == "block_ip":
                 ip = params.get("target")
-                return f"""✅ **FIREWALL UPDATE**
+                return f""" **FIREWALL UPDATE**
 - **Action:** IP Blocked
 - **Target:** `{ip}`
 - **Rule ID:** FW-{random.randint(10000, 99999)}
@@ -207,7 +207,7 @@ PROTOCOL:
                         for r in result.get('results', [])
                     ])
                     
-                    return f"""🎯 **PLAYBOOK EXECUTED**
+                    return f""" **PLAYBOOK EXECUTED**
 - **Playbook:** {result.get('playbook', playbook).upper()}
 - **Target:** `{target}`
 - **Actions:** {result.get('actions_executed', 0)} completed
@@ -215,9 +215,9 @@ PROTOCOL:
 **Execution Log:**
 {actions_summary}
 
-**Status:** ✅ All defensive measures activated"""
+**Status:**  All defensive measures activated"""
                 except ImportError:
-                    return f"⚠️ Playbook engine not available. Manual intervention required for {playbook} response."
+                    return f" Playbook engine not available. Manual intervention required for {playbook} response."
             
             # ============= THREAT INTELLIGENCE =============
             elif tool_name == "threat_intel":
@@ -226,7 +226,7 @@ PROTOCOL:
                     threats = get_latest_threats()[:5]
                     return f"**Latest Threat Intelligence:**\n```json\n{json.dumps(threats, indent=2)}\n```"
                 except ImportError:
-                    return "⚠️ Threat intel service unavailable."
+                    return " Threat intel service unavailable."
             
             elif tool_name == "check_reputation":
                 indicator = params.get("indicator")
@@ -242,7 +242,7 @@ PROTOCOL:
                     else:
                         result = check_file_hash(indicator)
                     
-                    return f"""🔍 **REPUTATION CHECK: {indicator}**
+                    return f""" **REPUTATION CHECK: {indicator}**
 - **Type:** {result.get('type', ind_type).upper()}
 - **Unified Score:** {result.get('unified_score', 0)}/100
 - **Risk Level:** {result.get('risk_level', 'UNKNOWN')}
@@ -251,7 +251,7 @@ PROTOCOL:
 **Source Breakdown:**
 {json.dumps(result.get('sources', {}), indent=2)}"""
                 except ImportError:
-                    return f"⚠️ Intel aggregator not available. Cannot check {indicator}."
+                    return f" Intel aggregator not available. Cannot check {indicator}."
             
             elif tool_name == "predict_threats":
                 try:
@@ -265,7 +265,7 @@ PROTOCOL:
                         for name, data in sorted(predictions.items(), key=lambda x: x[1]['probability'], reverse=True)
                     ])
                     
-                    return f"""🧠 **NEURAL THREAT PREDICTION**
+                    return f""" **NEURAL THREAT PREDICTION**
 
 {summary}
 
@@ -276,7 +276,7 @@ PROTOCOL:
 **Highest Risk:** {max(predictions.items(), key=lambda x: x[1]['probability'])[0].replace('_', ' ').title()}
 **Recommendation:** {max(predictions.items(), key=lambda x: x[1]['probability'])[1]['recommendation']}"""
                 except ImportError:
-                    return "⚠️ Neural predictor not available."
+                    return " Neural predictor not available."
             
             # ============= THREAT HUNTING =============
             elif tool_name == "hunt_query":
@@ -286,7 +286,7 @@ PROTOCOL:
                     from services.query_engine import execute_natural_query
                     result = execute_natural_query(query)
                     
-                    return f"""🔍 **THREAT HUNT RESULTS**
+                    return f""" **THREAT HUNT RESULTS**
 
 **Query:** "{query}"
 **Results Found:** {result.get('result_count', 0)}
@@ -298,7 +298,7 @@ PROTOCOL:
 {json.dumps(result.get('results', [])[:5], indent=2)}
 ```"""
                 except ImportError:
-                    return "⚠️ Query engine not available."
+                    return " Query engine not available."
             
             # ============= BEHAVIORAL ANALYSIS =============
             elif tool_name == "analyze_behavior":
@@ -319,22 +319,22 @@ PROTOCOL:
                         for a in result.get('anomalies', [])
                     ]) or "  - No anomalies detected"
                     
-                    return f"""👁️ **BEHAVIORAL ANALYSIS: {entity}**
+                    return f""" **BEHAVIORAL ANALYSIS: {entity}**
 
 - **Risk Score:** {result.get('risk_score', 0)}/100
 - **Risk Level:** {result.get('risk_level', 'NORMAL')}
-- **Anomalous:** {'⚠️ Yes' if result.get('is_anomalous') else '✅ No'}
+- **Anomalous:** {' Yes' if result.get('is_anomalous') else ' No'}
 
 **Detected Anomalies:**
 {anomalies_text}"""
                 except ImportError:
-                    return "⚠️ Behavior analyzer not available."
+                    return " Behavior analyzer not available."
             
             # ============= REPORTING =============
             elif tool_name == "generate_report":
                 report_type = params.get("type", "general")
                 report_id = f"{report_type.upper()}_REPORT_{int(time.time())}"
-                return f"""📄 **REPORT GENERATED**
+                return f""" **REPORT GENERATED**
 
 - **Report ID:** {report_id}
 - **Type:** {report_type.title()} Security Report
@@ -349,17 +349,17 @@ PROTOCOL:
 - Risk Assessment
 - Recommendations"""
                 
-            return "❓ Unknown tool requested. Please use a valid tool command."
+            return " Unknown tool requested. Please use a valid tool command."
             
         except Exception as e:
-            return f"⚠️ **Execution Error:** {str(e)}"
+            return f" **Execution Error:** {str(e)}"
 
     def chat(self, user_input, system_context=None):
         """
         Send a message to the AI with robust error handling.
         """
         if not self.client:
-            return "❌ **Error:** CORTEX offline. Configure GROQ_API_KEY in Settings."
+            return " **Error:** CORTEX offline. Configure GROQ_API_KEY in Settings."
 
         # Context injection
         context_prompt = ""
@@ -420,10 +420,10 @@ PROTOCOL:
         except Exception as e:
             error_msg = str(e).lower()
             if "rate" in error_msg or "429" in error_msg:
-                return "⚠️ **Rate Limited:** Please wait a moment and try again."
+                return " **Rate Limited:** Please wait a moment and try again."
             if "authentication" in error_msg or "api key" in error_msg:
-                return "❌ **Authentication Error:** Invalid API key. Please check Settings."
-            return f"❌ **Error:** {str(e)}"
+                return " **Authentication Error:** Invalid API key. Please check Settings."
+            return f" **Error:** {str(e)}"
 
     def reset_conversation(self):
         """Reset the conversation history."""

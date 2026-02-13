@@ -1,5 +1,5 @@
 """
-🔐 Login Page
+ Login Page
 =============
 Cyberpunk themed login page matching SOC platform design.
 """
@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 st.set_page_config(
     page_title="Login | SOC",
-    page_icon="🔐",
+    page_icon="",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -82,7 +82,7 @@ if 'pending_email' not in st.session_state:
 # Header
 st.markdown("""
 <div style="text-align: center; padding: 40px 0 30px 0;">
-    <div style="font-size: 4rem; margin-bottom: 10px;">🛡️</div>
+    <div style="font-size: 4rem; margin-bottom: 10px;"></div>
     <h1 style="
         font-family: 'Orbitron', sans-serif !important;
         font-size: 2.5rem;
@@ -130,12 +130,12 @@ if st.session_state.login_step == 'credentials':
                     except:
                         pass
                     
-                    st.success("✅ ACCESS GRANTED")
+                    st.success(" ACCESS GRANTED")
                     st.switch_page("pages/01_Dashboard.py")
             else:
-                st.error("❌ " + message)
+                st.error(" " + message)
         else:
-            st.warning("⚠️ Enter credentials")
+            st.warning(" Enter credentials")
     
     # Create account section
     st.markdown("""
@@ -156,7 +156,7 @@ elif st.session_state.login_step == '2fa_select':
     with col1:
         st.markdown("""
         <div style="text-align: center; padding: 20px; background: rgba(0,243,255,0.1); border-radius: 12px; border: 1px solid rgba(0,243,255,0.3);">
-            <div style="font-size: 2.5rem;">📧</div>
+            <div style="font-size: 2.5rem;"></div>
             <div style="color: #00f3ff; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">EMAIL</div>
         </div>
         """, unsafe_allow_html=True)
@@ -173,7 +173,7 @@ elif st.session_state.login_step == '2fa_select':
     with col2:
         st.markdown("""
         <div style="text-align: center; padding: 20px; background: rgba(188,19,254,0.1); border-radius: 12px; border: 1px solid rgba(188,19,254,0.3);">
-            <div style="font-size: 2.5rem;">📱</div>
+            <div style="font-size: 2.5rem;"></div>
             <div style="color: #bc13fe; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">SMS</div>
         </div>
         """, unsafe_allow_html=True)
@@ -201,7 +201,7 @@ elif st.session_state.login_step == '2fa_select':
     with col3:
         st.markdown("""
         <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 2.5rem; opacity: 0.5;">💬</div>
+            <div style="font-size: 2.5rem; opacity: 0.5;"></div>
             <div style="color: #666; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">WHATSAPP</div>
         </div>
         """, unsafe_allow_html=True)
@@ -218,7 +218,7 @@ elif st.session_state.login_step == '2fa_verify':
     
     st.markdown("""
     <div style="background: rgba(0,243,255,0.1); border-left: 3px solid #00f3ff; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
-        <p style="color: #00f3ff; margin: 0; font-family: 'Rajdhani', sans-serif;">📧 6-digit code sent. Check your inbox.</p>
+        <p style="color: #00f3ff; margin: 0; font-family: 'Rajdhani', sans-serif;"> 6-digit code sent. Check your inbox.</p>
         <p style="color: #666; margin: 5px 0 0 0; font-size: 0.85rem;">Code expires in 5 minutes.</p>
     </div>
     """, unsafe_allow_html=True)
@@ -246,18 +246,18 @@ elif st.session_state.login_step == '2fa_verify':
                         pass
                     
                     st.session_state.pending_email = None
-                    st.success("✅ ACCESS GRANTED")
+                    st.success(" ACCESS GRANTED")
                     st.switch_page("pages/01_Dashboard.py")
                 else:
-                    st.error("❌ " + message)
+                    st.error(" " + message)
             else:
-                st.warning("⚠️ Enter 6-digit code")
+                st.warning(" Enter 6-digit code")
     
     with col2:
         if st.button("RESEND", use_container_width=True):
             success, message = auth_service.generate_otp(st.session_state.pending_email)
             if success:
-                st.success("✅ Code sent!")
+                st.success(" Code sent!")
             else:
                 st.error(message)
     
@@ -269,6 +269,6 @@ elif st.session_state.login_step == '2fa_verify':
 # Footer
 st.markdown("""
 <div style="text-align: center; margin-top: 50px; color: #444; font-size: 0.8rem; font-family: 'Rajdhani', sans-serif;">
-    <p>🔐 AI-DRIVEN AUTONOMOUS SOC v2.0</p>
+    <p> AI-DRIVEN AUTONOMOUS SOC v2.0</p>
 </div>
 """, unsafe_allow_html=True)

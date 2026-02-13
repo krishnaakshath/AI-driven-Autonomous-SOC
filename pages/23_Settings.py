@@ -6,7 +6,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Settings | SOC", page_icon="⚙️", layout="wide")
+st.set_page_config(page_title="Settings | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -17,7 +17,7 @@ from services.auth_service import is_authenticated, is_admin
 
 # Must be logged in to access settings
 if not is_authenticated():
-    st.error("🔒 **Authentication Required**")
+    st.error(" **Authentication Required**")
     st.info("Please log in to access settings.")
     if st.button("Go to Login"):
         st.switch_page("pages/_Login.py")
@@ -29,9 +29,9 @@ st.markdown(page_header("Settings", "Configure your account and preferences"), u
 
 # Show admin status
 if IS_ADMIN:
-    st.success("👑 **Admin Mode** - Full access to all settings")
+    st.success(" **Admin Mode** - Full access to all settings")
 else:
-    st.info("👤 **User Mode** - Account and AI settings only. Contact admin for API configurations.")
+    st.info(" **User Mode** - Account and AI settings only. Contact admin for API configurations.")
 
 # Session timeout check (30 min inactivity)
 import time
@@ -66,9 +66,9 @@ def logout():
 
 # Create tabs based on admin status
 if IS_ADMIN:
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["👤 Account", "🤖 CORTEX AI", "🔑 API Keys", "🔐 OAuth", "📧 Notifications", "⚠️ Thresholds", "ℹ️ About"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([" Account", " CORTEX AI", " API Keys", " OAuth", " Notifications", " Thresholds", " About"])
 else:
-    tab1, tab2, tab7 = st.tabs(["👤 Account", "🤖 CORTEX AI", "ℹ️ About"])
+    tab1, tab2, tab7 = st.tabs([" Account", " CORTEX AI", " About"])
 
 # Account Tab with Logout
 with tab1:
@@ -104,12 +104,12 @@ with tab1:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button("🚪 Logout", type="primary", use_container_width=True):
+        if st.button(" Logout", type="primary", use_container_width=True):
             logout()
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button("🔄 Refresh Session", use_container_width=True):
+        if st.button(" Refresh Session", use_container_width=True):
             st.session_state.last_activity = time.time()
             st.success("Session refreshed!")
 
@@ -155,11 +155,11 @@ with tab2:
         )
         
         humor_labels = {
-            1: "🎓 **Serious** - Formal and professional",
-            2: "📝 **Dry Wit** - Mostly serious",
-            3: "⚖️ **Balanced** - Professional with charm",
-            4: "😊 **Friendly** - Warm and engaging",
-            5: "🎭 **Witty** - Fun and playful"
+            1: " **Serious** - Formal and professional",
+            2: " **Dry Wit** - Mostly serious",
+            3: " **Balanced** - Professional with charm",
+            4: " **Friendly** - Warm and engaging",
+            5: " **Witty** - Fun and playful"
         }
         st.markdown(humor_labels.get(humor_level, ""))
         
@@ -188,12 +188,12 @@ with tab2:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Preview
-    with st.expander("📝 Preview Response Style"):
+    with st.expander(" Preview Response Style"):
         preview_texts = {
             (1, "professional"): "I have analyzed the network traffic. The anomaly detection system identified 3 suspicious connections originating from IP 192.168.1.105. Recommended action: immediate isolation and forensic analysis.",
-            (3, "professional"): "Found some interesting activity! 🔍 Our anomaly detector flagged 3 suspicious connections from 192.168.1.105. I'd recommend we isolate that endpoint and take a closer look.",
-            (5, "friendly"): "Whoa, heads up! 🚨 Our digital watchdog just caught some sneaky traffic! 3 fishy connections from 192.168.1.105 - let's quarantine that box before things get spicy! 🌶️",
-            (5, "casual"): "Yo! 👋 Just spotted some weird stuff - 3 sus connections from .105. Might wanna yeet that endpoint off the network real quick! 🏃‍♂️"
+            (3, "professional"): "Found some interesting activity!  Our anomaly detector flagged 3 suspicious connections from 192.168.1.105. I'd recommend we isolate that endpoint and take a closer look.",
+            (5, "friendly"): "Whoa, heads up!  Our digital watchdog just caught some sneaky traffic! 3 fishy connections from 192.168.1.105 - let's quarantine that box before things get spicy! ",
+            (5, "casual"): "Yo!  Just spotted some weird stuff - 3 sus connections from .105. Might wanna yeet that endpoint off the network real quick! "
         }
         
         key = (humor_level, formality)
@@ -209,7 +209,7 @@ with tab2:
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    if st.button("💾 Save Personality Settings", type="primary"):
+    if st.button(" Save Personality Settings", type="primary"):
         new_prefs = {
             'humor_level': humor_level,
             'formality': formality,
@@ -230,7 +230,7 @@ with tab2:
         except:
             pass
         
-        st.success("✅ Personality settings saved! CORTEX will use these settings in new conversations.")
+        st.success(" Personality settings saved! CORTEX will use these settings in new conversations.")
 
 # Admin-only tabs (API Keys, OAuth, Notifications, Thresholds)
 if IS_ADMIN:
@@ -316,7 +316,7 @@ Configure SMTP settings to receive critical security alerts.
 Use an App Password for Gmail.
 </p>
 <div style="background: rgba(255, 68, 68, 0.1); border-left: 3px solid #FF4444; padding: 0.8rem; border-radius: 4px; margin-bottom: 1rem;">
-<p style="color: #FAFAFA; margin: 0; font-size: 0.85rem;">🔒 Alerts are sent securely using TLS encryption.</p>
+<p style="color: #FAFAFA; margin: 0; font-size: 0.85rem;"> Alerts are sent securely using TLS encryption.</p>
 </div>
 </div>""", unsafe_allow_html=True)
         
@@ -354,7 +354,7 @@ Use an App Password for Gmail.
                     from alerting.alert_service import send_test_alert
                     result = send_test_alert()
                     if result.get("email"):
-                        st.success("Test alert sent to email! ✅")
+                        st.success("Test alert sent to email! ")
                     else:
                         st.warning("Failed to send email. Check your credentials.")
                 except Exception as e:

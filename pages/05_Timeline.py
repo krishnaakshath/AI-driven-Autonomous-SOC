@@ -7,7 +7,7 @@ import random
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Incident Timeline | SOC", page_icon="⏱️", layout="wide")
+st.set_page_config(page_title="Incident Timeline | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -34,14 +34,14 @@ def load_incidents():
                     timeline = inc.get("timeline", [])
                     # Add icons to timeline events
                     icon_map = {
-                        "Initial Access": "📧", "Execution": "⚡", "Persistence": "🔄",
-                        "Discovery": "🔍", "Lateral Movement": "↔️", "Collection": "📦",
-                        "Exfiltration": "📤", "Impact": "🔒", "Detection": "🚨",
-                        "Containment": "🛡️", "Response": "✅", "Credential Access": "🎭",
-                        "Analysis": "🔬"
+                        "Initial Access": "", "Execution": "", "Persistence": "",
+                        "Discovery": "", "Lateral Movement": "", "Collection": "",
+                        "Exfiltration": "", "Impact": "", "Detection": "",
+                        "Containment": "", "Response": "", "Credential Access": "",
+                        "Analysis": ""
                     }
                     for event in timeline:
-                        event["icon"] = icon_map.get(event.get("phase", ""), "📌")
+                        event["icon"] = icon_map.get(event.get("phase", ""), "")
                     
                     result.append({
                         "id": inc.get("id", "INC-0000"),
@@ -62,12 +62,12 @@ def load_incidents():
             "severity": "CRITICAL", "status": "Contained",
             "start_time": datetime.now() - timedelta(hours=36),
             "timeline": [
-                {"time": -36, "phase": "Initial Access", "technique": "T1566.001", "description": "Phishing email with malicious Excel attachment received", "icon": "📧"},
-                {"time": -35, "phase": "Execution", "technique": "T1059.001", "description": "User opened attachment, macro executed PowerShell", "icon": "⚡"},
-                {"time": -34, "phase": "Persistence", "technique": "T1053.005", "description": "Scheduled task created for persistence", "icon": "🔄"},
-                {"time": -6, "phase": "Impact", "technique": "T1486", "description": "Ransomware encryption initiated", "icon": "🔒"},
-                {"time": -4, "phase": "Detection", "technique": "-", "description": "EDR detected mass file encryption", "icon": "🚨"},
-                {"time": -3, "phase": "Containment", "technique": "-", "description": "Affected systems isolated from network", "icon": "🛡️"},
+                {"time": -36, "phase": "Initial Access", "technique": "T1566.001", "description": "Phishing email with malicious Excel attachment received", "icon": ""},
+                {"time": -35, "phase": "Execution", "technique": "T1059.001", "description": "User opened attachment, macro executed PowerShell", "icon": ""},
+                {"time": -34, "phase": "Persistence", "technique": "T1053.005", "description": "Scheduled task created for persistence", "icon": ""},
+                {"time": -6, "phase": "Impact", "technique": "T1486", "description": "Ransomware encryption initiated", "icon": ""},
+                {"time": -4, "phase": "Detection", "technique": "-", "description": "EDR detected mass file encryption", "icon": ""},
+                {"time": -3, "phase": "Containment", "technique": "-", "description": "Affected systems isolated from network", "icon": ""},
             ]
         },
         {
@@ -75,19 +75,19 @@ def load_incidents():
             "severity": "HIGH", "status": "Resolved",
             "start_time": datetime.now() - timedelta(hours=72),
             "timeline": [
-                {"time": -72, "phase": "Initial Access", "technique": "T1078", "description": "Compromised VPN credentials used", "icon": "🔑"},
-                {"time": -70, "phase": "Credential Access", "technique": "T1003.001", "description": "Mimikatz detected on endpoint", "icon": "🎭"},
-                {"time": -69, "phase": "Detection", "technique": "-", "description": "EDR blocked credential dumping", "icon": "🚨"},
-                {"time": -68, "phase": "Response", "technique": "-", "description": "Account disabled, password reset forced", "icon": "✅"},
+                {"time": -72, "phase": "Initial Access", "technique": "T1078", "description": "Compromised VPN credentials used", "icon": ""},
+                {"time": -70, "phase": "Credential Access", "technique": "T1003.001", "description": "Mimikatz detected on endpoint", "icon": ""},
+                {"time": -69, "phase": "Detection", "technique": "-", "description": "EDR blocked credential dumping", "icon": ""},
+                {"time": -68, "phase": "Response", "technique": "-", "description": "Account disabled, password reset forced", "icon": ""},
             ]
         }
     ]
 
 # Show data source
 if HAS_SIEM:
-    st.success("✅ Connected to SIEM - Displaying real incident data")
+    st.success(" Connected to SIEM - Displaying real incident data")
 else:
-    st.warning("⚠️ SIEM not available - Using sample incidents")
+    st.warning(" SIEM not available - Using sample incidents")
 
 INCIDENTS = load_incidents()
 
@@ -207,7 +207,7 @@ col1, col2 = st.columns(2)
 with col1:
     df = pd.DataFrame(incident["timeline"])
     csv = df.to_csv(index=False)
-    st.download_button("📥 Export Timeline (CSV)", csv, f"{incident['id']}_timeline.csv", "text/csv", use_container_width=True)
+    st.download_button(" Export Timeline (CSV)", csv, f"{incident['id']}_timeline.csv", "text/csv", use_container_width=True)
 
 with col2:
     import json
@@ -217,7 +217,7 @@ with col2:
         "severity": incident["severity"],
         "timeline": incident["timeline"]
     }, indent=2, default=str)
-    st.download_button("📋 Export (JSON)", json_data, f"{incident['id']}_timeline.json", "application/json", use_container_width=True)
+    st.download_button(" Export (JSON)", json_data, f"{incident['id']}_timeline.json", "application/json", use_container_width=True)
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Incident Timeline</p></div>', unsafe_allow_html=True)

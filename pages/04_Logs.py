@@ -8,7 +8,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Log Viewer | SOC", page_icon="📜", layout="wide")
+st.set_page_config(page_title="Log Viewer | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -27,11 +27,11 @@ except ImportError:
 if HAS_SIEM:
     try:
         stats = get_siem_stats()
-        st.success(f"✅ Connected to SIEM - {stats.get('total_events_24h', 0)} events in last 24h")
+        st.success(f" Connected to SIEM - {stats.get('total_events_24h', 0)} events in last 24h")
     except:
-        st.success("✅ Connected to SIEM")
+        st.success(" Connected to SIEM")
 else:
-    st.warning("⚠️ SIEM not available - Using simulated logs")
+    st.warning(" SIEM not available - Using simulated logs")
 
 # Log sources
 LOG_SOURCES = ["Firewall", "IDS/IPS", "WAF", "Endpoint", "Authentication", "Network", "Application", "Cloud"]
@@ -209,10 +209,10 @@ col_exp1, col_exp2, col_exp3 = st.columns([1, 1, 2])
 with col_exp1:
     df = pd.DataFrame(filtered_logs)
     csv = df.to_csv(index=False)
-    st.download_button("📥 Export Logs (CSV)", csv, "security_logs.csv", "text/csv", use_container_width=True)
+    st.download_button(" Export Logs (CSV)", csv, "security_logs.csv", "text/csv", use_container_width=True)
 
 with col_exp2:
-    if st.button("🗑️ Clear Logs", use_container_width=True):
+    if st.button(" Clear Logs", use_container_width=True):
         st.session_state.log_entries = []
         st.rerun()
 

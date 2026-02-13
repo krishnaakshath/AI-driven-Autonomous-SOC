@@ -1,5 +1,5 @@
 """
-⚔️ MITRE ATT&CK Kill Chain Visualization
+ MITRE ATT&CK Kill Chain Visualization
 =========================================
 Interactive kill chain diagram with threat mapping
 and countermeasure recommendations.
@@ -35,7 +35,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0043",
         "name": "Reconnaissance",
-        "icon": "🔍",
+        "icon": "",
         "description": "Gathering information to plan attack",
         "techniques": ["Active Scanning", "Phishing for Information", "Search Open Websites"],
         "countermeasures": ["Limit public exposure", "Monitor for scanning activity", "OSINT monitoring"],
@@ -44,7 +44,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0042",
         "name": "Resource Development",
-        "icon": "🛠️",
+        "icon": "",
         "description": "Establishing infrastructure for attack",
         "techniques": ["Acquire Infrastructure", "Develop Capabilities", "Obtain Credentials"],
         "countermeasures": ["Threat intelligence feeds", "Domain monitoring", "Dark web monitoring"],
@@ -53,7 +53,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0001",
         "name": "Initial Access",
-        "icon": "🚪",
+        "icon": "",
         "description": "Gaining entry into the network",
         "techniques": ["Phishing", "Exploit Public-Facing App", "Supply Chain Compromise"],
         "countermeasures": ["Email security", "Patch management", "Vendor security assessment"],
@@ -62,7 +62,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0002",
         "name": "Execution",
-        "icon": "⚡",
+        "icon": "",
         "description": "Running malicious code",
         "techniques": ["PowerShell", "Command-Line Interface", "Scripting"],
         "countermeasures": ["Application whitelisting", "Script blocking", "EDR monitoring"],
@@ -71,7 +71,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0003",
         "name": "Persistence",
-        "icon": "📌",
+        "icon": "",
         "description": "Maintaining foothold",
         "techniques": ["Registry Run Keys", "Scheduled Tasks", "Web Shell"],
         "countermeasures": ["Registry monitoring", "Task scheduler auditing", "File integrity monitoring"],
@@ -80,7 +80,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0004",
         "name": "Privilege Escalation",
-        "icon": "⬆️",
+        "icon": "⬆",
         "description": "Gaining higher-level permissions",
         "techniques": ["Exploitation for Privilege Escalation", "Valid Accounts", "Token Manipulation"],
         "countermeasures": ["Least privilege principle", "Privileged access management", "Patch management"],
@@ -89,7 +89,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0005",
         "name": "Defense Evasion",
-        "icon": "🥷",
+        "icon": "",
         "description": "Avoiding detection",
         "techniques": ["Obfuscated Files", "Masquerading", "Disabling Security Tools"],
         "countermeasures": ["Behavioral analysis", "EDR solutions", "Integrity monitoring"],
@@ -98,7 +98,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0006",
         "name": "Credential Access",
-        "icon": "🔑",
+        "icon": "",
         "description": "Stealing credentials",
         "techniques": ["Credential Dumping", "Keylogging", "Brute Force"],
         "countermeasures": ["MFA enforcement", "Credential vaulting", "Honeytokens"],
@@ -107,7 +107,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0007",
         "name": "Discovery",
-        "icon": "🗺️",
+        "icon": "",
         "description": "Learning about the environment",
         "techniques": ["Network Service Scanning", "System Information Discovery", "Permission Groups Discovery"],
         "countermeasures": ["Network segmentation", "Deception technology", "Traffic analysis"],
@@ -116,7 +116,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0008",
         "name": "Lateral Movement",
-        "icon": "↔️",
+        "icon": "",
         "description": "Moving through the network",
         "techniques": ["Remote Services", "Internal Spearphishing", "Exploitation of Remote Services"],
         "countermeasures": ["Network segmentation", "Zero trust architecture", "Anomaly detection"],
@@ -125,7 +125,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0009",
         "name": "Collection",
-        "icon": "📦",
+        "icon": "",
         "description": "Gathering data of interest",
         "techniques": ["Data from Local System", "Email Collection", "Screen Capture"],
         "countermeasures": ["DLP solutions", "Data classification", "Access controls"],
@@ -134,7 +134,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0011",
         "name": "Command & Control",
-        "icon": "📡",
+        "icon": "",
         "description": "Communicating with compromised systems",
         "techniques": ["Web Protocols", "DNS", "Encrypted Channel"],
         "countermeasures": ["DNS monitoring", "TLS inspection", "Proxy filtering"],
@@ -143,7 +143,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0010",
         "name": "Exfiltration",
-        "icon": "📤",
+        "icon": "",
         "description": "Stealing data",
         "techniques": ["Exfiltration Over C2", "Exfiltration Over Web Service", "Scheduled Transfer"],
         "countermeasures": ["DLP enforcement", "Egress filtering", "Cloud access security"],
@@ -152,7 +152,7 @@ KILL_CHAIN_STAGES = [
     {
         "id": "TA0040",
         "name": "Impact",
-        "icon": "💥",
+        "icon": "",
         "description": "Disrupting operations",
         "techniques": ["Data Destruction", "Ransomware", "Service Stop"],
         "countermeasures": ["Backup verification", "Incident response plan", "Business continuity"],
@@ -183,7 +183,7 @@ def generate_active_threats():
     return threats
 
 # Tab layout
-tab1, tab2, tab3 = st.tabs(["🔄 Kill Chain View", "⚠️ Active Threats", "📊 Statistics"])
+tab1, tab2, tab3 = st.tabs([" Kill Chain View", " Active Threats", " Statistics"])
 
 with tab1:
     st.markdown("### MITRE ATT&CK Kill Chain Stages")
@@ -259,7 +259,7 @@ with tab1:
                 
                 st.markdown("**Countermeasures:**")
                 for cm in stage['countermeasures']:
-                    st.markdown(f"  ✓ {cm}")
+                    st.markdown(f"   {cm}")
 
 with tab2:
     st.markdown("### Active Threats in Kill Chain")
@@ -339,7 +339,7 @@ with tab3:
         otx_loaded = False
     
     if siem_loaded:
-        st.success(f"✅ Connected to SIEM — Analyzing {len(siem_events)} events")
+        st.success(f" Connected to SIEM — Analyzing {len(siem_events)} events")
     
     col1, col2 = st.columns(2)
     
@@ -401,7 +401,7 @@ with tab3:
         st.markdown("#### Threat Intelligence (OTX)")
         
         if otx_loaded and otx_pulses:
-            st.success(f"✅ {len(otx_pulses)} OTX threat pulses active")
+            st.success(f" {len(otx_pulses)} OTX threat pulses active")
             
             for pulse in otx_pulses[:7]:
                 name = pulse.get('name', 'Unknown')[:50]

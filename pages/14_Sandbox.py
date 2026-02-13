@@ -1,5 +1,5 @@
 """
-🧪 Malware Sandbox
+ Malware Sandbox
 ==================
 Safely analyze suspicious files and URLs in an isolated environment.
 """
@@ -13,7 +13,7 @@ from ui.theme import CYBERPUNK_CSS
 
 st.set_page_config(
     page_title="Sandbox | SOC",
-    page_icon="🧪",
+    page_icon="",
     layout="wide"
 )
 
@@ -23,7 +23,7 @@ st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 st.markdown("""
 <div style="text-align: center; padding: 20px 0 30px;">
     <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0; color: #fff;">
-        🧪 Malware Sandbox
+         Malware Sandbox
     </h1>
     <p style="color: #888; font-size: 0.9rem; letter-spacing: 2px; margin-top: 5px;">
         SAFE DETONATION & BEHAVIORAL ANALYSIS
@@ -70,7 +70,7 @@ if SANDBOX_LOADED:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Tabs for file and URL analysis
-    tab1, tab2, tab3 = st.tabs(["📁 File Analysis", "🔗 URL Analysis", "📜 History"])
+    tab1, tab2, tab3 = st.tabs([" File Analysis", " URL Analysis", " History"])
     
     with tab1:
         st.markdown("### Upload Suspicious File")
@@ -96,7 +96,7 @@ if SANDBOX_LOADED:
                 st.markdown(f"**Size:** {uploaded_file.size:,} bytes")
             
             with col2:
-                if st.button("🔬 Analyze File", type="primary", use_container_width=True):
+                if st.button(" Analyze File", type="primary", use_container_width=True):
                     with st.spinner("Detonating in sandbox..."):
                         import time
                         time.sleep(2)  # Simulate analysis time
@@ -141,11 +141,11 @@ if SANDBOX_LOADED:
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    st.markdown("#### 🔑 File Hashes")
+                    st.markdown("####  File Hashes")
                     for hash_type, hash_val in result["hashes"].items():
                         st.code(f"{hash_type.upper()}: {hash_val}")
                     
-                    st.markdown("#### 🖥️ Processes Spawned")
+                    st.markdown("####  Processes Spawned")
                     procs = result["behavior"]["processes_spawned"]
                     if procs:
                         for proc in procs:
@@ -154,7 +154,7 @@ if SANDBOX_LOADED:
                         st.markdown("*No processes spawned*")
                 
                 with col2:
-                    st.markdown("#### 🌐 Network Connections")
+                    st.markdown("####  Network Connections")
                     conns = result["behavior"]["network_connections"]
                     if conns:
                         for conn in conns:
@@ -167,12 +167,12 @@ if SANDBOX_LOADED:
                     else:
                         st.markdown("*No network activity*")
                     
-                    st.markdown("#### 📁 Files Modified")
+                    st.markdown("####  Files Modified")
                     st.metric("", result["behavior"]["files_modified"])
                 
                 # MITRE Techniques
                 if result["mitre_techniques"]:
-                    st.markdown("#### ⚔️ MITRE ATT&CK Techniques")
+                    st.markdown("####  MITRE ATT&CK Techniques")
                     for tech in result["mitre_techniques"]:
                         st.markdown(f"""
                         <span style="
@@ -202,7 +202,7 @@ if SANDBOX_LOADED:
             help="Enter the full URL including http:// or https://"
         )
         
-        if st.button("🔬 Analyze URL", type="primary"):
+        if st.button(" Analyze URL", type="primary"):
             if url_input:
                 with st.spinner("Loading URL in sandbox..."):
                     import time
@@ -244,13 +244,13 @@ if SANDBOX_LOADED:
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                st.markdown("#### 📊 URL Info")
-                st.markdown(f"**SSL Valid:** {'✅ Yes' if result['ssl_valid'] else '❌ No'}")
+                st.markdown("####  URL Info")
+                st.markdown(f"**SSL Valid:** {' Yes' if result['ssl_valid'] else ' No'}")
                 st.markdown(f"**Redirects:** {result['redirects']}")
                 st.markdown(f"**Domain Age:** {result['domain_age_days']} days")
             
             with col2:
-                st.markdown("#### 🚩 Phishing Indicators")
+                st.markdown("####  Phishing Indicators")
                 if result["phishing_indicators"]:
                     for ind in result["phishing_indicators"]:
                         st.markdown(f"• `{ind}`")
@@ -258,7 +258,7 @@ if SANDBOX_LOADED:
                     st.markdown("*None detected*")
             
             with col3:
-                st.markdown("#### 🌐 Network Activity")
+                st.markdown("####  Network Activity")
                 if result["network_activity"]:
                     for act in result["network_activity"]:
                         st.markdown(f"• {act['ip']}:{act['port']} ({act['type']})")
@@ -280,7 +280,7 @@ if SANDBOX_LOADED:
                 }.get(item["verdict"], "#888")
                 
                 name = item.get("filename") or item.get("url", "Unknown")
-                item_type = "📁 File" if "filename" in item else "🔗 URL"
+                item_type = " File" if "filename" in item else " URL"
                 
                 st.markdown(f"""
                 <div style="

@@ -8,7 +8,7 @@ from services.ai_assistant import ai_assistant
 # Page Config
 st.set_page_config(
     page_title="CORTEX AI | Autonomous SOC",
-    page_icon="🧠",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -212,7 +212,7 @@ html, body, [class*="css"], .stMarkdown, .stTextInput input, .stButton button {
 </style>
 
 <div class="cortex-hero">
-    <div class="cortex-logo">🧠</div>
+    <div class="cortex-logo"></div>
     <div class="cortex-title">CORTEX</div>
     <div class="cortex-subtitle">Autonomous Security Intelligence</div>
     <div class="cortex-status">NEURAL LINK ACTIVE</div>
@@ -220,30 +220,30 @@ html, body, [class*="css"], .stMarkdown, .stTextInput input, .stButton button {
 
 <div class="capabilities">
     <div class="capability">
-        <div class="capability-icon">🔍</div>
+        <div class="capability-icon"></div>
         <div class="capability-text">SCAN</div>
     </div>
     <div class="capability">
-        <div class="capability-icon">🛡️</div>
+        <div class="capability-icon"></div>
         <div class="capability-text">DEFEND</div>
     </div>
     <div class="capability">
-        <div class="capability-icon">📊</div>
+        <div class="capability-icon"></div>
         <div class="capability-text">REPORT</div>
     </div>
     <div class="capability">
-        <div class="capability-icon">🧪</div>
+        <div class="capability-icon"></div>
         <div class="capability-text">ANALYZE</div>
     </div>
     <div class="capability">
-        <div class="capability-icon">🎤</div>
+        <div class="capability-icon"></div>
         <div class="capability-text">VOICE</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # File Upload Section
-with st.expander("📁 **Upload File for Analysis** - Check files for malware"):
+with st.expander(" **Upload File for Analysis** - Check files for malware"):
     uploaded_file = st.file_uploader(
         "Drop any file to scan for malware",
         type=["exe", "dll", "ps1", "bat", "vbs", "js", "doc", "docx", "xls", "xlsx", "pdf", "zip", "rar", "py", "sh", "txt", "json", "xml", "csv"],
@@ -256,8 +256,8 @@ with st.expander("📁 **Upload File for Analysis** - Check files for malware"):
             st.markdown(f"**File:** `{uploaded_file.name}` ({uploaded_file.size:,} bytes)")
         
         with col2:
-            if st.button("🔬 Analyze with CORTEX", type="primary", use_container_width=True):
-                with st.spinner("🧪 Detonating in sandbox..."):
+            if st.button(" Analyze with CORTEX", type="primary", use_container_width=True):
+                with st.spinner(" Detonating in sandbox..."):
                     try:
                         from services.sandbox_service import analyze_file
                         import time
@@ -267,7 +267,7 @@ with st.expander("📁 **Upload File for Analysis** - Check files for malware"):
                         result = analyze_file(content, uploaded_file.name)
                         
                         # Create detailed analysis message
-                        verdict_emoji = {"MALICIOUS": "🔴", "SUSPICIOUS": "🟠", "CLEAN": "🟢"}.get(result["verdict"], "⚪")
+                        verdict_emoji = {"MALICIOUS": "", "SUSPICIOUS": "", "CLEAN": ""}.get(result["verdict"], "")
                         
                         analysis_report = f"""
 **{verdict_emoji} FILE ANALYSIS COMPLETE**
@@ -276,35 +276,35 @@ with st.expander("📁 **Upload File for Analysis** - Check files for malware"):
 **Verdict:** **{result['verdict']}** ({result['severity']} Severity)
 **Analysis Time:** {result['analysis_time']}s
 
-**🔑 Hashes:**
+** Hashes:**
 - MD5: `{result['hashes']['md5']}`
 - SHA256: `{result['hashes']['sha256'][:32]}...`
 
-**📊 Behavioral Analysis:**
+** Behavioral Analysis:**
 - Processes Spawned: {len(result['behavior']['processes_spawned'])}
 - Files Modified: {result['behavior']['files_modified']}
 - Network Connections: {len(result['behavior']['network_connections'])}
 
 """
                         if result['behavior']['processes_spawned']:
-                            analysis_report += f"**⚠️ Suspicious Processes:** {', '.join(result['behavior']['processes_spawned'])}\n\n"
+                            analysis_report += f"** Suspicious Processes:** {', '.join(result['behavior']['processes_spawned'])}\n\n"
                         
                         if result['behavior']['network_connections']:
-                            analysis_report += "**🌐 C2 Connections:**\n"
+                            analysis_report += "** C2 Connections:**\n"
                             for conn in result['behavior']['network_connections']:
                                 analysis_report += f"- `{conn['ip']}:{conn['port']}` ({conn['type']})\n"
                         
                         if result['mitre_techniques']:
-                            analysis_report += "\n**⚔️ MITRE ATT&CK:**\n"
+                            analysis_report += "\n** MITRE ATT&CK:**\n"
                             for tech in result['mitre_techniques']:
                                 analysis_report += f"- {tech['id']}: {tech['name']}\n"
                         
                         if result['verdict'] == "MALICIOUS":
-                            analysis_report += "\n**🛡️ Recommended Actions:**\n1. Quarantine this file immediately\n2. Do not execute under any circumstances\n3. Scan affected systems for similar files\n4. Report to threat intelligence"
+                            analysis_report += "\n** Recommended Actions:**\n1. Quarantine this file immediately\n2. Do not execute under any circumstances\n3. Scan affected systems for similar files\n4. Report to threat intelligence"
                         elif result['verdict'] == "SUSPICIOUS":
-                            analysis_report += "\n**⚠️ Recommendations:**\n1. Exercise caution with this file\n2. Run additional analysis before execution\n3. Monitor system if already executed"
+                            analysis_report += "\n** Recommendations:**\n1. Exercise caution with this file\n2. Run additional analysis before execution\n3. Monitor system if already executed"
                         else:
-                            analysis_report += "\n**✅ File appears safe.** However, always exercise caution with unknown files."
+                            analysis_report += "\n** File appears safe.** However, always exercise caution with unknown files."
                         
                         st.session_state.cortex_messages.append({"role": "user", "content": f"Analyze file: {uploaded_file.name}"})
                         st.session_state.cortex_messages.append({"role": "assistant", "content": analysis_report})
@@ -314,7 +314,7 @@ with st.expander("📁 **Upload File for Analysis** - Check files for malware"):
                         st.error(f"Analysis failed: {e}")
 
 # Voice Commands Section
-with st.expander("🎤 **Voice Commands** - Speak to CORTEX"):
+with st.expander(" **Voice Commands** - Speak to CORTEX"):
     st.markdown("""
     <div style="text-align: center; padding: 20px;">
         <p style="color: #888; font-size: 0.9rem;">Click the button below and speak your command.</p>
@@ -347,7 +347,7 @@ with st.expander("🎤 **Voice Commands** - Speak to CORTEX"):
         </script>
         """, unsafe_allow_html=True)
         
-        if st.button("🎤 Start Voice Command", type="primary", use_container_width=True):
+        if st.button(" Start Voice Command", type="primary", use_container_width=True):
             st.markdown("""
             <div style="
                 background: rgba(255,0,128,0.1);
@@ -357,7 +357,7 @@ with st.expander("🎤 **Voice Commands** - Speak to CORTEX"):
                 text-align: center;
                 margin-top: 10px;
             ">
-                <div style="color: #ff0080; font-size: 0.9rem;">🎤 Listening...</div>
+                <div style="color: #ff0080; font-size: 0.9rem;"> Listening...</div>
                 <div style="color: #888; font-size: 0.8rem; margin-top: 5px;">Speak: "Scan IP 8.8.8.8" or "Block threat"</div>
             </div>
             """, unsafe_allow_html=True)
@@ -375,9 +375,9 @@ with st.expander("🎤 **Voice Commands** - Speak to CORTEX"):
     cols = st.columns(3)
     for i, example in enumerate(voice_examples):
         with cols[i % 3]:
-            if st.button(f"📢 {example}", key=f"voice_{i}", use_container_width=True):
+            if st.button(f" {example}", key=f"voice_{i}", use_container_width=True):
                 st.session_state.cortex_messages.append({"role": "user", "content": example})
-                with st.spinner("⚡ Processing..."):
+                with st.spinner(" Processing..."):
                     response = ai_assistant.chat(example, system_context={"Page": "CORTEX AI", "Mode": "Voice Command"})
                     st.session_state.cortex_messages.append({"role": "assistant", "content": response})
                 st.rerun()
@@ -412,7 +412,7 @@ prompt = st.chat_input("Command CORTEX... (e.g., 'Scan 8.8.8.8', 'Block 10.0.0.1
 if prompt:
     st.session_state.cortex_messages.append({"role": "user", "content": prompt})
     
-    with st.spinner("⚡ CORTEX processing neural query..."):
+    with st.spinner(" CORTEX processing neural query..."):
         context = {"Page": "CORTEX AI Interface", "Mode": "Direct Command"}
         response = ai_assistant.chat(prompt, system_context=context)
         st.session_state.cortex_messages.append({"role": "assistant", "content": response})

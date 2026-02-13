@@ -1,5 +1,5 @@
 """
-🔎 Digital Forensics
+ Digital Forensics
 ====================
 Incident investigation powered by SIEM service data.
 Shows real incidents from the centralized SIEM with MITRE ATT&CK timelines.
@@ -48,9 +48,9 @@ incidents = load_siem_incidents()
 events = load_siem_events()
 
 if incidents:
-    st.success(f"✅ Connected to SIEM — {len(incidents)} active incidents | {len(events)} events")
+    st.success(f" Connected to SIEM — {len(incidents)} active incidents | {len(events)} events")
 else:
-    st.warning("⚠️ No incidents from SIEM")
+    st.warning(" No incidents from SIEM")
 
 # Tabs
 tab1, tab2, tab3 = st.tabs(["Incident Analysis", "Attack Timeline", "Evidence"])
@@ -89,14 +89,14 @@ with tab1:
     with col1:
         st.markdown("""
             <div class="glass-card">
-                <h4 style="color: #00D4FF; margin: 0 0 1rem 0;">🧠 Memory Analysis</h4>
+                <h4 style="color: #00D4FF; margin: 0 0 1rem 0;"> Memory Analysis</h4>
                 <p style="color: #8B95A5; margin: 0;">Analyze memory dumps for malware artifacts, injected code, and rootkits.</p>
             </div>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown("""
             <div class="glass-card">
-                <h4 style="color: #8B5CF6; margin: 0 0 1rem 0;">💾 Disk Forensics</h4>
+                <h4 style="color: #8B5CF6; margin: 0 0 1rem 0;"> Disk Forensics</h4>
                 <p style="color: #8B95A5; margin: 0;">Examine file systems, deleted files, and disk artifacts.</p>
             </div>
         """, unsafe_allow_html=True)
@@ -151,7 +151,7 @@ with tab3:
         
         st.markdown(f"""
             <div class="glass-card" style="margin-bottom: 1rem;">
-                <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">📊 Event Evidence Summary</h4>
+                <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;"> Event Evidence Summary</h4>
                 <p style="color: #8B95A5; margin: 0;">
                     Total Events: {len(events)} | 
                     Critical: {sev_counts.get('CRITICAL', 0)} | 

@@ -1,5 +1,5 @@
 """
-🔧 Sidebar Manager
+ Sidebar Manager
 ==================
 Manages sidebar visibility based on user role.
 Call inject_sidebar_filter() at the top of each protected page.
@@ -68,7 +68,7 @@ def add_sidebar_user_info():
             if is_admin():
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #FFD700, #FF8C00); color: #000; padding: 8px 12px; border-radius: 8px; text-align: center; font-weight: 600; font-size: 0.85rem; margin-bottom: 10px;">
-                    👑 ADMIN
+                     ADMIN
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -85,7 +85,7 @@ def add_sidebar_user_info():
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            if st.button("🚪 Logout", use_container_width=True, key="sidebar_logout"):
+            if st.button(" Logout", use_container_width=True, key="sidebar_logout"):
                 for key in ['authenticated', 'user_email', 'user_name', 'login_step', 'pending_email', 'otp_store', 'cortex_messages', 'session_start']:
                     if key in st.session_state:
                         del st.session_state[key]
@@ -102,7 +102,7 @@ def require_auth_with_sidebar():
     from services.auth_service import is_authenticated
     
     if not is_authenticated():
-        st.error("🔒 **Authentication Required**")
+        st.error(" **Authentication Required**")
         st.info("Please log in to access this page.")
         if st.button("Go to Login"):
             st.switch_page("pages/_Login.py")

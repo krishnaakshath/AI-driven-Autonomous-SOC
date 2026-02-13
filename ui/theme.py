@@ -1,5 +1,5 @@
 """
-🔮 CYBERPUNK 2077 THEME - AI-Driven Autonomous SOC
+ CYBERPUNK 2077 THEME - AI-Driven Autonomous SOC
 ===================================================
 Ultra-futuristic UI with neon glows, scanlines, glitch effects,
 holographic elements, and interactive particle systems.

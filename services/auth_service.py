@@ -1,5 +1,5 @@
 """
-🔐 Authentication Service
+ Authentication Service
 =========================
 Handles user registration, login, 2FA, and session management.
 
@@ -270,7 +270,7 @@ class AuthService:
             
             # Create email
             msg = MIMEMultipart('alternative')
-            msg['Subject'] = f"🔐 Your SOC Login Code: {otp}"
+            msg['Subject'] = f" Your SOC Login Code: {otp}"
             msg['From'] = gmail_user
             msg['To'] = email
             
@@ -278,7 +278,7 @@ class AuthService:
             <html>
             <body style="font-family: Arial, sans-serif; background: #0a0a1a; color: #fff; padding: 20px;">
                 <div style="max-width: 400px; margin: 0 auto; background: #1a1a2e; border: 1px solid #00f3ff; border-radius: 10px; padding: 30px;">
-                    <h1 style="color: #00f3ff; text-align: center; margin: 0;">🔐 SOC Login</h1>
+                    <h1 style="color: #00f3ff; text-align: center; margin: 0;"> SOC Login</h1>
                     <p style="color: #888; text-align: center;">Hello {name},</p>
                     <div style="background: #0a0a1a; border: 2px solid #00f3ff; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
                         <div style="font-size: 32px; font-weight: bold; color: #00f3ff; letter-spacing: 8px;">{otp}</div>
@@ -341,7 +341,7 @@ class AuthService:
             client = Client(twilio_sid, twilio_token)
             
             message = client.messages.create(
-                body=f"🔐 Your SOC Login Code: {otp}\n\nThis code expires in 5 minutes.",
+                body=f" Your SOC Login Code: {otp}\n\nThis code expires in 5 minutes.",
                 from_=twilio_phone,
                 to=phone
             )
@@ -456,14 +456,14 @@ def is_admin() -> bool:
 def require_admin():
     """Require admin role or show access denied."""
     if not is_authenticated():
-        st.error("🔒 **Authentication Required**")
+        st.error(" **Authentication Required**")
         st.info("Please log in to access this page.")
         if st.button("Go to Login"):
             st.switch_page("pages/_Login.py")
         st.stop()
     
     if not is_admin():
-        st.error("🚫 **Admin Access Only**")
+        st.error(" **Admin Access Only**")
         st.warning("This page is restricted to administrators. Your access has been logged.")
         st.info(f"Logged in as: {st.session_state.get('user_email', 'Unknown')}")
         st.stop()

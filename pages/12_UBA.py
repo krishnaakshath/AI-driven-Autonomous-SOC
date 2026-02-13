@@ -9,7 +9,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="User Behavior Analytics | SOC", page_icon="👤", layout="wide")
+st.set_page_config(page_title="User Behavior Analytics | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -75,9 +75,9 @@ def generate_user_data():
 
 # Show data source
 if HAS_SIEM:
-    st.success("✅ Connected to SIEM - Displaying real user behavior data")
+    st.success(" Connected to SIEM - Displaying real user behavior data")
 else:
-    st.warning("⚠️ SIEM not available - Using simulated data")
+    st.warning(" SIEM not available - Using simulated data")
 
 user_data = generate_user_data()
 df = pd.DataFrame(user_data)
@@ -133,7 +133,7 @@ for user in user_data[:5]:
         align-items: center;
     ">
         <div>
-            <span style="color: #FAFAFA; font-weight: bold; font-size: 1.1rem;">👤 {user['user']}</span>
+            <span style="color: #FAFAFA; font-weight: bold; font-size: 1.1rem;"> {user['user']}</span>
             <span style="color: #8B95A5; margin-left: 10px;">{user['department']}</span>
         </div>
         <div style="display: flex; gap: 30px; align-items: center;">
@@ -223,7 +223,7 @@ with chart2:
 # Export
 st.markdown("<br>", unsafe_allow_html=True)
 csv = df.to_csv(index=False)
-st.download_button("📥 Export User Analytics (CSV)", csv, "user_behavior_analytics.csv", "text/csv")
+st.download_button(" Export User Analytics (CSV)", csv, "user_behavior_analytics.csv", "text/csv")
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | User Behavior Analytics</p></div>', unsafe_allow_html=True)

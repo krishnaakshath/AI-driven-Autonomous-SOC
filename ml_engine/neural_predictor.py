@@ -1,5 +1,5 @@
 """
-🧠 Neural Threat Prediction Engine
+ Neural Threat Prediction Engine
 ===================================
 LSTM-based time-series model for predicting cyber attacks
 BEFORE they happen. Uses historical event patterns to forecast
@@ -251,11 +251,11 @@ class NeuralThreatPredictor:
         eta = highest[1]["eta_text"]
         
         if prob >= 50:
-            return f"⚠️ ALERT: {prob}% probability of {attack_type} attack within {eta}"
+            return f" ALERT: {prob}% probability of {attack_type} attack within {eta}"
         elif prob >= 30:
-            return f"📊 WATCH: {prob}% probability of {attack_type} - monitoring recommended"
+            return f" WATCH: {prob}% probability of {attack_type} - monitoring recommended"
         else:
-            return f"✅ STABLE: All threat levels normal. Highest: {attack_type} at {prob}%"
+            return f" STABLE: All threat levels normal. Highest: {attack_type} at {prob}%"
     
     def get_top_threats(self, n: int = 3) -> List[Tuple[str, Dict]]:
         """Get top N threats by probability."""

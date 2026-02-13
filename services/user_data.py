@@ -1,5 +1,5 @@
 """
-👤 User Data Service
+ User Data Service
 ====================
 Manages per-user data storage including scan history, uploaded files, and activity logs.
 """

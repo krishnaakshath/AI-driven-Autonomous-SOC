@@ -7,7 +7,7 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Detection Rules | SOC", page_icon="📜", layout="wide")
+st.set_page_config(page_title="Detection Rules | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -82,10 +82,10 @@ def save_rules(rules):
 if 'custom_rules' not in st.session_state:
     st.session_state.custom_rules = load_rules()
 
-st.success("✅ Persistent storage enabled - rules saved to file")
+st.success(" Persistent storage enabled - rules saved to file")
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["📜 Rule Library", "✏️ Create Rule", "📊 Rule Performance"])
+tab1, tab2, tab3 = st.tabs([" Rule Library", " Create Rule", " Rule Performance"])
 
 with tab1:
     st.markdown(section_title("Detection Rules Library"), unsafe_allow_html=True)
@@ -131,10 +131,10 @@ with tab1:
             
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("✏️ Edit", key=f"edit_{rule['id']}"):
+                if st.button(" Edit", key=f"edit_{rule['id']}"):
                     st.session_state.editing_rule = rule
             with col2:
-                if st.button("🗑️ Delete", key=f"delete_{rule['id']}"):
+                if st.button(" Delete", key=f"delete_{rule['id']}"):
                     st.session_state.custom_rules.remove(rule)
                     save_rules(st.session_state.custom_rules)
                     st.rerun()
@@ -210,21 +210,21 @@ level: high"""
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("✅ Validate Rule", use_container_width=True):
+        if st.button(" Validate Rule", use_container_width=True):
             # Basic validation
             if rule_type == "YARA":
                 if "rule" in rule_content and "condition:" in rule_content:
-                    st.success("✅ YARA syntax valid")
+                    st.success(" YARA syntax valid")
                 else:
-                    st.error("❌ Invalid YARA syntax - missing rule or condition")
+                    st.error(" Invalid YARA syntax - missing rule or condition")
             else:
                 if "title:" in rule_content and "detection:" in rule_content:
-                    st.success("✅ Sigma syntax valid")
+                    st.success(" Sigma syntax valid")
                 else:
-                    st.error("❌ Invalid Sigma syntax - missing title or detection")
+                    st.error(" Invalid Sigma syntax - missing title or detection")
     
     with col2:
-        if st.button("💾 Save Rule", type="primary", use_container_width=True):
+        if st.button(" Save Rule", type="primary", use_container_width=True):
             if rule_name and rule_content:
                 new_rule = {
                     "id": f"RULE-{len(st.session_state.custom_rules) + 1:03d}",
@@ -237,7 +237,7 @@ level: high"""
                 }
                 st.session_state.custom_rules.append(new_rule)
                 save_rules(st.session_state.custom_rules)
-                st.success(f"✅ Rule '{rule_name}' saved!")
+                st.success(f" Rule '{rule_name}' saved!")
                 st.rerun()
             else:
                 st.warning("Please enter rule name and content")

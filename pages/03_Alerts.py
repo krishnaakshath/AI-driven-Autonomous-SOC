@@ -1,5 +1,5 @@
 """
-🚨 Security Alerts
+ Security Alerts
 ==================
 Real-time threat detection from centralized SIEM service.
 Alerts are generated from SIEM events and enriched with threat intel.
@@ -35,7 +35,7 @@ with col_refresh:
 with col_time:
     st.markdown('''
         <div style="display: flex; align-items: center; gap: 0.5rem; height: 38px;">
-            <span style="color: #00C853;">●</span>
+            <span style="color: #00C853;"></span>
             <span style="color: #8B95A5;">Auto-refreshing every 30s | Connected to SIEM</span>
         </div>
     ''', unsafe_allow_html=True)
@@ -126,9 +126,9 @@ with c5:
 
 # OTX enrichment banner
 if otx_data["source"] == "OTX Live":
-    st.success(f"✅ **OTX Enrichment Active** — {otx_data['active_pulses']} threat pulses | Latest: {otx_data['latest'][:60]}")
+    st.success(f" **OTX Enrichment Active** — {otx_data['active_pulses']} threat pulses | Latest: {otx_data['latest'][:60]}")
 else:
-    st.info("ℹ️ OTX enrichment offline — showing SIEM alerts only")
+    st.info(" OTX enrichment offline — showing SIEM alerts only")
 
 st.markdown("<br>", unsafe_allow_html=True)
 

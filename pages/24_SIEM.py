@@ -10,7 +10,7 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="SIEM | SOC", page_icon="📊", layout="wide")
+st.set_page_config(page_title="SIEM | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -173,7 +173,7 @@ with tab1:
     # Export
     df_filtered = pd.DataFrame(filtered)
     csv = df_filtered.to_csv(index=False)
-    st.download_button("📥 Export Events (CSV)", csv, "siem_events.csv", "text/csv")
+    st.download_button(" Export Events (CSV)", csv, "siem_events.csv", "text/csv")
 
 with tab2:
     st.markdown(section_title("SIEM Analytics"), unsafe_allow_html=True)
@@ -278,7 +278,7 @@ with tab3:
     
     # Add new rule
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("➕ Create New Correlation Rule"):
+    with st.expander(" Create New Correlation Rule"):
         rule_name = st.text_input("Rule Name", placeholder="My Custom Rule")
         rule_condition = st.text_area("Condition (pseudo-code)", placeholder="event.type == 'login_failure' AND count > 5 within 5m")
         rule_action = st.selectbox("Action", ["Alert SOC", "Block IP", "Isolate Host", "Alert + Block", "Quarantine"])
@@ -327,14 +327,14 @@ with tab4:
                     <div style="color: #FAFAFA;">{source['last_event']}</div>
                     <div style="color: #8B95A5; font-size: 0.75rem;">Last Event</div>
                 </div>
-                <div style="color: {status_color};">● {source['status']}</div>
+                <div style="color: {status_color};"> {source['status']}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     
     # Add log source
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("➕ Add Log Source"):
+    with st.expander(" Add Log Source"):
         source_name = st.text_input("Source Name", placeholder="My Log Source")
         source_type = st.selectbox("Source Type", ["Syslog (UDP)", "Syslog (TCP)", "API", "Agent", "File Beat", "Kafka"])
         source_host = st.text_input("Host/IP", placeholder="192.168.1.100")

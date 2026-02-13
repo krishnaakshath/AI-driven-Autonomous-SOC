@@ -8,7 +8,7 @@ import hmac
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="API Integration | SOC", page_icon="🔌", layout="wide")
+st.set_page_config(page_title="API Integration | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -85,7 +85,7 @@ ENDPOINTS = [
 ]
 
 # Tabs
-tab1, tab2, tab3, tab4 = st.tabs(["🔑 API Keys", "📖 Endpoints", "🧪 API Tester", "🔗 Webhooks"])
+tab1, tab2, tab3, tab4 = st.tabs([" API Keys", " Endpoints", " API Tester", " Webhooks"])
 
 with tab1:
     st.markdown(section_title("API Authentication"), unsafe_allow_html=True)
@@ -123,7 +123,7 @@ with tab1:
     with col1:
         st.code(st.session_state.api_key)
     with col2:
-        if st.button("🔄 Regenerate", use_container_width=True):
+        if st.button(" Regenerate", use_container_width=True):
             st.session_state.api_key = hashlib.sha256(os.urandom(32)).hexdigest()[:32]
             st.session_state.api_key_created = current_time
             st.rerun()
@@ -135,8 +135,8 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
     
-    st.info(f"⏱️ **Token expires in {int(time_remaining)} seconds** - Auto-regenerates every {API_TOKEN_EXPIRY}s to reduce server load")
-    st.warning("⚠️ Keep your API key secure. Never expose it in client-side code.")
+    st.info(f" **Token expires in {int(time_remaining)} seconds** - Auto-regenerates every {API_TOKEN_EXPIRY}s to reduce server load")
+    st.warning(" Keep your API key secure. Never expose it in client-side code.")
     
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### Rate Limits")
@@ -200,7 +200,7 @@ with tab3:
     
     headers = st.text_area("Custom Headers (JSON)", value='{\n  "Authorization": "Bearer ' + st.session_state.api_key[:10] + '..."\n}', height=100)
     
-    if st.button("🚀 Send Request", type="primary"):
+    if st.button(" Send Request", type="primary"):
         st.markdown("### Response")
         
         # Simulate API response
@@ -252,9 +252,9 @@ with tab4:
     
     secret = st.text_input("Webhook Secret", value=hashlib.sha256(b"secret").hexdigest()[:20], type="password")
     
-    if st.button("📌 Register Webhook", type="primary"):
+    if st.button(" Register Webhook", type="primary"):
         if webhook_url:
-            st.success(f"✅ Webhook registered: {webhook_url}")
+            st.success(f" Webhook registered: {webhook_url}")
             st.info("We'll send a test ping to verify the endpoint.")
         else:
             st.warning("Please enter a webhook URL")

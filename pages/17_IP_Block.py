@@ -9,7 +9,7 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Bulk IP Blocking | SOC", page_icon="🚫", layout="wide")
+st.set_page_config(page_title="Bulk IP Blocking | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -46,10 +46,10 @@ def save_blocklist(blocklist):
 if 'blocklist' not in st.session_state:
     st.session_state.blocklist = load_blocklist()
 
-st.success("✅ Persistent storage enabled - blocklist saved to file")
+st.success(" Persistent storage enabled - blocklist saved to file")
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["📤 Upload Blocklist", "📋 Current Blocklist", "📊 Statistics"])
+tab1, tab2, tab3 = st.tabs([" Upload Blocklist", " Current Blocklist", " Statistics"])
 
 with tab1:
     st.markdown(section_title("Upload IP Blocklist"), unsafe_allow_html=True)
@@ -91,7 +91,7 @@ with tab1:
                 if len(ips) > 20:
                     st.caption(f"...and {len(ips) - 20} more")
             
-            if st.button("🚫 Block All IPs", type="primary"):
+            if st.button(" Block All IPs", type="primary"):
                 added_count = 0
                 for ip in ips:
                     if not any(b['ip'] == ip for b in st.session_state.blocklist):
@@ -104,14 +104,14 @@ with tab1:
                         added_count += 1
                 
                 save_blocklist(st.session_state.blocklist)
-                st.success(f"✅ Added **{added_count}** IPs to blocklist")
+                st.success(f" Added **{added_count}** IPs to blocklist")
                 st.rerun()
                 
         except Exception as e:
             st.error(f"Error reading file: {e}")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### ➕ Add Single IP")
+    st.markdown("###  Add Single IP")
     
     col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
@@ -167,9 +167,9 @@ with tab2:
         with col3:
             st.markdown(f"<span style='color: #8B95A5;'>{entry['added']}</span>", unsafe_allow_html=True)
         with col4:
-            st.markdown(f"<span style='color: {status_color};'>●</span> {entry['status']}", unsafe_allow_html=True)
+            st.markdown(f"<span style='color: {status_color};'></span> {entry['status']}", unsafe_allow_html=True)
         with col5:
-            if st.button("❌", key=f"remove_{i}"):
+            if st.button("", key=f"remove_{i}"):
                 st.session_state.blocklist.remove(entry)
                 st.rerun()
     
@@ -180,14 +180,14 @@ with tab2:
     with col1:
         df = pd.DataFrame(st.session_state.blocklist)
         csv = df.to_csv(index=False)
-        st.download_button("📥 Export Blocklist", csv, "ip_blocklist.csv", "text/csv", use_container_width=True)
+        st.download_button(" Export Blocklist", csv, "ip_blocklist.csv", "text/csv", use_container_width=True)
     
     with col2:
-        if st.button("🔄 Sync to Firewall", use_container_width=True):
+        if st.button(" Sync to Firewall", use_container_width=True):
             st.info("Firewall sync simulated - would push to iptables/firewall API")
     
     with col3:
-        if st.button("🗑️ Clear All", use_container_width=True):
+        if st.button(" Clear All", use_container_width=True):
             st.session_state.blocklist = []
             st.rerun()
 

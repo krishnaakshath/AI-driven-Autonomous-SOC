@@ -1,5 +1,5 @@
 """
-🎯 Autonomous Response Playbooks
+ Autonomous Response Playbooks
 ================================
 Visual playbook editor/viewer with execution logs and status tracking.
 Zero-touch incident response with predefined security workflows.
@@ -15,7 +15,7 @@ from services.playbook_engine import playbook_engine, list_playbooks, get_playbo
 
 st.set_page_config(
     page_title="Playbooks | SOC",
-    page_icon="🎯",
+    page_icon="",
     layout="wide"
 )
 
@@ -52,7 +52,7 @@ with tab1:
     
     for pb in playbooks:
         severity_color = severity_colors.get(pb['severity'], '#888')
-        auto_badge = "🤖 AUTO" if pb['auto_execute'] else "👤 MANUAL"
+        auto_badge = " AUTO" if pb['auto_execute'] else " MANUAL"
         
         with st.expander(f"**{pb['name']}** — {pb['severity'].upper()}", expanded=False):
             col1, col2 = st.columns([3, 1])
@@ -161,7 +161,7 @@ with tab2:
     
     col1, col2 = st.columns([1, 4])
     with col1:
-        execute_btn = st.button("▶️ Execute Playbook", type="primary", use_container_width=True)
+        execute_btn = st.button(" Execute Playbook", type="primary", use_container_width=True)
     
     if execute_btn:
         if not target_ip:
@@ -171,11 +171,11 @@ with tab2:
                 result = execute_playbook(selected_pb_key, target_ip)
                 
                 if result.get('success'):
-                    st.success(f"✅ Playbook executed successfully!")
+                    st.success(f" Playbook executed successfully!")
                     
                     st.markdown("### Execution Results")
                     for action_result in result.get('results', []):
-                        icon = "✅" if action_result['status'] == 'success' else "❌"
+                        icon = "" if action_result['status'] == 'success' else ""
                         st.markdown(f"{icon} **{action_result['action']}**: {action_result.get('result', action_result.get('error', 'Completed'))}")
                 else:
                     st.error(f"Playbook execution failed: {result.get('error', 'Unknown error')}")

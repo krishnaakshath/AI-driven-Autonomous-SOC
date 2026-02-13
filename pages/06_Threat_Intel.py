@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Threat Intelligence | SOC", page_icon="🌐", layout="wide")
+st.set_page_config(page_title="Threat Intelligence | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -37,7 +37,7 @@ with col_refresh:
 with col_time:
     st.markdown(f'''
         <div style="display: flex; align-items: center; gap: 0.5rem; height: 38px;">
-            <span style="color: #0aff0a;">●</span>
+            <span style="color: #0aff0a;"></span>
             <span style="color: #8B95A5; font-family: 'Share Tech Mono', monospace;">LIVE FEED // AUTO-REFRESH 30s</span>
         </div>
     ''', unsafe_allow_html=True)
@@ -135,7 +135,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 st.markdown('''
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem;">
-        <span style="font-size: 1.5rem;">🌐</span>
+        <span style="font-size: 1.5rem;"></span>
         <h3 style="
             margin: 0; 
             color: #00f3ff; 

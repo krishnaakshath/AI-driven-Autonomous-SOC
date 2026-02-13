@@ -36,7 +36,7 @@ def render_autonomous_defense_log(risk_score):
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown('<h4 style="font-family: Orbitron; color: #00f3ff; font-size: 0.9rem; margin-bottom: 5px;">⚡ AUTONOMOUS DEFENSE PROTOCOL</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="font-family: Orbitron; color: #00f3ff; font-size: 0.9rem; margin-bottom: 5px;"> AUTONOMOUS DEFENSE PROTOCOL</h4>', unsafe_allow_html=True)
     
     # Generate fake log entries based on risk
     actions = []

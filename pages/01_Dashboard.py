@@ -344,7 +344,7 @@ if ALERTS_AVAILABLE:
         }
         result = trigger_alert(alert_data)
         if result.get("telegram") or result.get("email"):
-            st.toast("🚨 Critical alert sent!", icon="🔔")
+            st.toast(" Critical alert sent!", icon="")
 
 
 # Premium Header
@@ -410,7 +410,7 @@ for col, value, label, color in metrics_data:
 try:
     from ui.educational import render_explanation, render_quick_tip
     
-    with st.expander("📚 **Learn: What do these metrics mean?** (Click to expand)"):
+    with st.expander(" **Learn: What do these metrics mean?** (Click to expand)"):
         col1, col2 = st.columns(2)
         with col1:
             render_explanation("active_threats")

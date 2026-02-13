@@ -1,5 +1,5 @@
 """
-🎯 Autonomous Response Playbook Engine
+ Autonomous Response Playbook Engine
 =======================================
 Zero-touch incident response with predefined playbooks.
 Automatically executes response actions when threats are detected.

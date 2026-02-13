@@ -1,5 +1,5 @@
 """
-🌍 Geo-Attack Prediction Engine
+ Geo-Attack Prediction Engine
 ================================
 Predicts which countries are most likely to be attacked next
 using historical attack patterns, geopolitical factors, and

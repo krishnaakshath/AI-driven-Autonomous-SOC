@@ -1,5 +1,5 @@
 """
-🧪 Malware Sandbox Service
+ Malware Sandbox Service
 ==========================
 Safe environment for analyzing suspicious files and URLs.
 

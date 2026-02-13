@@ -1,5 +1,5 @@
 """
-🌍 Geo-Attack Predictions
+ Geo-Attack Predictions
 =========================
 Visual world map showing which countries are most likely
 to be attacked next, with probability percentages.
@@ -14,7 +14,7 @@ from ui.theme import CYBERPUNK_CSS
 
 st.set_page_config(
     page_title="Geo Predictions | SOC",
-    page_icon="🌍",
+    page_icon="",
     layout="wide"
 )
 
@@ -24,7 +24,7 @@ st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 st.markdown("""
 <div style="text-align: center; padding: 20px 0 30px;">
     <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0; color: #fff;">
-        🌍 Geo-Attack Predictions
+         Geo-Attack Predictions
     </h1>
     <p style="color: #888; font-size: 0.9rem; letter-spacing: 2px; margin-top: 5px;">
         ML-POWERED COUNTRY THREAT FORECASTING
@@ -68,7 +68,7 @@ if GEO_LOADED:
     """, unsafe_allow_html=True)
     
     # Top 5 targets
-    st.markdown("### 🎯 Top 5 Most Likely Targets")
+    st.markdown("###  Top 5 Most Likely Targets")
     
     cols = st.columns(5)
     for i, (country, data) in enumerate(top_targets):
@@ -83,7 +83,7 @@ if GEO_LOADED:
                 height: 220px;
             ">
                 <div style="font-size: 0.7rem; color: #666;">#{i+1}</div>
-                <div style="font-size: 1.5rem; margin: 5px 0;">🏳️</div>
+                <div style="font-size: 1.5rem; margin: 5px 0;"></div>
                 <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">{country}</div>
                 <div style="font-size: 2.5rem; font-weight: 800; color: {data['color']}; margin: 10px 0;">
                     {data['probability']}%
@@ -106,7 +106,7 @@ if GEO_LOADED:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Tabs for different views
-    tab1, tab2, tab3 = st.tabs(["📊 Full Rankings", "🔍 Analysis Factors", "📈 Trend Data"])
+    tab1, tab2, tab3 = st.tabs([" Full Rankings", " Analysis Factors", " Trend Data"])
     
     with tab1:
         st.markdown("### All Countries by Attack Probability")

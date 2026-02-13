@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Dark Web Monitor | SOC", page_icon="🌑", layout="wide")
+st.set_page_config(page_title="Dark Web Monitor | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -24,9 +24,9 @@ except ImportError:
 
 # Show API status
 if HAS_THREAT_INTEL:
-    st.success("✅ Connected to Threat Intelligence - Using real breach databases")
+    st.success(" Connected to Threat Intelligence - Using real breach databases")
 else:
-    st.warning("⚠️ Threat Intel not available - Using simulated data")
+    st.warning(" Threat Intel not available - Using simulated data")
 
 # Known breach database
 BREACH_DATABASES = [
@@ -137,7 +137,7 @@ def check_domain_exposure(domain):
     return exposures
 
 # Tabs for different monitoring types
-tab1, tab2, tab3 = st.tabs(["📧 Email Breach Check", "🌐 Domain Monitoring", "📊 Breach Intelligence"])
+tab1, tab2, tab3 = st.tabs([" Email Breach Check", " Domain Monitoring", " Breach Intelligence"])
 
 with tab1:
     st.markdown(section_title("Check Email for Breaches"), unsafe_allow_html=True)
@@ -153,7 +153,7 @@ with tab1:
     
     email_input = st.text_input("Email Address", placeholder="user@example.com")
     
-    if st.button("🔍 Check for Breaches", type="primary"):
+    if st.button(" Check for Breaches", type="primary"):
         if email_input and "@" in email_input:
             with st.spinner("Scanning breach databases..."):
                 import time
@@ -162,7 +162,7 @@ with tab1:
                 breaches = check_email_breach(email_input)
                 
                 if breaches:
-                    st.error(f"⚠️ **{len(breaches)} breach(es) found** for {email_input}")
+                    st.error(f" **{len(breaches)} breach(es) found** for {email_input}")
                     
                     for breach in breaches:
                         st.markdown(f"""
@@ -184,7 +184,7 @@ with tab1:
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    st.markdown("### 🛡️ Recommended Actions")
+                    st.markdown("###  Recommended Actions")
                     st.markdown("""
                     1. **Change your password immediately** for any accounts using this email
                     2. **Enable MFA** on all important accounts
@@ -193,7 +193,7 @@ with tab1:
                     5. **Monitor credit reports** if financial data was exposed
                     """)
                 else:
-                    st.success(f"✅ **No breaches found** for {email_input}")
+                    st.success(f" **No breaches found** for {email_input}")
                     st.markdown("Good news! This email was not found in known breach databases.")
         else:
             st.warning("Please enter a valid email address")
@@ -212,7 +212,7 @@ with tab2:
     
     domain_input = st.text_input("Domain", placeholder="example.com")
     
-    if st.button("🔍 Scan Domain", type="primary", key="scan_domain"):
+    if st.button(" Scan Domain", type="primary", key="scan_domain"):
         if domain_input:
             with st.spinner("Scanning dark web sources..."):
                 import time
@@ -221,7 +221,7 @@ with tab2:
                 exposures = check_domain_exposure(domain_input)
                 
                 if exposures:
-                    st.error(f"⚠️ **{len(exposures)} exposure(s) found** for {domain_input}")
+                    st.error(f" **{len(exposures)} exposure(s) found** for {domain_input}")
                     
                     for exp in exposures:
                         severity_color = {"HIGH": "#FF8C00", "CRITICAL": "#FF4444", "MEDIUM": "#FFD700", "LOW": "#00D4FF"}
@@ -242,7 +242,7 @@ with tab2:
                         </div>
                         """, unsafe_allow_html=True)
                 else:
-                    st.success(f"✅ **No exposures found** for {domain_input}")
+                    st.success(f" **No exposures found** for {domain_input}")
         else:
             st.warning("Please enter a domain")
 

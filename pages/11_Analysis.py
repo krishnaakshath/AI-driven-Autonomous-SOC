@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="ML Insights | SOC", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="ML Insights | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -36,7 +36,7 @@ except ImportError:
     NEURAL_LOADED = False
 
 if ML_LOADED:
-    tab0, tab1, tab2, tab3 = st.tabs(["🧠 Neural Prediction", "🌲 Isolation Forest", "📊 Fuzzy C-Means", "🔄 Combined Analysis"])
+    tab0, tab1, tab2, tab3 = st.tabs([" Neural Prediction", " Isolation Forest", " Fuzzy C-Means", " Combined Analysis"])
     
     with tab0:
         st.markdown(section_title("Neural Threat Prediction Engine"), unsafe_allow_html=True)
@@ -170,9 +170,9 @@ if ML_LOADED:
                 <strong>Anomalies are easier to isolate</strong> (shorter path = more anomalous).
             </p>
             <ul style="color: #FAFAFA; margin: 0.5rem 0;">
-                <li>🔴 <strong>Data Exfiltration:</strong> Very high outbound bytes</li>
-                <li>🟠 <strong>DDoS:</strong> Very high inbound traffic with many packets</li>
-                <li>🟡 <strong>C2 Communication:</strong> Long duration beaconing patterns</li>
+                <li> <strong>Data Exfiltration:</strong> Very high outbound bytes</li>
+                <li> <strong>DDoS:</strong> Very high inbound traffic with many packets</li>
+                <li> <strong>C2 Communication:</strong> Long duration beaconing patterns</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -261,23 +261,23 @@ if ML_LOADED:
                     
                     with st.expander(f"View Details - {a['id']}"):
                         st.markdown(f"""
-**🕐 When:** Detected in current analysis batch (real-time monitoring)
+** When:** Detected in current analysis batch (real-time monitoring)
 
-**❓ Why (Root Cause):**  
+** Why (Root Cause):**  
 {why}
 
-**⚙️ How (Technical Details):**  
+** How (Technical Details):**  
 {how}
 
-**📊 Key Metrics:**
+** Key Metrics:**
 - Bytes In: `{a.get('bytes_in', 0):,.0f}`
 - Bytes Out: `{a.get('bytes_out', 0):,.0f}`
 - Packets: `{a.get('packets', 0)}`
 - Duration: `{a.get('duration', 0):.1f}s`
 - Port: `{a.get('port', 'N/A')}`
 
-**🎯 Recommended Action:**
-{"🚨 IMMEDIATE BLOCK - Isolate affected system and investigate data loss" if a['risk_level'] == 'CRITICAL' else "⚠️ INVESTIGATE - Monitor closely and prepare containment procedures"}
+** Recommended Action:**
+{" IMMEDIATE BLOCK - Isolate affected system and investigate data loss" if a['risk_level'] == 'CRITICAL' else " INVESTIGATE - Monitor closely and prepare containment procedures"}
                         """)
     
     with tab2:
@@ -394,15 +394,15 @@ if ML_LOADED:
                     
                     with st.expander(f"View Details - {r['id']}"):
                         st.markdown(f"""
-**🏷️ Primary Category:** {top_cat} ({conf}%)
+** Primary Category:** {top_cat} ({conf}%)
 
-**❓ Why This Classification:**  
+** Why This Classification:**  
 {cat_info['why']}
 
-**⚙️ Attack Mechanism:**  
+** Attack Mechanism:**  
 {cat_info['how']}
 
-**📊 Cluster Memberships:**
+** Cluster Memberships:**
 """)
                         for cat, pct in memberships.items():
                             bar_width = pct
@@ -410,14 +410,14 @@ if ML_LOADED:
                             st.markdown(f"`{cat}`: {pct}%")
                         
                         st.markdown(f"""
-**📈 Event Metrics:**
+** Event Metrics:**
 - Bytes In: `{r.get('bytes_in', 0):,.0f}`
 - Bytes Out: `{r.get('bytes_out', 0):,.0f}`
 - Packets: `{r.get('packets', 0)}`
 - Duration: `{r.get('duration', 0):.1f}s`
 
-**🎯 Recommended Action:**
-{"🚨 HIGH PRIORITY - Immediate containment required" if conf > 70 else "⚠️ INVESTIGATE - Verify threat and monitor"}
+** Recommended Action:**
+{" HIGH PRIORITY - Immediate containment required" if conf > 70 else " INVESTIGATE - Verify threat and monitor"}
                         """)
     
     with tab3:
@@ -439,7 +439,7 @@ if ML_LOADED:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button("🚀 Run Full ML Pipeline", type="primary", key="run_combined"):
+        if st.button(" Run Full ML Pipeline", type="primary", key="run_combined"):
             with st.spinner("Running combined ML analysis..."):
                 # Generate events
                 events = gen_if_events(n_normal=80, n_anomalous=20)

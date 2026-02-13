@@ -1,5 +1,5 @@
 """
-👁️ Behavioral Anomaly Detection Engine
+ Behavioral Anomaly Detection Engine
 =======================================
 Learns normal user/system behavior patterns and detects
 anomalies that could indicate insider threats or compromised accounts.

@@ -1,5 +1,5 @@
 """
-🔍 Natural Language Query Engine
+ Natural Language Query Engine
 =================================
 Translates natural language queries into structured data lookups.
 Enables threat hunting with plain English commands.

@@ -1,5 +1,5 @@
 """
-🌐 Multi-Source Threat Intelligence Aggregator
+ Multi-Source Threat Intelligence Aggregator
 ===============================================
 Aggregates threat data from multiple intelligence sources
 and produces a unified threat score.

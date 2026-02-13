@@ -102,7 +102,7 @@ with tab2:
     if not VT_KEY:
         st.warning("VirusTotal API key not found. URL scanning unavailable.")
     else:
-        st.markdown('<div style="padding: 0.5rem 1rem; background: rgba(0, 200, 83, 0.1); border-radius: 8px; border-left: 3px solid #00C853;"><span style="color: #00C853;">✓</span> <span style="color: #8B95A5;">VirusTotal API connected</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding: 0.5rem 1rem; background: rgba(0, 200, 83, 0.1); border-radius: 8px; border-left: 3px solid #00C853;"><span style="color: #00C853;"></span> <span style="color: #8B95A5;">VirusTotal API connected</span></div>', unsafe_allow_html=True)
         
         url = st.text_input("Enter URL", placeholder="https://example.com")
         

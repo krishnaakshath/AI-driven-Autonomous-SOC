@@ -1,5 +1,5 @@
 """
-🎙️ Voice Command Interface
+ Voice Command Interface
 ===========================
 Web Speech API integration for voice-controlled SOC operations.
 Enables hands-free threat hunting and system control.
@@ -128,7 +128,7 @@ def inject_voice_interface(on_command_callback: Optional[Callable] = None):
     
     <div class="voice-container">
         <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()" title="Voice Command (Hold to speak)">
-            🎙️
+            
         </button>
         <div class="voice-status" id="voiceStatus">Click to start</div>
     </div>
@@ -352,6 +352,6 @@ def render_voice_button_mini():
     </style>
     
     <div class="voice-mini" onclick="toggleVoice()">
-        🎙️ Voice Command
+         Voice Command
     </div>
     """, unsafe_allow_html=True)

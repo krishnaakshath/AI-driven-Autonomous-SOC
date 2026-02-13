@@ -30,7 +30,7 @@ def check_threats():
     # Simulate a random threat check
     # 5% chance of a critical threat in this polling interval
     if random.random() < 0.05:
-        logger.warning("⚠️ ANOMALY DETECTED!")
+        logger.warning(" ANOMALY DETECTED!")
         
         # Simulate threat details
         threat_data = {
@@ -44,7 +44,7 @@ def check_threats():
         
         # Trigger Alert
         try:
-            subject = f"🚨 SOC ALERT: {threat_data['attack_type']} Detected"
+            subject = f" SOC ALERT: {threat_data['attack_type']} Detected"
             body = f"""
             CRITICAL SECURITY ALERT
             -----------------------
@@ -60,9 +60,9 @@ def check_threats():
             
             if os.getenv('SENDER_EMAIL') and os.getenv('SENDER_PASSWORD'):
                 send_email_alert(subject, body, os.getenv('SENDER_EMAIL')) # Send to self for now
-                logger.info("✅ Alert email dispatched.")
+                logger.info(" Alert email dispatched.")
             else:
-                logger.warning("❌ Email credentials not set. Alert skipped.")
+                logger.warning(" Email credentials not set. Alert skipped.")
                 
         except Exception as e:
             logger.error(f"Failed to send alert: {e}")
@@ -71,7 +71,7 @@ def check_threats():
         logger.info("System Nominal. No threats detected.")
 
 if __name__ == "__main__":
-    logger.info("🛡️ SOC BACKGROUND MONITOR INITIALIZED")
+    logger.info(" SOC BACKGROUND MONITOR INITIALIZED")
     logger.info("Running in 24/7 Surveillance Mode")
     
     while True:

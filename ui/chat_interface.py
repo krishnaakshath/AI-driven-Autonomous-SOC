@@ -171,12 +171,12 @@ def inject_floating_cortex_link():
     </style>
     """, unsafe_allow_html=True)
 
-    # 🤖 FLOATING CORTEX ORB with embedded chat
-    with st.popover("🤖"):
+    #  FLOATING CORTEX ORB with embedded chat
+    with st.popover(""):
         # Header
         st.markdown("""
         <div class="cortex-header">
-            <span class="cortex-icon">🧠</span>
+            <span class="cortex-icon"></span>
             <div>
                 <div class="cortex-title">CORTEX</div>
                 <div class="cortex-status">NEURAL LINK ACTIVE</div>
@@ -210,7 +210,7 @@ def inject_floating_cortex_link():
         
         if prompt:
             st.session_state.cortex_messages.append({"role": "user", "content": prompt})
-            with st.spinner("⚡ Processing..."):
+            with st.spinner(" Processing..."):
                 context = {"Page": st.session_state.get("current_page", "SOC Dashboard")}
                 response = ai_assistant.chat(prompt, system_context=context)
                 st.session_state.cortex_messages.append({"role": "assistant", "content": response})

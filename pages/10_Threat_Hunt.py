@@ -7,7 +7,7 @@ import random
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Threat Hunting | SOC", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="Threat Hunting | SOC", page_icon="", layout="wide")
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -52,16 +52,16 @@ HUNT_QUERIES = [
 ]
 
 # Tabs
-tab1, tab2, tab3, tab4 = st.tabs(["🔍 IOC Search", "📜 Hunt Queries", "💡 Hypothesis Hunt", "📊 Results"])
+tab1, tab2, tab3, tab4 = st.tabs([" IOC Search", " Hunt Queries", " Hypothesis Hunt", " Results"])
 
 with tab1:
     st.markdown(section_title("Search for Indicators of Compromise"), unsafe_allow_html=True)
     
     # Show API status
     if HAS_REAL_API:
-        st.success("✅ Connected to real threat intelligence APIs (AbuseIPDB, VirusTotal, OTX)")
+        st.success(" Connected to real threat intelligence APIs (AbuseIPDB, VirusTotal, OTX)")
     else:
-        st.warning("⚠️ Using simulated data - configure API keys in Settings for real intelligence")
+        st.warning(" Using simulated data - configure API keys in Settings for real intelligence")
     
     col1, col2 = st.columns([3, 1])
     
@@ -71,7 +71,7 @@ with tab1:
     with col2:
         ioc_type = st.selectbox("Type", ["Auto-Detect", "IP Address", "Domain", "File Hash", "Process"])
     
-    if st.button("🔍 Hunt", type="primary"):
+    if st.button(" Hunt", type="primary"):
         if ioc_input:
             with st.spinner("Hunting across all data sources..."):
                 import time
@@ -96,7 +96,7 @@ with tab1:
                 # Display results
                 if result_data and result_data.get('risk_score', 0) > 0:
                     risk = result_data.get('risk_score', 0)
-                    st.error(f"⚠️ **Threat Detected!** Risk Score: {risk}/100")
+                    st.error(f" **Threat Detected!** Risk Score: {risk}/100")
                     
                     st.markdown(f"""
                     **IP:** {ioc_input}  
@@ -106,7 +106,7 @@ with tab1:
                     **Categories:** {', '.join(result_data.get('categories', ['Unknown']))}
                     """)
                     
-                    st.markdown("### 🎯 Recommended Actions")
+                    st.markdown("###  Recommended Actions")
                     st.markdown("""
                     1. Isolate affected endpoints immediately
                     2. Collect forensic artifacts (memory dump, logs)
@@ -115,7 +115,7 @@ with tab1:
                     5. Reset credentials for affected users
                     """)
                 elif random.random() > 0.4:  # Fallback simulation
-                    st.error(f"⚠️ **IOC Found in Environment!** (Simulated)")
+                    st.error(f" **IOC Found in Environment!** (Simulated)")
                     
                     matches = []
                     for _ in range(random.randint(2, 8)):
@@ -130,13 +130,13 @@ with tab1:
                     df = pd.DataFrame(matches)
                     st.dataframe(df, use_container_width=True)
                 else:
-                    st.success(f"✅ **IOC not found** - No matches in current data")
+                    st.success(f" **IOC not found** - No matches in current data")
                     st.info("Consider expanding time range or checking additional data sources")
         else:
             st.warning("Please enter an IOC to search")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 📋 Quick IOC Lists")
+    st.markdown("###  Quick IOC Lists")
     
     cols = st.columns(4)
     with cols[0]:
@@ -186,7 +186,7 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
         with col2:
-            if st.button("▶ Run", key=f"run_{query['name']}", use_container_width=True):
+            if st.button(" Run", key=f"run_{query['name']}", use_container_width=True):
                 st.session_state[f"hunt_result_{query['name']}"] = random.randint(0, 50)
                 st.rerun()
 
@@ -218,7 +218,7 @@ with tab3:
                                    ["EDR Logs", "Firewall Logs", "DNS Logs", "Proxy Logs", "Windows Event Logs", "Authentication Logs"],
                                    default=["EDR Logs", "Windows Event Logs"])
     
-    if st.button("🎯 Start Hunt", type="primary"):
+    if st.button(" Start Hunt", type="primary"):
         if hypothesis:
             with st.spinner("Executing hypothesis-driven hunt..."):
                 import time
@@ -227,10 +227,10 @@ with tab3:
                 findings = random.randint(0, 25)
                 
                 if findings > 0:
-                    st.warning(f"⚠️ **{findings} potential matches found**")
+                    st.warning(f" **{findings} potential matches found**")
                     st.markdown("Results require analyst review to confirm true positives.")
                 else:
-                    st.success("✅ No matches found for this hypothesis")
+                    st.success(" No matches found for this hypothesis")
         else:
             st.warning("Please enter a hunting hypothesis")
 
@@ -250,7 +250,7 @@ with tab4:
     
     # Export
     csv = df.to_csv(index=False)
-    st.download_button("📥 Export Hunt History", csv, "hunt_history.csv", "text/csv")
+    st.download_button(" Export Hunt History", csv, "hunt_history.csv", "text/csv")
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Threat Hunting</p></div>', unsafe_allow_html=True)
