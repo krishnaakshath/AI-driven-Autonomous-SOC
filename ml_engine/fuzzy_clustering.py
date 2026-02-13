@@ -254,6 +254,154 @@ class FuzzyCMeans:
             'avg_membership': cluster_avg_confidence,
             'total_events': len(results)
         }
+    
+    def fit_on_dataset(self) -> Dict:
+        """
+        Train on NSL-KDD dataset using the 5 attack categories.
+        Maps NSL-KDD categories to FCM clusters.
+        
+        Returns:
+            Training statistics
+        """
+        from ml_engine.nsl_kdd_dataset import (
+            load_nsl_kdd_train, get_numeric_features,
+            get_category_labels, get_dataset_summary
+        )
+        
+        train_df = load_nsl_kdd_train()
+        summary = get_dataset_summary(train_df)
+        
+        X = get_numeric_features(train_df)
+        
+        # Scale
+        X_scaled = self.scaler.fit_transform(X)
+        
+        n_samples = X_scaled.shape[0]
+        
+        # Initialize membership
+        self.membership = self._initialize_membership(n_samples)
+        
+        # Iterative optimization
+        converged_iter = self.max_iter
+        for iteration in range(self.max_iter):
+            self.centers = self._update_centers(X_scaled, self.membership)
+            new_membership = self._update_membership(X_scaled, self.centers)
+            
+            if np.max(np.abs(new_membership - self.membership)) < self.error:
+                converged_iter = iteration + 1
+                break
+            self.membership = new_membership
+        
+        self.is_trained = True
+        self._trained_on_dataset = True
+        self._train_labels = get_category_labels(train_df)
+        
+        return {
+            'n_clusters': self.n_clusters,
+            'n_samples': n_samples,
+            'n_features': X_scaled.shape[1],
+            'iterations': converged_iter,
+            'converged': converged_iter < self.max_iter,
+            'trained_at': datetime.now().isoformat(),
+            'dataset_summary': summary
+        }
+    
+    def evaluate(self) -> Dict:
+        """
+        Evaluate clustering on NSL-KDD test data.
+        
+        Computes:
+        - Cluster purity (how homogeneous each cluster is)
+        - Per-category distribution across clusters
+        - Silhouette score
+        
+        Returns:
+            Evaluation metrics dictionary
+        """
+        if not hasattr(self, '_trained_on_dataset') or not self._trained_on_dataset:
+            self.fit_on_dataset()
+        
+        from ml_engine.nsl_kdd_dataset import (
+            load_nsl_kdd_test, get_numeric_features, get_category_labels
+        )
+        
+        test_df = load_nsl_kdd_test()
+        X_test = get_numeric_features(test_df)
+        y_true_labels = get_category_labels(test_df)
+        
+        X_test_scaled = self.scaler.transform(X_test)
+        
+        # Get membership for test data
+        membership = self._update_membership(X_test_scaled, self.centers)
+        
+        # Assign each sample to primary cluster
+        cluster_assignments = np.argmax(membership, axis=1)
+        
+        # Map category names to numbers for purity calculation
+        cat_names = sorted(set(y_true_labels))
+        cat_to_idx = {name: idx for idx, name in enumerate(cat_names)}
+        y_true_idx = np.array([cat_to_idx[label] for label in y_true_labels])
+        
+        # Cluster purity: for each cluster, find most common true label
+        total_correct = 0
+        cluster_details = {}
+        for c in range(self.n_clusters):
+            mask = cluster_assignments == c
+            if mask.sum() == 0:
+                cluster_details[self.cluster_names[c]] = {
+                    'size': 0, 'dominant_category': 'N/A', 'purity': 0
+                }
+                continue
+            
+            cluster_true = y_true_labels[mask]
+            unique, counts = np.unique(cluster_true, return_counts=True)
+            dominant_idx = np.argmax(counts)
+            dominant_cat = unique[dominant_idx]
+            purity = counts[dominant_idx] / mask.sum()
+            total_correct += counts[dominant_idx]
+            
+            cat_dist = {str(u): int(c) for u, c in zip(unique, counts)}
+            
+            cluster_details[self.cluster_names[c]] = {
+                'size': int(mask.sum()),
+                'dominant_category': dominant_cat,
+                'purity': round(purity * 100, 2),
+                'category_distribution': cat_dist
+            }
+        
+        overall_purity = total_correct / len(y_true_labels) if len(y_true_labels) > 0 else 0
+        
+        # Silhouette score (sampled for speed)
+        try:
+            from sklearn.metrics import silhouette_score
+            sample_size = min(1000, len(X_test_scaled))
+            indices = np.random.choice(len(X_test_scaled), sample_size, replace=False)
+            sil_score = silhouette_score(X_test_scaled[indices], cluster_assignments[indices])
+        except Exception:
+            sil_score = 0.0
+        
+        # Per-category accuracy
+        category_accuracy = {}
+        for cat in cat_names:
+            cat_mask = y_true_labels == cat
+            if cat_mask.sum() == 0:
+                continue
+            # Find which cluster this category maps to most
+            cat_clusters = cluster_assignments[cat_mask]
+            most_common = np.bincount(cat_clusters, minlength=self.n_clusters).argmax()
+            correct = (cat_clusters == most_common).sum()
+            category_accuracy[cat] = round(correct / cat_mask.sum() * 100, 2)
+        
+        self.dataset_metrics = {
+            'overall_purity': round(overall_purity * 100, 2),
+            'silhouette_score': round(sil_score, 4),
+            'cluster_details': cluster_details,
+            'category_accuracy': category_accuracy,
+            'test_samples': len(y_true_labels),
+            'categories_found': cat_names
+        }
+        
+        return self.dataset_metrics
 
 
 def generate_sample_events(n_events: int = 100) -> List[Dict]:

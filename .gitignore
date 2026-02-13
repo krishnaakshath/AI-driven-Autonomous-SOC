@@ -13,3 +13,11 @@ scaler.pkl
 live_capture.csv
 soc_monitor.log
 **/__pycache__/
+
+# Database
+soc_data.db
+*.db
+
+# Helper Scripts
+test_day1.py
+manual_attack_tool.py

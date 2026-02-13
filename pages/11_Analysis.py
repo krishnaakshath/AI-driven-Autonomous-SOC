@@ -15,14 +15,12 @@ from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
 
-# Authentication removed - public dashboard
-
-st.markdown(page_header("ML Insights", "Isolation Forest Anomaly Detection & Fuzzy C-Means Clustering"), unsafe_allow_html=True)
+st.markdown(page_header("ML Insights", "Isolation Forest Anomaly Detection & Fuzzy C-Means Clustering — Trained on NSL-KDD Dataset"), unsafe_allow_html=True)
 
 # Import ML modules
 try:
-    from ml_engine.isolation_forest import detect_anomalies, get_anomaly_summary, generate_sample_events as gen_if_events
-    from ml_engine.fuzzy_clustering import cluster_threats, get_threat_distribution, generate_sample_events as gen_fcm_events
+    from ml_engine.isolation_forest import SOCIsolationForest, detect_anomalies, get_anomaly_summary, generate_sample_events as gen_if_events
+    from ml_engine.fuzzy_clustering import FuzzyCMeans, cluster_threats, get_threat_distribution, generate_sample_events as gen_fcm_events
     ML_LOADED = True
 except ImportError as e:
     ML_LOADED = False
@@ -35,6 +33,13 @@ try:
 except ImportError:
     NEURAL_LOADED = False
 
+# Import dataset module
+try:
+    from ml_engine.nsl_kdd_dataset import load_nsl_kdd_train, get_dataset_summary, get_data_source
+    DATASET_AVAILABLE = True
+except ImportError:
+    DATASET_AVAILABLE = False
+
 # Import SIEM for real event data
 SIEM_AVAILABLE = False
 try:
@@ -45,14 +50,12 @@ except ImportError:
 
 def _siem_to_ml_events(siem_events):
     """Convert SIEM events into ML-compatible format with numeric features."""
-    import numpy as np
     severity_map = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
     ml_events = []
     for i, evt in enumerate(siem_events):
         sev = severity_map.get(evt.get("severity", "LOW"), 1)
         event_type = evt.get("event_type", "").lower()
         
-        # Generate realistic network features based on event type and severity
         if "exfil" in event_type or "data" in event_type:
             bytes_out = np.random.normal(500000, 100000) * sev
             bytes_in = np.random.normal(1000, 200)
@@ -89,7 +92,6 @@ def _siem_to_ml_events(siem_events):
             port = 0
             etype = "scan"
         else:
-            # Normal traffic with severity-based noise
             bytes_in = np.random.normal(5000, 1000) * (1 + sev * 0.3)
             bytes_out = np.random.normal(2000, 500) * (1 + sev * 0.3)
             packets = np.random.randint(10, 100 + sev * 50)
@@ -137,9 +139,27 @@ def get_ml_events_fcm(n_events=100):
             pass
     return gen_fcm_events(n_events=n_events), False
 
+
+def render_metric_card(label, value, color):
+    """Render a styled metric card."""
+    st.markdown(f"""
+    <div style="
+        background: linear-gradient(135deg, rgba(26,31,46,0.8), rgba(26,31,46,0.6));
+        border: 1px solid {color}40;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+    ">
+        <div style="font-size: 1.8rem; font-weight: 800; color: {color};">{value}</div>
+        <div style="color: #8B95A5; font-size: 0.8rem;">{label}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 if ML_LOADED:
-    tab0, tab1, tab2, tab3 = st.tabs([" Neural Prediction", " Isolation Forest", " Fuzzy C-Means", " Combined Analysis"])
+    tab0, tab1, tab2, tab3 = st.tabs(["Neural Prediction", "Isolation Forest", "Fuzzy C-Means", "Combined Analysis"])
     
+    # ===== TAB 0: Neural Prediction =====
     with tab0:
         st.markdown(section_title("Neural Threat Prediction Engine"), unsafe_allow_html=True)
         
@@ -157,11 +177,9 @@ if ML_LOADED:
         st.markdown("<br>", unsafe_allow_html=True)
         
         if NEURAL_LOADED:
-            # Get predictions
             predictions = predict_threats()
             summary = get_threat_summary()
             
-            # Summary banner
             if "ALERT" in summary:
                 banner_color = "#ff0040"
             elif "WATCH" in summary:
@@ -182,7 +200,6 @@ if ML_LOADED:
             </div>
             """, unsafe_allow_html=True)
             
-            # Threat probability gauges
             st.markdown("### Threat Probability Forecast")
             
             cols = st.columns(5)
@@ -218,7 +235,6 @@ if ML_LOADED:
                     </div>
                     """, unsafe_allow_html=True)
             
-            # Detailed predictions table
             st.markdown("### Detailed Analysis")
             
             for threat_type, data in sorted(predictions.items(), key=lambda x: x[1]['probability'], reverse=True):
@@ -229,30 +245,17 @@ if ML_LOADED:
                         st.markdown(f"**Precursor Events Detected:** {data['precursor_count']}")
                         st.markdown(f"**Time Window:** {data['time_window_hours']} hours")
                     with col2:
-                        # Mini gauge
                         st.markdown(f"""
                         <div style="text-align: center;">
                             <div style="
-                                width: 80px;
-                                height: 80px;
-                                border-radius: 50%;
+                                width: 80px; height: 80px; border-radius: 50%;
                                 background: conic-gradient({data['color']} {data['probability']}%, #1a1a2e {data['probability']}%);
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                margin: 0 auto;
+                                display: flex; align-items: center; justify-content: center; margin: 0 auto;
                             ">
                                 <div style="
-                                    width: 60px;
-                                    height: 60px;
-                                    border-radius: 50%;
-                                    background: #0a0a1a;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    font-size: 1.2rem;
-                                    font-weight: 700;
-                                    color: {data['color']};
+                                    width: 60px; height: 60px; border-radius: 50%; background: #0a0a1a;
+                                    display: flex; align-items: center; justify-content: center;
+                                    font-size: 1.2rem; font-weight: 700; color: {data['color']};
                                 ">{data['probability']}%</div>
                             </div>
                         </div>
@@ -260,28 +263,149 @@ if ML_LOADED:
         else:
             st.warning("Neural Predictor module not available. Please check installation.")
     
+    # ===== TAB 1: Isolation Forest =====
     with tab1:
-        st.markdown(section_title("Isolation Forest - Anomaly Detection"), unsafe_allow_html=True)
+        st.markdown(section_title("Isolation Forest — Anomaly Detection"), unsafe_allow_html=True)
         
         st.markdown("""
         <div class="glass-card">
             <h4 style="color: #00D4FF; margin: 0;">How Isolation Forest Works</h4>
             <p style="color: #8B95A5; margin: 0.5rem 0;">
-                Isolation Forest detects anomalies by <strong>isolating observations</strong>. 
-                The algorithm randomly selects features and split values, creating trees. 
-                <strong>Anomalies are easier to isolate</strong> (shorter path = more anomalous).
+                Trains on <strong>normal network traffic</strong> and detects anomalies as outliers.
+                Uses the <strong>NSL-KDD dataset</strong> (125K+ records of real intrusion data) for training
+                and evaluation with proper train/test splits.
             </p>
-            <ul style="color: #FAFAFA; margin: 0.5rem 0;">
-                <li> <strong>Data Exfiltration:</strong> Very high outbound bytes</li>
-                <li> <strong>DDoS:</strong> Very high inbound traffic with many packets</li>
-                <li> <strong>C2 Communication:</strong> Long duration beaconing patterns</li>
-            </ul>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Get events from SIEM or generate sample data
+        # Dataset Training Section
+        st.markdown("### Dataset Training & Accuracy")
+        
+        if st.button("Train on NSL-KDD Dataset", type="primary", key="train_if"):
+            with st.spinner("Loading NSL-KDD dataset and training Isolation Forest..."):
+                iforest = SOCIsolationForest()
+                train_stats = iforest.train_on_dataset()
+                metrics = iforest.evaluate()
+                
+                # Store in session state
+                st.session_state['if_metrics'] = metrics
+                st.session_state['if_train_stats'] = train_stats
+                st.session_state['if_model'] = iforest
+        
+        if 'if_metrics' in st.session_state:
+            metrics = st.session_state['if_metrics']
+            train_stats = st.session_state['if_train_stats']
+            summary_d = train_stats.get('dataset_summary', {})
+            
+            # Dataset info
+            st.markdown(f"""
+            <div class="glass-card" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="color: #00C853; font-weight: 700;">Dataset Loaded</span>
+                        <span style="color: #8B95A5; margin-left: 1rem;">{summary_d.get('data_source', 'N/A')}</span>
+                    </div>
+                    <div style="color: #00D4FF;">{summary_d.get('total_records', 'N/A'):,} records | {summary_d.get('num_features', 38)} features</div>
+                </div>
+                <div style="color: #8B95A5; margin-top: 0.5rem; font-size: 0.85rem;">
+                    Trained on {train_stats.get('n_samples', 0):,} normal samples | 
+                    Test set: {metrics.get('test_samples', 0):,} samples ({metrics.get('true_attacks', 0):,} attacks, {metrics.get('true_normal', 0):,} normal)
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Accuracy Metrics
+            c1, c2, c3, c4, c5 = st.columns(5)
+            with c1:
+                render_metric_card("Accuracy", f"{metrics['accuracy']}%", "#00D4FF")
+            with c2:
+                render_metric_card("Precision", f"{metrics['precision']}%", "#8B5CF6")
+            with c3:
+                render_metric_card("Recall", f"{metrics['recall']}%", "#00C853")
+            with c4:
+                render_metric_card("F1 Score", f"{metrics['f1_score']}%", "#FF8C00")
+            with c5:
+                render_metric_card("AUC-ROC", f"{metrics['auc_roc']}%", "#FF0066")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Confusion Matrix and ROC Curve side by side
+            chart1, chart2 = st.columns(2)
+            
+            with chart1:
+                # Confusion Matrix
+                cm = metrics['confusion_matrix']
+                fig = go.Figure(data=go.Heatmap(
+                    z=cm,
+                    x=['Predicted Normal', 'Predicted Attack'],
+                    y=['Actual Normal', 'Actual Attack'],
+                    text=[[str(cm[0][0]), str(cm[0][1])], [str(cm[1][0]), str(cm[1][1])]],
+                    texttemplate="%{text}",
+                    textfont={"size": 20, "color": "white"},
+                    colorscale=[[0, '#1A1F2E'], [0.5, '#00D4FF'], [1, '#FF0066']],
+                    showscale=False
+                ))
+                fig.update_layout(
+                    title="Confusion Matrix",
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font_color='#FAFAFA',
+                    height=350,
+                    xaxis=dict(side='bottom'),
+                    yaxis=dict(autorange='reversed')
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with chart2:
+                # ROC Curve
+                from sklearn.metrics import roc_curve
+                y_true = metrics['y_true']
+                y_scores = metrics['y_scores']
+                fpr, tpr, _ = roc_curve(y_true, y_scores)
+                
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=fpr, y=tpr, mode='lines',
+                    name=f"AUC = {metrics['auc_roc']}%",
+                    line=dict(color='#00D4FF', width=3),
+                    fill='tozeroy',
+                    fillcolor='rgba(0,212,255,0.15)'
+                ))
+                fig.add_trace(go.Scatter(
+                    x=[0, 1], y=[0, 1], mode='lines',
+                    name='Random', line=dict(color='rgba(255, 0, 102, 0.27)', width=1, dash='dash')
+                ))
+                fig.update_layout(
+                    title="ROC Curve",
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font_color='#FAFAFA',
+                    height=350,
+                    xaxis=dict(title='False Positive Rate', showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
+                    yaxis=dict(title='True Positive Rate', showgrid=True, gridcolor='rgba(255,255,255,0.05)')
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Detection details
+            with st.expander("View Detection Breakdown"):
+                tn, fp = cm[0][0], cm[0][1]
+                fn, tp = cm[1][0], cm[1][1]
+                st.markdown(f"""
+| Metric | Value | Meaning |
+|--------|-------|---------|
+| True Positives (TP) | **{tp}** | Attacks correctly detected |
+| True Negatives (TN) | **{tn}** | Normal traffic correctly classified |
+| False Positives (FP) | **{fp}** | Normal traffic incorrectly flagged |
+| False Negatives (FN) | **{fn}** | Attacks that went undetected |
+| Detected / Total Attacks | **{metrics['detected_attacks']}** / {metrics['true_attacks']} | |
+                """)
+        
+        # Live Detection Section
+        st.markdown("---")
+        st.markdown("### Live Anomaly Detection")
+        
         if st.button("Run Anomaly Detection", type="primary", key="run_if"):
             with st.spinner("Analyzing events with Isolation Forest..."):
                 events, from_siem = get_ml_events_if(n_normal=100, n_anomalous=15)
@@ -290,24 +414,22 @@ if ML_LOADED:
                 else:
                     st.info("Using generated sample data (SIEM not available)")
                 
-                # Run detection
                 results = detect_anomalies(events)
                 summary = get_anomaly_summary(events)
                 
-                # Display summary metrics
                 c1, c2, c3, c4 = st.columns(4)
                 with c1:
-                    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00D4FF;">{summary["total_events"]}</p><p class="metric-label">Total Events</p></div>', unsafe_allow_html=True)
+                    render_metric_card("Total Events", summary["total_events"], "#00D4FF")
                 with c2:
-                    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF4444;">{summary["total_anomalies"]}</p><p class="metric-label">Anomalies Detected</p></div>', unsafe_allow_html=True)
+                    render_metric_card("Anomalies", summary["total_anomalies"], "#FF4444")
                 with c3:
-                    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF8C00;">{summary["anomaly_rate"]:.1f}%</p><p class="metric-label">Anomaly Rate</p></div>', unsafe_allow_html=True)
+                    render_metric_card("Anomaly Rate", f"{summary['anomaly_rate']:.1f}%", "#FF8C00")
                 with c4:
-                    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #8B5CF6;">{summary["max_anomaly_score"]:.0f}</p><p class="metric-label">Max Score</p></div>', unsafe_allow_html=True)
+                    render_metric_card("Max Score", f"{summary['max_anomaly_score']:.0f}", "#8B5CF6")
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # Risk distribution chart - FIXED Y-axis
+                # Risk distribution chart
                 risk_data = summary['risk_distribution']
                 fig = go.Figure(data=[
                     go.Bar(
@@ -322,36 +444,18 @@ if ML_LOADED:
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
                     height=300,
-                    yaxis=dict(range=[0, max(50, max(risk_data.values()) + 5)], dtick=10)  # Fixed Y-axis
+                    yaxis=dict(range=[0, max(50, max(risk_data.values()) + 5)], dtick=10)
                 )
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # Top anomalies with View Details
+                # Top anomalies
                 st.markdown(section_title("Top Anomalous Events"), unsafe_allow_html=True)
                 anomalies = [r for r in results if r['is_anomaly']]
                 top_5 = sorted(anomalies, key=lambda x: x['anomaly_score'], reverse=True)[:5]
                 
-                # Store in session state for expanders
-                if 'anomaly_details' not in st.session_state:
-                    st.session_state.anomaly_details = {}
-                
-                for idx, a in enumerate(top_5):
+                for a in top_5:
                     color = "#FF4444" if a['risk_level'] == 'CRITICAL' else "#FF8C00"
                     event_type = a.get('type', 'Unknown')
-                    
-                    # Generate detailed explanation
-                    if event_type == 'exfiltration':
-                        why = "Unusually high outbound data transfer detected (500KB+ vs normal 2KB average)"
-                        how = "Large volumes of data being sent to external IP addresses, possibly through encrypted channels"
-                    elif event_type == 'ddos':
-                        why = "Extremely high inbound packet count (10,000+ packets in short burst)"
-                        how = "Multiple sources flooding the network with SYN requests or UDP packets"
-                    elif event_type == 'c2':
-                        why = "Persistent beaconing pattern detected (long-duration connections to unusual ports)"
-                        how = "Regular interval connections to command-and-control servers, typical of malware communication"
-                    else:
-                        why = "Behavior pattern significantly deviates from baseline normal traffic"
-                        how = "Statistical features fall outside normal distribution boundaries"
                     
                     st.markdown(f"""<div class="glass-card" style="margin: 0.5rem 0; border-left: 3px solid {color};">
 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -366,43 +470,133 @@ if ML_LOADED:
                     
                     with st.expander(f"View Details - {a['id']}"):
                         st.markdown(f"""
-** When:** Detected in current analysis batch (real-time monitoring)
-
-** Why (Root Cause):**  
-{why}
-
-** How (Technical Details):**  
-{how}
-
-** Key Metrics:**
-- Bytes In: `{a.get('bytes_in', 0):,.0f}`
-- Bytes Out: `{a.get('bytes_out', 0):,.0f}`
-- Packets: `{a.get('packets', 0)}`
-- Duration: `{a.get('duration', 0):.1f}s`
-- Port: `{a.get('port', 'N/A')}`
-
-** Recommended Action:**
-{" IMMEDIATE BLOCK - Isolate affected system and investigate data loss" if a['risk_level'] == 'CRITICAL' else " INVESTIGATE - Monitor closely and prepare containment procedures"}
+**Bytes In:** `{a.get('bytes_in', 0):,.0f}` | **Bytes Out:** `{a.get('bytes_out', 0):,.0f}` | **Packets:** `{a.get('packets', 0)}` | **Duration:** `{a.get('duration', 0):.1f}s`
                         """)
     
+    # ===== TAB 2: Fuzzy C-Means =====
     with tab2:
-        st.markdown(section_title("Fuzzy C-Means - Threat Clustering"), unsafe_allow_html=True)
+        st.markdown(section_title("Fuzzy C-Means — Threat Clustering"), unsafe_allow_html=True)
         
         st.markdown("""
         <div class="glass-card">
             <h4 style="color: #8B5CF6; margin: 0;">How Fuzzy C-Means Works</h4>
             <p style="color: #8B95A5; margin: 0.5rem 0;">
-                Unlike K-Means which assigns each event to <strong>exactly one cluster</strong>,
-                Fuzzy C-Means provides <strong>membership degrees</strong> to all clusters.
-                An event can be 60% Malware and 40% Exfiltration simultaneously.
-            </p>
-            <p style="color: #00D4FF; margin: 0.5rem 0;">
-                <strong>Threat Categories:</strong> Malware/Ransomware, Data Exfiltration, DDoS/DoS, Reconnaissance, Insider Threat
+                Unlike K-Means, Fuzzy C-Means provides <strong>membership degrees</strong> to all clusters.
+                Trained on the <strong>NSL-KDD dataset</strong> with 5 attack categories: 
+                Normal, DoS, Probe, R2L, U2R.
             </p>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Dataset Training Section
+        st.markdown("### Dataset Training & Accuracy")
+        
+        if st.button("Train on NSL-KDD Dataset", type="primary", key="train_fcm"):
+            with st.spinner("Loading NSL-KDD dataset and training Fuzzy C-Means..."):
+                fcm = FuzzyCMeans()
+                train_stats = fcm.fit_on_dataset()
+                metrics = fcm.evaluate()
+                
+                st.session_state['fcm_metrics'] = metrics
+                st.session_state['fcm_train_stats'] = train_stats
+                st.session_state['fcm_model'] = fcm
+        
+        if 'fcm_metrics' in st.session_state:
+            metrics = st.session_state['fcm_metrics']
+            train_stats = st.session_state['fcm_train_stats']
+            summary_d = train_stats.get('dataset_summary', {})
+            
+            # Dataset info
+            st.markdown(f"""
+            <div class="glass-card" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="color: #00C853; font-weight: 700;">Dataset Loaded</span>
+                        <span style="color: #8B95A5; margin-left: 1rem;">{summary_d.get('data_source', 'N/A')}</span>
+                    </div>
+                    <div style="color: #8B5CF6;">{summary_d.get('total_records', 'N/A'):,} records | {train_stats.get('n_features', 38)} features</div>
+                </div>
+                <div style="color: #8B95A5; margin-top: 0.5rem; font-size: 0.85rem;">
+                    Trained on {train_stats.get('n_samples', 0):,} samples | 
+                    {train_stats.get('iterations', 0)} iterations | 
+                    Test set: {metrics.get('test_samples', 0):,} samples
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Metrics
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                render_metric_card("Cluster Purity", f"{metrics['overall_purity']}%", "#8B5CF6")
+            with c2:
+                render_metric_card("Silhouette Score", f"{metrics['silhouette_score']:.4f}", "#00D4FF")
+            with c3:
+                cat_acc = metrics.get('category_accuracy', {})
+                avg_acc = np.mean(list(cat_acc.values())) if cat_acc else 0
+                render_metric_card("Avg Category Accuracy", f"{avg_acc:.1f}%", "#00C853")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            chart1, chart2 = st.columns(2)
+            
+            with chart1:
+                # Category accuracy chart
+                cat_acc = metrics.get('category_accuracy', {})
+                if cat_acc:
+                    cats = list(cat_acc.keys())
+                    accs = [float(cat_acc[c]) for c in cats]
+                    colors = ['#00C853', '#FF4444', '#00D4FF', '#FF8C00', '#8B5CF6']
+                    
+                    fig = go.Figure(data=[
+                        go.Bar(x=cats, y=accs, marker_color=colors[:len(cats)])
+                    ])
+                    fig.update_layout(
+                        title="Per-Category Accuracy",
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        font_color='#FAFAFA',
+                        height=350,
+                        yaxis=dict(range=[0, 105], title='Accuracy (%)')
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            with chart2:
+                # Cluster size distribution
+                cluster_details = metrics.get('cluster_details', {})
+                if cluster_details:
+                    names = list(cluster_details.keys())
+                    sizes = [cluster_details[n]['size'] for n in names]
+                    purities = [cluster_details[n]['purity'] for n in names]
+                    
+                    fig = go.Figure(data=[go.Pie(
+                        labels=names,
+                        values=sizes,
+                        hole=0.4,
+                        marker_colors=['#FF4444', '#8B5CF6', '#FF8C00', '#00D4FF', '#00C853']
+                    )])
+                    fig.update_layout(
+                        title="Cluster Size Distribution",
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font_color='#FAFAFA',
+                        height=350
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            # Cluster details table
+            with st.expander("View Cluster Details"):
+                for name, details in cluster_details.items():
+                    st.markdown(f"""
+**{name}** — Size: {details['size']} | Purity: {details['purity']}% | Dominant: {details['dominant_category']}
+                    """)
+                    if 'category_distribution' in details:
+                        for cat, count in details['category_distribution'].items():
+                            st.markdown(f"  - {cat}: {count}")
+        
+        # Live Clustering Section
+        st.markdown("---")
+        st.markdown("### Live Threat Clustering")
         
         if st.button("Run Threat Clustering", type="primary", key="run_fcm"):
             with st.spinner("Clustering events with Fuzzy C-Means..."):
@@ -414,11 +608,9 @@ if ML_LOADED:
                 results = cluster_threats(events)
                 distribution = get_threat_distribution(events)
                 
-                # Cluster distribution
                 c1, c2 = st.columns(2)
                 
                 with c1:
-                    # Pie chart
                     counts = distribution['cluster_counts']
                     fig = go.Figure(data=[go.Pie(
                         labels=list(counts.keys()),
@@ -435,7 +627,6 @@ if ML_LOADED:
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with c2:
-                    # Summary stats
                     st.markdown(section_title("Cluster Summary"), unsafe_allow_html=True)
                     for name, count in counts.items():
                         pct = distribution['cluster_percentages'][name]
@@ -445,167 +636,173 @@ if ML_LOADED:
                             <span style="color: #00D4FF;">{count} events ({pct}%)</span>
                         </div>
                         """, unsafe_allow_html=True)
-                
-                # Sample clustered events
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.markdown(section_title("Sample Clustered Events"), unsafe_allow_html=True)
-                
-                # Category explanations
-                category_info = {
-                    'Malware/Ransomware': {
-                        'why': 'High inbound traffic with executable patterns, file encryption signatures detected',
-                        'how': 'Malicious payload delivered via phishing or exploit, encrypts files and demands ransom'
-                    },
-                    'Data Exfiltration': {
-                        'why': 'Unusually high outbound data volume to external destinations',
-                        'how': 'Sensitive data being transferred outside the network, possibly compressed/encrypted'
-                    },
-                    'DDoS/DoS Attack': {
-                        'why': 'Massive inbound traffic spike with high packet-per-second rate',
-                        'how': 'Distributed attack flooding network resources, causing service unavailability'
-                    },
-                    'Reconnaissance': {
-                        'why': 'Sequential port scanning activity, network enumeration patterns',
-                        'how': 'Attacker mapping network topology, identifying vulnerable services'
-                    },
-                    'Insider Threat': {
-                        'why': 'Unusual access patterns from internal IP, off-hours activity',
-                        'how': 'Authorized user accessing sensitive resources outside normal behavior'
-                    }
-                }
-                
-                for idx, r in enumerate(results[:5]):
-                    memberships = r['cluster_memberships']
-                    top_cat = r['primary_category']
-                    conf = r['primary_confidence']
-                    cat_info = category_info.get(top_cat, {'why': 'Pattern matches threat category signature', 'how': 'Behavioral analysis indicates threat characteristics'})
-                    
-                    # Color based on category
-                    cat_colors = {
-                        'Malware/Ransomware': '#FF4444',
-                        'Data Exfiltration': '#8B5CF6',
-                        'DDoS/DoS Attack': '#FF8C00',
-                        'Reconnaissance': '#00D4FF',
-                        'Insider Threat': '#00C853'
-                    }
-                    color = cat_colors.get(top_cat, '#8B5CF6')
-                    
-                    st.markdown(f"""<div class="glass-card" style="margin: 0.5rem 0; border-left: 3px solid {color};">
-<div style="display: flex; justify-content: space-between; align-items: center;">
-<div>
-<span style="color: {color}; font-weight: 700;">[{top_cat}]</span>
-<span style="color: #FAFAFA; font-weight: 600; margin-left: 0.5rem;">{r['id']}</span>
-</div>
-<span style="color: {color}; font-weight: 700;">{conf}% Confidence</span>
-</div>
-<p style="color: #8B95A5; margin: 0.3rem 0;">IP: {r.get('source_ip', 'N/A')} | Risk Score: {r.get('risk_score', 'N/A')}</p>
-</div>""", unsafe_allow_html=True)
-                    
-                    with st.expander(f"View Details - {r['id']}"):
-                        st.markdown(f"""
-** Primary Category:** {top_cat} ({conf}%)
-
-** Why This Classification:**  
-{cat_info['why']}
-
-** Attack Mechanism:**  
-{cat_info['how']}
-
-** Cluster Memberships:**
-""")
-                        for cat, pct in memberships.items():
-                            bar_width = pct
-                            bar_color = cat_colors.get(cat, '#8B5CF6')
-                            st.markdown(f"`{cat}`: {pct}%")
-                        
-                        st.markdown(f"""
-** Event Metrics:**
-- Bytes In: `{r.get('bytes_in', 0):,.0f}`
-- Bytes Out: `{r.get('bytes_out', 0):,.0f}`
-- Packets: `{r.get('packets', 0)}`
-- Duration: `{r.get('duration', 0):.1f}s`
-
-** Recommended Action:**
-{" HIGH PRIORITY - Immediate containment required" if conf > 70 else " INVESTIGATE - Verify threat and monitor"}
-                        """)
     
+    # ===== TAB 3: Combined Analysis =====
     with tab3:
         st.markdown(section_title("Combined ML Analysis"), unsafe_allow_html=True)
         
         st.markdown("""
         <div class="glass-card">
-            <h4 style="color: #00C853; margin: 0;">Real-World SOC Application</h4>
+            <h4 style="color: #00C853; margin: 0;">Multi-Model Performance Comparison</h4>
             <p style="color: #8B95A5; margin: 0.5rem 0;">
-                In a production SOC, these algorithms work together:
+                Train both models on the NSL-KDD dataset and compare their performance.
+                Isolation Forest provides binary anomaly detection while Fuzzy C-Means
+                provides multi-class threat categorization.
             </p>
-            <ol style="color: #FAFAFA;">
-                <li><strong>Isolation Forest</strong> first identifies which events are anomalous</li>
-                <li><strong>Fuzzy C-Means</strong> then categorizes those anomalies by threat type</li>
-                <li>SOC analysts prioritize based on anomaly score + threat category</li>
-            </ol>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button(" Run Full ML Pipeline", type="primary", key="run_combined"):
-            with st.spinner("Running combined ML analysis..."):
-                # Get events from SIEM or generate
-                events, from_siem = get_ml_events_if(n_normal=80, n_anomalous=20)
-                if from_siem:
-                    st.success("Pipeline running on real SIEM data")
-                else:
-                    st.info("Pipeline running on generated sample data")
+        if st.button("Train & Compare Both Models", type="primary", key="train_both"):
+            with st.spinner("Training both models on NSL-KDD dataset..."):
+                # Train IF
+                iforest = SOCIsolationForest()
+                if_stats = iforest.train_on_dataset()
+                if_metrics = iforest.evaluate()
                 
-                # Step 1: Anomaly Detection
-                st.markdown("### Step 1: Anomaly Detection (Isolation Forest)")
-                anomaly_results = detect_anomalies(events)
-                anomaly_summary = get_anomaly_summary(events)
+                # Train FCM
+                fcm = FuzzyCMeans()
+                fcm_stats = fcm.fit_on_dataset()
+                fcm_metrics = fcm.evaluate()
                 
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.metric("Total Events", anomaly_summary['total_events'])
-                with c2:
-                    st.metric("Anomalies Found", anomaly_summary['total_anomalies'], delta=f"{anomaly_summary['anomaly_rate']:.1f}%")
-                with c3:
-                    st.metric("Critical Risk", anomaly_summary['risk_distribution']['CRITICAL'])
+                st.session_state['if_metrics'] = if_metrics
+                st.session_state['if_train_stats'] = if_stats
+                st.session_state['fcm_metrics'] = fcm_metrics
+                st.session_state['fcm_train_stats'] = fcm_stats
+                st.session_state['comparison_done'] = True
+        
+        if st.session_state.get('comparison_done'):
+            if_m = st.session_state['if_metrics']
+            fcm_m = st.session_state['fcm_metrics']
+            
+            st.markdown("### Model Performance Comparison")
+            
+            # Comparison metrics
+            c1, c2 = st.columns(2)
+            
+            with c1:
+                st.markdown("""
+                <div style="
+                    background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,212,255,0.05));
+                    border: 1px solid #00D4FF40;
+                    border-radius: 12px;
+                    padding: 1.5rem;
+                    text-align: center;
+                ">
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #00D4FF; margin-bottom: 1rem;">Isolation Forest</div>
+                """, unsafe_allow_html=True)
                 
-                # Step 2: Cluster anomalies
-                st.markdown("### Step 2: Threat Categorization (Fuzzy C-Means)")
-                anomalies_only = [e for e in anomaly_results if e['is_anomaly']]
+                for label, key, color in [
+                    ("Accuracy", "accuracy", "#00D4FF"),
+                    ("Precision", "precision", "#8B5CF6"),
+                    ("Recall", "recall", "#00C853"),
+                    ("F1 Score", "f1_score", "#FF8C00"),
+                    ("AUC-ROC", "auc_roc", "#FF0066")
+                ]:
+                    val = if_m[key]
+                    st.markdown(f"""
+                    <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span style="color: #8B95A5;">{label}</span>
+                        <span style="color: {color}; font-weight: 700;">{val}%</span>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                if anomalies_only:
-                    cluster_results = cluster_threats(anomalies_only)
+                st.markdown("</div>", unsafe_allow_html=True)
+            
+            with c2:
+                st.markdown("""
+                <div style="
+                    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(139,92,246,0.05));
+                    border: 1px solid #8B5CF640;
+                    border-radius: 12px;
+                    padding: 1.5rem;
+                    text-align: center;
+                ">
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #8B5CF6; margin-bottom: 1rem;">Fuzzy C-Means</div>
+                """, unsafe_allow_html=True)
+                
+                cat_acc = fcm_m.get('category_accuracy', {})
+                avg_acc = np.mean(list(cat_acc.values())) if cat_acc else 0
+                
+                for label, val, color in [
+                    ("Cluster Purity", f"{fcm_m['overall_purity']}%", "#8B5CF6"),
+                    ("Silhouette Score", f"{fcm_m['silhouette_score']:.4f}", "#00D4FF"),
+                    ("Avg Category Accuracy", f"{avg_acc:.1f}%", "#00C853"),
+                    ("Test Samples", str(fcm_m['test_samples']), "#FF8C00"),
+                    ("Categories", str(len(fcm_m.get('categories_found', []))), "#FF0066")
+                ]:
+                    st.markdown(f"""
+                    <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span style="color: #8B95A5;">{label}</span>
+                        <span style="color: {color}; font-weight: 700;">{val}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+            
+            # Run combined pipeline
+            st.markdown("---")
+            st.markdown("### Combined Detection Pipeline")
+            
+            if st.button("Run Full ML Pipeline", type="primary", key="run_combined"):
+                with st.spinner("Running combined ML analysis..."):
+                    events, from_siem = get_ml_events_if(n_normal=80, n_anomalous=20)
+                    if from_siem:
+                        st.success("Pipeline running on real SIEM data")
+                    else:
+                        st.info("Pipeline running on generated sample data")
                     
-                    # Combined view
-                    st.markdown("### Combined Results: Prioritized Threat List")
+                    # Step 1: Anomaly Detection
+                    st.markdown("### Step 1: Anomaly Detection (Isolation Forest)")
+                    anomaly_results = detect_anomalies(events)
+                    anomaly_summary = get_anomaly_summary(events)
                     
-                    # Sort by anomaly score
-                    sorted_results = sorted(cluster_results, key=lambda x: x.get('anomaly_score', 0), reverse=True)
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.metric("Total Events", anomaly_summary['total_events'])
+                    with c2:
+                        st.metric("Anomalies Found", anomaly_summary['total_anomalies'], delta=f"{anomaly_summary['anomaly_rate']:.1f}%")
+                    with c3:
+                        st.metric("Critical Risk", anomaly_summary['risk_distribution']['CRITICAL'])
                     
-                    for r in sorted_results[:10]:
-                        risk_color = {'CRITICAL': '#FF4444', 'HIGH': '#FF8C00', 'MEDIUM': '#FFD700', 'LOW': '#00C853'}.get(r.get('risk_level', 'MEDIUM'), '#8B95A5')
+                    # Step 2: Cluster anomalies
+                    st.markdown("### Step 2: Threat Categorization (Fuzzy C-Means)")
+                    anomalies_only = [e for e in anomaly_results if e['is_anomaly']]
+                    
+                    if anomalies_only:
+                        cluster_results = cluster_threats(anomalies_only)
                         
-                        st.markdown(f"""
-                        <div class="glass-card" style="margin: 0.5rem 0; border-left: 4px solid {risk_color};">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <span style="color: {risk_color}; font-weight: 700;">[{r.get('risk_level', 'N/A')}]</span>
-                                    <span style="color: #FAFAFA; font-weight: 600; margin-left: 0.5rem;">{r['id']}</span>
+                        st.markdown("### Prioritized Threat List")
+                        
+                        sorted_results = sorted(cluster_results, key=lambda x: x.get('anomaly_score', 0), reverse=True)
+                        
+                        for r in sorted_results[:10]:
+                            risk_color = {'CRITICAL': '#FF4444', 'HIGH': '#FF8C00', 'MEDIUM': '#FFD700', 'LOW': '#00C853'}.get(r.get('risk_level', 'MEDIUM'), '#8B95A5')
+                            
+                            st.markdown(f"""
+                            <div class="glass-card" style="margin: 0.5rem 0; border-left: 4px solid {risk_color};">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <span style="color: {risk_color}; font-weight: 700;">[{r.get('risk_level', 'N/A')}]</span>
+                                        <span style="color: #FAFAFA; font-weight: 600; margin-left: 0.5rem;">{r['id']}</span>
+                                    </div>
+                                    <span style="color: #8B5CF6;">{r.get('primary_category', 'Unknown')}</span>
                                 </div>
-                                <span style="color: #8B5CF6;">{r.get('primary_category', 'Unknown')}</span>
+                                <div style="display: flex; gap: 2rem; margin-top: 0.5rem;">
+                                    <span style="color: #8B95A5;">Anomaly Score: <span style="color: #FF8C00;">{r.get('anomaly_score', 0)}</span></span>
+                                    <span style="color: #8B95A5;">Confidence: <span style="color: #00D4FF;">{r.get('primary_confidence', 0)}%</span></span>
+                                    <span style="color: #8B95A5;">IP: {r.get('source_ip', 'N/A')}</span>
+                                </div>
                             </div>
-                            <div style="display: flex; gap: 2rem; margin-top: 0.5rem;">
-                                <span style="color: #8B95A5;">Anomaly Score: <span style="color: #FF8C00;">{r.get('anomaly_score', 0)}</span></span>
-                                <span style="color: #8B95A5;">Confidence: <span style="color: #00D4FF;">{r.get('primary_confidence', 0)}%</span></span>
-                                <span style="color: #8B95A5;">IP: {r.get('source_ip', 'N/A')}</span>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.info("No anomalies detected to cluster.")
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.info("No anomalies detected to cluster.")
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | ML Insights</p></div>', unsafe_allow_html=True)
-from ui.chat_interface import inject_floating_cortex_link
-inject_floating_cortex_link()
+try:
+    from ui.chat_interface import inject_floating_cortex_link
+    inject_floating_cortex_link()
+except ImportError:
+    pass

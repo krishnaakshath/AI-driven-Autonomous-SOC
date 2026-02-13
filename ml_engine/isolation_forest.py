@@ -19,6 +19,8 @@ WHY ISOLATION FOREST FOR SOC:
 
 import numpy as np
 from sklearn.ensemble import IsolationForest
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score
+from sklearn.preprocessing import StandardScaler
 from typing import List, Dict, Tuple, Optional
 import pandas as pd
 from datetime import datetime
@@ -54,6 +56,9 @@ class SOCIsolationForest:
         self.is_trained = False
         self.feature_names = ['bytes_in', 'bytes_out', 'packets', 'duration', 'port', 'protocol_num']
         self.training_stats = {}
+        self.scaler = StandardScaler()
+        self.dataset_metrics = {}
+        self._trained_on_dataset = False
     
     def _extract_features(self, events: List[Dict]) -> np.ndarray:
         """
@@ -165,6 +170,110 @@ class SOCIsolationForest:
         results = self.predict(events)
         sorted_results = sorted(results, key=lambda x: x['anomaly_score'], reverse=True)
         return sorted_results[:top_n]
+    
+    def train_on_dataset(self) -> Dict:
+        """
+        Train on the NSL-KDD dataset.
+        Trains only on NORMAL traffic so the model learns what 'normal' looks like
+        and can detect attacks as anomalies.
+        
+        Returns:
+            Training statistics and dataset info
+        """
+        from ml_engine.nsl_kdd_dataset import (
+            load_nsl_kdd_train, get_numeric_features, 
+            get_binary_labels, get_dataset_summary
+        )
+        
+        # Load training data
+        train_df = load_nsl_kdd_train()
+        summary = get_dataset_summary(train_df)
+        
+        # Get features and labels
+        X_all = get_numeric_features(train_df)
+        y_all = get_binary_labels(train_df)
+        
+        # Train only on normal traffic (unsupervised anomaly detection)
+        normal_mask = y_all == 0
+        X_normal = X_all[normal_mask]
+        
+        # Scale features
+        X_normal_scaled = self.scaler.fit_transform(X_normal)
+        
+        # Train model
+        self.model.fit(X_normal_scaled)
+        self.is_trained = True
+        self._trained_on_dataset = True
+        
+        self.training_stats = {
+            'n_samples': len(X_normal),
+            'n_total': len(X_all),
+            'n_features': X_all.shape[1],
+            'trained_at': datetime.now().isoformat(),
+            'dataset_summary': summary
+        }
+        
+        return self.training_stats
+    
+    def evaluate(self) -> Dict:
+        """
+        Evaluate model on the NSL-KDD test dataset.
+        
+        Returns:
+            Dictionary with accuracy, precision, recall, F1, confusion matrix, AUC-ROC
+        """
+        if not self._trained_on_dataset:
+            self.train_on_dataset()
+        
+        from ml_engine.nsl_kdd_dataset import (
+            load_nsl_kdd_test, get_numeric_features, get_binary_labels
+        )
+        
+        # Load test data
+        test_df = load_nsl_kdd_test()
+        X_test = get_numeric_features(test_df)
+        y_true = get_binary_labels(test_df)
+        
+        # Scale with same scaler
+        X_test_scaled = self.scaler.transform(X_test)
+        
+        # Predict (-1 = anomaly/attack, 1 = normal)
+        predictions = self.model.predict(X_test_scaled)
+        scores = self.model.decision_function(X_test_scaled)
+        
+        # Convert: -1 -> 1 (attack), 1 -> 0 (normal)
+        y_pred = (predictions == -1).astype(int)
+        
+        # Compute metrics
+        acc = accuracy_score(y_true, y_pred)
+        prec = precision_score(y_true, y_pred, zero_division=0)
+        rec = recall_score(y_true, y_pred, zero_division=0)
+        f1 = f1_score(y_true, y_pred, zero_division=0)
+        cm = confusion_matrix(y_true, y_pred)
+        
+        # AUC-ROC (use decision scores, inverted since lower = more anomalous)
+        try:
+            auc = roc_auc_score(y_true, -scores)
+        except ValueError:
+            auc = 0.0
+        
+        self.dataset_metrics = {
+            'accuracy': round(acc * 100, 2),
+            'precision': round(prec * 100, 2),
+            'recall': round(rec * 100, 2),
+            'f1_score': round(f1 * 100, 2),
+            'auc_roc': round(auc * 100, 2),
+            'confusion_matrix': cm.tolist(),
+            'test_samples': len(y_true),
+            'true_attacks': int(y_true.sum()),
+            'detected_attacks': int(y_pred.sum()),
+            'true_normal': int((y_true == 0).sum()),
+            'y_true': y_true.tolist(),
+            'y_pred': y_pred.tolist(),
+            'y_scores': (-scores).tolist()
+        }
+        
+        return self.dataset_metrics
 
 
 def generate_sample_events(n_normal: int = 100, n_anomalous: int = 10) -> List[Dict]:
