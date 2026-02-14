@@ -55,11 +55,33 @@ def get_executive_metrics():
                 "false_positive_rate": round(soc_data.get('false_positive_rate', random.uniform(2.0, 8.0)), 1),
                 "sla_compliance": round(random.uniform(92.0, 99.5), 1),
                 "cost_savings": blocked * 250 if blocked > 0 else random.randint(150000, 500000),
+                "trend_data": [], 
+                "category_data": []
             }
+            
+            # Fetch dynamic chart data
+            from services.database import db
+            trend_data = db.get_monthly_counts()
+            cat_data = db.get_threat_categories()
+            
+            # Update metrics with chart data
+            if trend_data:
+                metrics["trend_data"] = trend_data
+                # Update incidents_month to reflect real last month data if available
+                metrics["incidents_month"] = trend_data[-1]['count']
+            
+            if cat_data:
+                metrics["category_data"] = cat_data
+                
+            return metrics
+            
         except Exception as e:
             st.warning(f"Using simulated data - API error: {str(e)[:50]}")
     
     # Fallback to simulated data
+    months = ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb"]
+    categories = ["Malware", "Phishing", "DDoS", "Ransomware", "Insider", "APT"]
+    
     return {
         "mttr": round(random.uniform(2.5, 8.5), 1),
         "mttd": round(random.uniform(0.5, 3.0), 1),
@@ -71,6 +93,8 @@ def get_executive_metrics():
         "false_positive_rate": round(random.uniform(2.0, 8.0), 1),
         "sla_compliance": round(random.uniform(92.0, 99.5), 1),
         "cost_savings": random.randint(150000, 500000),
+        "trend_data": [{"month": m, "count": random.randint(60, 120)} for m in months],
+        "category_data": [{"category": c, "count": random.randint(10, 40)} for c in categories]
     }
 
 metrics = get_executive_metrics()
@@ -112,8 +136,9 @@ chart1, chart2 = st.columns(2)
 with chart1:
     st.markdown(section_title("Monthly Incident Trend"), unsafe_allow_html=True)
     
-    months = ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb"]
-    incidents = [random.randint(60, 120) for _ in months]
+    months = [d['month'] for d in metrics['trend_data']]
+    incidents = [d['count'] for d in metrics['trend_data']]
+    # Estimate resolved based on incident count (mocking resolved logic for now as DB doesn't track it explicitly yet)
     resolved = [int(i * random.uniform(0.85, 0.98)) for i in incidents]
     
     fig = go.Figure()
@@ -134,8 +159,12 @@ with chart1:
 with chart2:
     st.markdown(section_title("Threat Categories"), unsafe_allow_html=True)
     
-    categories = ["Malware", "Phishing", "DDoS", "Ransomware", "Insider", "APT"]
-    values = [random.randint(10, 40) for _ in categories]
+    if metrics['category_data']:
+        categories = [d['category'] for d in metrics['category_data']]
+        values = [d['count'] for d in metrics['category_data']]
+    else:
+        categories = ["No Data"]
+        values = [1]
     
     fig = go.Figure(data=[go.Pie(
         labels=categories,

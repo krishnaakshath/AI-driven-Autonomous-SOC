@@ -143,5 +143,39 @@ class DatabaseService:
             conn.commit()
             conn.close()
 
+    def get_monthly_counts(self):
+        """Get event counts grouped by month for trend analysis."""
+        with _db_lock:
+            conn = self._get_conn()
+            c = conn.cursor()
+            # SQLite strftime %Y-%m
+            c.execute("""
+                SELECT strftime('%Y-%m', timestamp) as month, COUNT(*) as count 
+                FROM events 
+                GROUP BY month 
+                ORDER BY month ASC 
+                LIMIT 12
+            """)
+            rows = c.fetchall()
+            conn.close()
+            return [{"month": row[0], "count": row[1]} for row in rows]
+
+    def get_threat_categories(self):
+        """Get counts of high-severity event types for category chart."""
+        with _db_lock:
+            conn = self._get_conn()
+            c = conn.cursor()
+            c.execute("""
+                SELECT event_type, COUNT(*) as count 
+                FROM events 
+                WHERE severity IN ('HIGH', 'CRITICAL') 
+                GROUP BY event_type 
+                ORDER BY count DESC 
+                LIMIT 6
+            """)
+            rows = c.fetchall()
+            conn.close()
+            return [{"category": row[0], "count": row[1]} for row in rows]
+
 # Singleton instance
 db = DatabaseService()
