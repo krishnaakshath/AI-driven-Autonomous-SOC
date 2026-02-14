@@ -335,12 +335,35 @@ if IS_ADMIN:
         
         st.markdown("""
             <div class="glass-card" style="margin-bottom: 1.5rem;">
-                <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">Google Gemini AI</h4>
-                <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">For AI-powered threat analysis and report generation</p>
+                <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">Groq AI (Llama 3)</h4>
+                <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">High-speed AI inference engine for CORTEX assistant.</p>
             </div>
         """, unsafe_allow_html=True)
         
-        gemini_key = st.text_input("Gemini API Key", value=config.get("gemini_api_key", ""), type="password", key="gemini")
+        col_ai1, col_ai2 = st.columns([3, 1])
+        with col_ai1:
+            groq_key = st.text_input("Groq API Key", value=config.get("GROQ_API_KEY", ""), type="password", key="groq_key")
+        with col_ai2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Test Groq", key="test_groq"):
+                if groq_key:
+                    try:
+                        # Temporarily set for test
+                        os.environ["GROQ_API_KEY"] = groq_key
+                        from services.ai_assistant import ai_assistant
+                        # Force reload key
+                        ai_assistant.api_key = groq_key
+                        ai_assistant.client = __import__('openai').OpenAI(api_key=groq_key, base_url="https://api.groq.com/openai/v1")
+                        
+                        resp = ai_assistant.chat("Test connection. Reply with 'OK'.")
+                        if "OK" in resp or "Error" not in resp:
+                            st.success("Connected!")
+                        else:
+                            st.error(f"Failed: {resp}")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+                else:
+                    st.warning("Enter key first")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -351,7 +374,24 @@ if IS_ADMIN:
             </div>
         """, unsafe_allow_html=True)
         
-        vt_key = st.text_input("VirusTotal API Key", value=config.get("virustotal_api_key", ""), type="password", key="vt")
+        col_vt1, col_vt2 = st.columns([3, 1])
+        with col_vt1:
+            vt_key = st.text_input("VirusTotal API Key", value=config.get("virustotal_api_key", ""), type="password", key="vt")
+        with col_vt2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Test VT", key="test_vt"):
+                if vt_key:
+                    try:
+                        from services.threat_intel import threat_intel
+                        threat_intel.virustotal_key = vt_key
+                        # Test with 8.8.8.8
+                        res = threat_intel.check_ip_virustotal("8.8.8.8")
+                        if "error" not in res:
+                            st.success("Connected!")
+                        else:
+                            st.error(f"Failed: {res['error']}")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
         
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -362,16 +402,60 @@ if IS_ADMIN:
             </div>
         """, unsafe_allow_html=True)
         
-        otx_key = st.text_input("OTX API Key", value=config.get("otx_api_key", ""), type="password", key="otx")
+        col_otx1, col_otx2 = st.columns([3, 1])
+        with col_otx1:
+            otx_key = st.text_input("OTX API Key", value=config.get("otx_api_key", ""), type="password", key="otx")
+        with col_otx2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Test OTX", key="test_otx"):
+                if otx_key:
+                    try:
+                        from services.threat_intel import threat_intel
+                        threat_intel.otx_key = otx_key
+                        res = threat_intel.get_otx_pulses(limit=1)
+                        if res:
+                            st.success(f"Connected! Data: {len(res)} pulses")
+                        else:
+                            st.warning("Connected but no data returned (or public fallback used).")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        st.markdown("""
+            <div class="glass-card" style="margin-bottom: 1.5rem;">
+                <h4 style="color: #FF8C00; margin: 0 0 0.5rem 0;">AbuseIPDB</h4>
+                <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">For IP reputation and confidence scoring</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col_ab1, col_ab2 = st.columns([3, 1])
+        with col_ab1:
+            abuse_key = st.text_input("AbuseIPDB API Key", value=config.get("abuseipdb_api_key", ""), type="password", key="abuse")
+        with col_ab2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Test AbuseIPDB", key="test_abuse"):
+                 if abuse_key:
+                    try:
+                        from services.threat_intel import threat_intel
+                        threat_intel.abuseipdb_key = abuse_key
+                        res = threat_intel.check_ip_abuseipdb("1.1.1.1")
+                        if "error" not in res:
+                            st.success("Connected!")
+                        else:
+                            st.error(f"Failed: {res['error']}")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("Save API Keys", type="primary"):
-            config["gemini_api_key"] = gemini_key
+            config["GROQ_API_KEY"] = groq_key
             config["virustotal_api_key"] = vt_key
             config["otx_api_key"] = otx_key
+            config["abuseipdb_api_key"] = abuse_key
             save_config(config)
-            st.success("API keys saved successfully!")
+            st.success("API keys saved successfully! Services updated.")
 
     with tab4:
         st.markdown(section_title("Social Login"), unsafe_allow_html=True)
