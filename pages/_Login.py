@@ -122,8 +122,8 @@ st.markdown("""
 </style>
     """, unsafe_allow_html=True)
     
-    # Particles only if not already running (handled by theme)
-    inject_particles()
+# Particles only if not already running (handled by theme)
+inject_particles()
 
 # Initialize session states
 if 'login_step' not in st.session_state:

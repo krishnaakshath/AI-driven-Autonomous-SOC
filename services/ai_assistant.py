@@ -33,7 +33,6 @@ class AIAssistant:
             self.messages = []  # Chat history
             self._initialize_system()
         else:
-        else:
             self.client = None
 
     def reload_config(self):
