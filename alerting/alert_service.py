@@ -89,7 +89,7 @@ class AlertService:
              
         # 3. Send Alerts
         # Email (batch)
-        if self.config.get('notification_email', True) and self.email.is_configured():
+        if self.config.get('auto_notify', True) and self.email.is_configured():
             # Dedup emails
             email_recipients = list(set(email_recipients))
             if email_recipients:
@@ -100,7 +100,7 @@ class AlertService:
     def send_daily_summary(self, summary_data: Dict[str, Any]) -> dict:
         results = {"email": False}
         
-        if self.config.get('notification_email', True) and self.email.is_configured():
+        if self.config.get('auto_notify', True) and self.email.is_configured():
             recipients = self.config.get('gmail_recipient') or self.config.get('gmail_email')
             if recipients:
                 recipient_list = [r.strip() for r in recipients.split(',')]

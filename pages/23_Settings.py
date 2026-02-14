@@ -628,6 +628,9 @@ if "System Configuration" in current_tab and is_admin_user:
                 from services.ai_assistant import ai_assistant
                 ai_assistant.reload_config()
                 
+                from alerting.alert_service import alert_service
+                alert_service.reload_config()
+                
                 st.success("System configuration saved and services reloaded!")
             except Exception as e:
                 st.warning(f"Settings saved, but service reload failed: {e}")
