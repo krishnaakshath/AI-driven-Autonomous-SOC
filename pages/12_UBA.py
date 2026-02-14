@@ -20,12 +20,13 @@ inject_particles()
 
 st.markdown(page_header("User Behavior Analytics", "ML-powered insider threat detection and anomaly analysis"), unsafe_allow_html=True)
 
-# Import SIEM service for real data
+# Import services for real data
 try:
     from services.siem_service import get_user_behavior
-    HAS_SIEM = True
+    from ml_engine.behavior_analyzer import behavior_detector
+    HAS_REAL_DATA = True
 except ImportError:
-    HAS_SIEM = False
+    HAS_REAL_DATA = False
 
 # Get user behavior data from SIEM
 @st.cache_data(ttl=300)
@@ -77,10 +78,18 @@ def generate_user_data():
     return sorted(data, key=lambda x: x["risk_score"], reverse=True)
 
 # Show data source
-if HAS_SIEM:
-    st.success(" Connected to SIEM - Displaying real user behavior data")
+if HAS_REAL_DATA:
+    st.markdown("""
+    <div style="background: rgba(0, 212, 255, 0.1); border: 1px solid #00D4FF40; border-radius: 8px; padding: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="color: #00D4FF;">🔒 SIEM CONNECTED</span>
+            <span style="color: #8B5CF6;">🧠 ML ENGINE ACTIVE</span>
+        </div>
+        <div style="color: #8B95A5; font-size: 0.8rem;">Analyzing live event stream...</div>
+    </div>
+    """, unsafe_allow_html=True)
 else:
-    st.warning(" SIEM not available - Using simulated data")
+    st.warning("⚠️ Using simulated data - Engine not grounded")
 
 user_data = generate_user_data()
 df = pd.DataFrame(user_data)

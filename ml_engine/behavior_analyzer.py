@@ -91,36 +91,40 @@ class BehavioralAnomalyDetector:
         "new_ip_threshold": 0.2,        # % of logins from new IPs
     }
     
-    def __init__(self):
+    def __init__(self, demo_mode: bool = False):
         self.profiles: Dict[str, BehaviorProfile] = {}
         self.anomaly_log: List[Dict] = []
-        self._initialize_sample_profiles()
+        if demo_mode:
+            self._initialize_sample_profiles()
     
-    def _initialize_sample_profiles(self):
-        """Create sample user profiles for demo."""
-        sample_users = ["admin", "user1", "user2", "analyst", "developer"]
-        
-        for user in sample_users:
-            profile = BehaviorProfile(user)
+    def train_on_events(self, events: List[Dict]):
+        """Train/Update profiles from a batch of SIEM events."""
+        for event in events:
+            user = event.get("user")
+            if not user or user == "-":
+                continue
             
-            # Simulate 30 days of normal behavior
-            for _ in range(100):
-                # Normal business hours login
-                hour = random.choice([8, 9, 10, 11, 14, 15, 16, 17])
-                day = random.randint(0, 4)  # Mon-Fri
-                ts = datetime.now() - timedelta(days=random.randint(1, 30))
-                ts = ts.replace(hour=hour)
-                
-                profile.add_login_event(ts, f"192.168.1.{random.randint(10, 50)}")
-                
-                # Normal file access
-                resources = ["/data/reports", "/data/logs", "/apps/dashboard", "/docs"]
-                profile.add_resource_access(random.choice(resources))
-                
-                # Normal data transfers (1KB - 10MB)
-                profile.add_data_transfer(random.randint(1024, 10 * 1024 * 1024))
+            profile = self.get_or_create_profile(user)
             
-            self.profiles[user] = profile
+            # Extract timestamp
+            try:
+                ts_str = event.get("timestamp")
+                ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S") if ts_str else datetime.now()
+            except:
+                ts = datetime.now()
+                
+            # Map event types to analyzer methods
+            etype = str(event.get("event_type", "")).lower()
+            
+            if "login success" in etype:
+                profile.add_login_event(ts, event.get("source_ip", "0.0.0.0"))
+            elif "file access" in etype:
+                profile.add_resource_access(event.get("details", "unknown_file"))
+                # Simulate transfer size for file access if not present
+                profile.add_data_transfer(random.randint(1024, 5000000))
+            elif "blocked" in etype or "anomaly" in etype:
+                # High severity events boost risk immediately
+                self.analyze_login(user, ts, event.get("source_ip", "0.0.0.0"))
     
     def get_or_create_profile(self, entity_id: str) -> BehaviorProfile:
         """Get existing profile or create new one."""

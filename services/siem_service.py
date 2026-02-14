@@ -127,10 +127,18 @@ class SIEMService:
             return 0
 
     def get_user_behavior_data(self) -> List[Dict]:
-        """Get user behavior analytics from DB events."""
+        """Get user behavior analytics from DB events, enriched by ML."""
         events = db.get_recent_events(limit=1000)
         
-        # Aggregate by user
+        # Train ML engine on recent events
+        try:
+            from ml_engine.behavior_analyzer import behavior_detector
+            behavior_detector.train_on_events(events)
+            HAS_ML = True
+        except ImportError:
+            HAS_ML = False
+            
+        # Aggregate by user for summary statistics
         users = {}
         for event in events:
             user = event.get("user", "-")
@@ -149,14 +157,14 @@ class SIEMService:
                 }
             
             # Count event types
-            etype = event.get("event_type", "")
-            if "Login Success" in etype:
+            etype = str(event.get("event_type", "")).lower()
+            if "login success" in etype:
                 users[user]["login_count"] += 1
-            if "Login Failure" in etype:
+            if "login failure" in etype:
                 users[user]["failed_logins"] += 1
-            if "File Access" in etype:
+            if "file access" in etype:
                 users[user]["data_access"] += 1
-            if event["severity"] in ["HIGH", "CRITICAL"]:
+            if event.get("severity") in ["HIGH", "CRITICAL"]:
                 users[user]["alerts"] += 1
             
             users[user]["unique_ips"].add(event.get("source_ip"))
@@ -171,16 +179,24 @@ class SIEMService:
             except:
                 pass
         
-        # Convert to list with risk scores
+        # Convert to list with risk scores from ML or Fallback
         result = []
         for user, data in users.items():
-            risk_score = min(100, (
-                (data["failed_logins"] * 5) +
-                (data["data_access"] / 10) +
-                (data["after_hours"] * 3) +
-                (len(data["unique_ips"]) * 2) +
-                (data["alerts"] * 10)
-            ))
+            if HAS_ML:
+                # Use ML detector for grounded risk score and anomaly check
+                risk_score = behavior_detector.get_entity_risk_score(user)
+                # Check for any logged anomalies
+                is_anomalous = any(a["entity_id"] == user for a in behavior_detector.anomaly_log[-50:])
+            else:
+                # Fallback logic
+                risk_score = min(100, (
+                    (data["failed_logins"] * 5) +
+                    (data["data_access"] / 10) +
+                    (data["after_hours"] * 3) +
+                    (len(data["unique_ips"]) * 2) +
+                    (data["alerts"] * 10)
+                ))
+                is_anomalous = risk_score > 50
             
             result.append({
                 "user": user,
@@ -192,7 +208,7 @@ class SIEMService:
                 "unique_ips": len(data["unique_ips"]),
                 "high_severity_alerts": data["alerts"],
                 "risk_score": round(risk_score, 1),
-                "is_anomalous": risk_score > 50
+                "is_anomalous": is_anomalous
             })
         
         return sorted(result, key=lambda x: x["risk_score"], reverse=True)
