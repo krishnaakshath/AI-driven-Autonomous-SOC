@@ -17,11 +17,27 @@ from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
 
-st.markdown(page_header("Real-Time Log Viewer", "Live streaming logs from all security sources"), unsafe_allow_html=True)
+# Session state for log persistence
+if 'log_entries' not in st.session_state:
+    st.session_state.log_entries = []
+if 'log_refresh_counter' not in st.session_state:
+    st.session_state.log_refresh_counter = 0
+
+# Header with Refresh button
+h_col1, h_col2 = st.columns([5, 1])
+with h_col1:
+    st.markdown(page_header("Real-Time Log Viewer", "Live streaming logs from all security sources"), unsafe_allow_html=True)
+with h_col2:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🔄 Fetch Latest", use_container_width=True):
+        st.cache_data.clear()
+        st.session_state.log_refresh_counter += 1
+        st.rerun()
 
 # Import SIEM service for real data
 try:
     from services.siem_service import get_siem_logs, get_siem_stats
+    from services.database import db
     HAS_SIEM = True
 except ImportError:
     HAS_SIEM = False
@@ -30,11 +46,11 @@ except ImportError:
 if HAS_SIEM:
     try:
         stats = get_siem_stats()
-        st.success(f" Connected to SIEM - {stats.get('total_events_24h', 0)} events in last 24h")
+        st.success(f" Connected to SIEM - {stats.get('total_events_24h', 0)} events analyzed | Indexing active")
     except:
-        st.success(" Connected to SIEM")
+        st.success(" Connected to SIEM Infrastructure")
 else:
-    st.warning(" SIEM not available - Using simulated logs")
+    st.warning(" SIEM not available - Using fallback logging simulation")
 
 # Log sources
 LOG_SOURCES = ["Firewall", "IDS/IPS", "WAF", "Endpoint", "Authentication", "Network", "Application", "Cloud"]
@@ -130,60 +146,58 @@ def generate_log_entry():
 
 # Filters
 st.markdown("<br>", unsafe_allow_html=True)
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4 = st.columns([2, 1, 2, 1])
 
 with col1:
-    selected_sources = st.multiselect("Log Sources", LOG_SOURCES, default=LOG_SOURCES[:4])
+    selected_sources = st.multiselect("Sources", LOG_SOURCES, default=LOG_SOURCES)
 
 with col2:
-    selected_severity = st.multiselect("Severity", SEVERITY_LEVELS, default=["WARNING", "ERROR", "CRITICAL"])
+    selected_severity = st.multiselect("Severity", SEVERITY_LEVELS, default=["INFO", "WARNING", "ERROR", "CRITICAL"])
 
 with col3:
-    search_query = st.text_input("Search", placeholder="Filter by keyword...")
+    search_query = st.text_input("Deep Search", placeholder="Filter by IP, user, or threat pattern...")
 
 with col4:
-    auto_refresh = st.toggle("Auto-Refresh (5s)", value=True)
+    auto_refresh = st.toggle("Auto-Live", value=False, help="Automatically refreshes every 10 seconds")
 
-# Generate logs or fetch from SIEM
-if HAS_SIEM:
-    # Fetch real logs from DB
-    real_logs = get_siem_logs(limit=200)
-    # Convert to format expected by UI
-    formatted_logs = []
-    for log in real_logs:
-        formatted_logs.append({
-            "timestamp": log.get("timestamp"),
-            "source": log.get("source"),
-            "severity": log.get("severity"),
-            "message": f"{log.get('event_type')} - {log.get('details', '') or log.get('source_ip')}",
-            "event_id": log.get("id")
-        })
-    st.session_state.log_entries = formatted_logs
-else:
-    # Fallback simulation
-    if 'log_entries' not in st.session_state:
-        st.session_state.log_entries = [generate_log_entry() for _ in range(50)]
-    
-    # Add new logs on refresh
-    if auto_refresh:
-        new_logs = [generate_log_entry() for _ in range(random.randint(1, 5))]
-        st.session_state.log_entries = new_logs + st.session_state.log_entries[:100]
+# Function to generate logs or fetch from SIEM
+@st.cache_data(ttl=10)
+def fetch_logs(refresh_id=0):
+    if HAS_SIEM:
+        # Fetch real logs from DB
+        real_logs = db.get_recent_events(limit=500)
+        # Convert to format expected by UI
+        formatted_logs = []
+        for log in real_logs:
+            formatted_logs.append({
+                "timestamp": log.get("timestamp"),
+                "source": log.get("source") or "Unknown",
+                "severity": log.get("severity") or "INFO",
+                "message": f"{log.get('event_type', 'LOG')} - {log.get('details', '') or log.get('source_ip', 'Internal')}",
+                "event_id": log.get("id") or f"ID-{random.randint(100,999)}"
+            })
+        return formatted_logs
+    else:
+        # Generate some synthetic ones if no SIEM
+        return [generate_log_entry() for _ in range(100)]
+
+st.session_state.log_entries = fetch_logs(st.session_state.log_refresh_counter)
 
 # Filter logs
 filtered_logs = [
     log for log in st.session_state.log_entries
     if log['source'] in selected_sources
     and log['severity'] in selected_severity
-    and (not search_query or search_query.lower() in log['message'].lower())
+    and (not search_query or search_query.lower() in str(log).lower())
 ]
 
 # Display live indicator
 st.markdown(f"""
-<div style="display: flex; align-items: center; gap: 10px; margin: 1rem 0;">
-    <span style="width: 10px; height: 10px; background: #00FF00; border-radius: 50%; animation: pulse 1s infinite;"></span>
-    <span style="color: #00FF00; font-family: monospace;">LIVE FEED</span>
-    <span style="color: #8B95A5;">|</span>
-    <span style="color: #8B95A5;">{len(filtered_logs)} entries</span>
+<div style="display: flex; align-items: center; gap: 10px; margin: 1rem 0; background: rgba(0,212,255,0.05); padding: 10px; border-radius: 8px; border-left: 2px solid #00D4FF;">
+    <span style="width: 10px; height: 10px; background: {('#00FF00' if auto_refresh else '#8B95A5')}; border-radius: 50%; animation: {('pulse 1s infinite' if auto_refresh else 'none')};"></span>
+    <span style="color: {('#00FF00' if auto_refresh else '#8B95A5')}; font-family: monospace; font-weight: bold;">{('STREAMING' if auto_refresh else 'PAUSED')}</span>
+    <span style="color: #333;">|</span>
+    <span style="color: #FAFAFA; font-size: 0.9rem;">{len(filtered_logs)} Events in view</span>
 </div>
 <style>@keyframes pulse {{ 0%, 100% {{ opacity: 1; }} 50% {{ opacity: 0.3; }} }}</style>
 """, unsafe_allow_html=True)
@@ -191,54 +205,56 @@ st.markdown(f"""
 # Log display
 st.markdown("""
 <div style="
-    background: #0a0e17;
-    border: 1px solid rgba(0,212,255,0.2);
-    border-radius: 8px;
-    padding: 10px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
-    max-height: 500px;
+    background: #020617;
+    border: 1px solid rgba(0,212,255,0.1);
+    border-radius: 12px;
+    padding: 5px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    max-height: 600px;
     overflow-y: auto;
 ">
 """, unsafe_allow_html=True)
 
-for log in filtered_logs[:50]:
+for log in filtered_logs[:100]:
     color = SEVERITY_COLORS.get(log['severity'], "#FFFFFF")
     st.markdown(f"""
     <div style="
-        padding: 8px 12px;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 6px 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
         display: flex;
-        gap: 15px;
+        gap: 12px;
+        align-items: baseline;
     ">
-        <span style="color: #8B95A5; min-width: 180px;">{log['timestamp']}</span>
-        <span style="color: #00D4FF; min-width: 100px;">[{log['source']}]</span>
-        <span style="color: {color}; min-width: 80px; font-weight: bold;">{log['severity']}</span>
-        <span style="color: #FAFAFA;">{log['message']}</span>
-        <span style="color: #8B95A5; margin-left: auto;">{log['event_id']}</span>
+        <span style="color: #475569; min-width: 100px;">{log['timestamp']}</span>
+        <span style="color: #38BDF8; min-width: 110px;">[{log['source']}]</span>
+        <span style="color: {color}; min-width: 70px; font-weight: bold;">{log['severity']}</span>
+        <span style="color: #CBD5E1; word-break: break-all;">{log['message']}</span>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Export logs
+# Export and Actions
 st.markdown("<br>", unsafe_allow_html=True)
 col_exp1, col_exp2, col_exp3 = st.columns([1, 1, 2])
 
 with col_exp1:
-    df = pd.DataFrame(filtered_logs)
-    csv = df.to_csv(index=False)
-    st.download_button(" Export Logs (CSV)", csv, "security_logs.csv", "text/csv", use_container_width=True)
+    if filtered_logs:
+        df = pd.DataFrame(filtered_logs)
+        csv = df.to_csv(index=False)
+        st.download_button("💾 Export Current View (CSV)", csv, "security_logs.csv", "text/csv", use_container_width=True)
 
 with col_exp2:
-    if st.button(" Clear Logs", use_container_width=True):
+    if st.button("🗑️ Clear Cache", use_container_width=True):
         st.session_state.log_entries = []
+        st.cache_data.clear()
         st.rerun()
 
-# Auto-refresh
+# Non-blocking auto-refresh simulation
 if auto_refresh:
-    time.sleep(5)
+    time.sleep(10)
     st.rerun()
 
 st.markdown("---")
-st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Log Viewer</p></div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align: center; color: #475569;"><p>AI-Driven Autonomous SOC | Intelligent Log Analyzer | Build 2024.2.1</p></div>', unsafe_allow_html=True)

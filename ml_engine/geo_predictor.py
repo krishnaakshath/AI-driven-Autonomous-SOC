@@ -8,12 +8,9 @@ time-series analysis.
 Output: "USA: 78% probability of attack in next 6 hours"
 """
 
-import numpy as np
-from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
-from collections import defaultdict
 import random
 import math
+from services.threat_intel import threat_intel
 
 class GeoAttackPredictor:
     """
@@ -117,27 +114,14 @@ class GeoAttackPredictor:
         self.attack_history: Dict[str, List[Dict]] = defaultdict(list)
         self.predictions_cache: Dict = {}
         self.last_update = datetime.now()
-        self._generate_historical_data()
+        # No longer generating historical data upfront, will use API data
     
-    def _generate_historical_data(self):
-        """Generate synthetic historical attack data."""
-        now = datetime.now()
-        
-        for country, profile in self.COUNTRY_PROFILES.items():
-            # Generate 30 days of attack history based on base risk
-            num_attacks = int(profile["base_risk"] * 100)
-            
-            for _ in range(num_attacks):
-                days_ago = random.randint(1, 30)
-                attack_type = random.choice(list(self.ATTACK_WEIGHTS.keys()))
-                
-                self.attack_history[country].append({
-                    "timestamp": (now - timedelta(days=days_ago)).isoformat(),
-                    "attack_type": attack_type,
-                    "severity": random.choice(["low", "medium", "high", "critical"]),
-                    "sector": random.choice(profile["sectors"]),
-                    "source_country": random.choice(["Unknown", "Russia", "China", "North Korea", "Iran"])
-                })
+    def _get_live_threat_counts(self, force_refresh: bool = False) -> Dict[str, int]:
+        """Fetch real-time threat counts from OTX."""
+        try:
+            return threat_intel.get_country_threat_counts(force_refresh=force_refresh)
+        except Exception:
+            return {}
     
     def _calculate_temporal_factor(self) -> float:
         """Calculate time-based risk factor."""
@@ -158,34 +142,14 @@ class GeoAttackPredictor:
         
         return hour_factor * day_factor
     
-    def _calculate_trend_factor(self, country: str) -> float:
-        """Calculate trend factor based on recent attack frequency."""
-        history = self.attack_history.get(country, [])
-        if not history:
+    def _calculate_trend_factor(self, country: str, live_count: int = 0) -> float:
+        """Calculate trend factor based on recent attack frequency from API."""
+        if live_count == 0:
             return 1.0
         
-        now = datetime.now()
-        recent_attacks = 0
-        older_attacks = 0
-        
-        for attack in history:
-            try:
-                attack_time = datetime.fromisoformat(attack["timestamp"])
-                days_ago = (now - attack_time).days
-                
-                if days_ago <= 7:
-                    recent_attacks += 1
-                elif days_ago <= 30:
-                    older_attacks += 1
-            except ValueError:
-                continue
-        
-        # If recent attacks are higher than average, increase risk
-        if older_attacks > 0:
-            trend = (recent_attacks * 4) / (older_attacks + 1)  # Annualize recent
-            return min(1.5, max(0.5, trend))
-        
-        return 1.0
+        # Scale risk based on pulse count (0 to 10+ pulses)
+        risk_boost = min(0.5, live_count / 20.0) 
+        return 1.0 + risk_boost
     
     def _calculate_geopolitical_factor(self, country: str) -> float:
         """Simulate geopolitical risk factor (would use real API in production)."""
@@ -199,27 +163,40 @@ class GeoAttackPredictor:
             return 1.1
         return 1.0
     
-    def predict_country_attacks(self) -> Dict[str, Dict]:
+    def predict_country_attacks(self, force_refresh: bool = False) -> Dict[str, Dict]:
         """
-        Predict attack probability for each country.
+        Predict attack probability for each country using live API data.
         
         Returns:
             Dictionary with country predictions
         """
-        # Use cache if fresh
+        # Use cache if fresh and not forced
         cache_age = (datetime.now() - self.last_update).seconds
-        if self.predictions_cache and cache_age < 60:
+        if not force_refresh and self.predictions_cache and cache_age < 60:
             return self.predictions_cache
+        
+        # Fetch live data
+        live_counts = self._get_live_threat_counts(force_refresh=force_refresh)
         
         predictions = {}
         temporal_factor = self._calculate_temporal_factor()
         
+        # Normalization mapping for country names between services
+        name_map = {
+            "USA": "United States",
+            "UK": "United Kingdom",
+        }
+        
         for country, profile in self.COUNTRY_PROFILES.items():
+            # Get match from live counts
+            match_name = name_map.get(country, country)
+            live_count = live_counts.get(match_name, 0)
+            
             # Base probability from country profile
             base_prob = profile["base_risk"]
             
             # Apply factors
-            trend_factor = self._calculate_trend_factor(country)
+            trend_factor = self._calculate_trend_factor(country, live_count=live_count)
             geo_factor = self._calculate_geopolitical_factor(country)
             
             # Target value influences attack likelihood
@@ -271,14 +248,14 @@ class GeoAttackPredictor:
                 "color": color,
                 "likely_attack": likely_attack.replace("_", " ").title(),
                 "target_sectors": profile["sectors"][:2],
-                "trend": "↑" if self._calculate_trend_factor(country) > 1.1 else "→",
+                "trend": "↑" if trend_factor > 1.0 else "→",
                 "eta_hours": eta_hours,
-                "recent_attacks": len([a for a in self.attack_history.get(country, []) 
-                                      if (datetime.now() - datetime.fromisoformat(a["timestamp"])).days <= 7]),
+                "recent_attacks": live_count,
                 "factors": {
                     "temporal": round(temporal_factor, 2),
-                    "trend": round(self._calculate_trend_factor(country), 2),
-                    "geopolitical": round(self._calculate_geopolitical_factor(country), 2)
+                    "trend": round(trend_factor, 2),
+                    "geopolitical": round(geo_factor, 2),
+                    "api_signal": live_count
                 }
             }
         
@@ -297,9 +274,9 @@ class GeoAttackPredictor:
         predictions = self.predict_country_attacks()
         return list(predictions.items())[:n]
     
-    def get_globe_data(self) -> List[Dict]:
+    def get_globe_data(self, refresh: bool = False) -> List[Dict]:
         """Get data formatted for 3D globe visualization."""
-        predictions = self.predict_country_attacks()
+        predictions = self.predict_country_attacks(force_refresh=refresh)
         
         globe_data = []
         for country, data in predictions.items():
@@ -332,19 +309,20 @@ class GeoAttackPredictor:
 geo_predictor = GeoAttackPredictor()
 
 
-def predict_country_attacks() -> Dict[str, Dict]:
+def predict_country_attacks(refresh: bool = False) -> Dict[str, Dict]:
     """Get attack predictions for all countries."""
-    return geo_predictor.predict_country_attacks()
+    return geo_predictor.predict_country_attacks(force_refresh=refresh)
 
 
-def get_top_targets(n: int = 5) -> List[Tuple[str, Dict]]:
+def get_top_targets(n: int = 5, refresh: bool = False) -> List[Tuple[str, Dict]]:
     """Get top N most likely targets."""
-    return geo_predictor.get_top_targets(n)
+    predictions = geo_predictor.predict_country_attacks(force_refresh=refresh)
+    return list(predictions.items())[:n]
 
 
-def get_globe_visualization_data() -> List[Dict]:
+def get_globe_visualization_data(refresh: bool = False) -> List[Dict]:
     """Get data for 3D globe visualization."""
-    return geo_predictor.get_globe_data()
+    return geo_predictor.get_globe_data(refresh=refresh)
 
 
 def get_country_prediction(country: str) -> Dict:

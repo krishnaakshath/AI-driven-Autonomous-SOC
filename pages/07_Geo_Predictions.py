@@ -12,28 +12,29 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from ui.theme import CYBERPUNK_CSS
 
-try:
-    st.set_page_config(
-        page_title="Geo Predictions | SOC",
-        page_icon="",
-        layout="wide"
-    )
-except st.errors.StreamlitAPIException:
-    pass  # Already set by dashboard.py
-
-st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+# Session state for manual refresh
+if 'geo_refresh' not in st.session_state:
+    st.session_state.geo_refresh = 0
 
 # Header
-st.markdown("""
-<div style="text-align: center; padding: 20px 0 30px;">
-    <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0; color: #fff;">
-         Geo-Attack Predictions
-    </h1>
-    <p style="color: #888; font-size: 0.9rem; letter-spacing: 2px; margin-top: 5px;">
-        ML-POWERED COUNTRY THREAT FORECASTING
-    </p>
-</div>
-""", unsafe_allow_html=True)
+h_col1, h_col2 = st.columns([4, 1])
+with h_col1:
+    st.markdown("""
+    <div style="padding: 10px 0;">
+        <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0; color: #fff;">
+             Geo-Attack Predictions
+        </h1>
+        <p style="color: #888; font-size: 0.9rem; letter-spacing: 2px; margin-top: 5px;">
+            ML-POWERED COUNTRY THREAT FORECASTING
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+with h_col2:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    if st.button("🔄 Refresh Intelligence", use_container_width=True):
+        st.cache_data.clear()
+        st.session_state.geo_refresh += 1
+        st.rerun()
 
 # Import geo predictor
 try:
@@ -44,8 +45,10 @@ except ImportError as e:
     st.error(f"Geo predictor not available: {e}")
 
 if GEO_LOADED:
-    predictions = predict_country_attacks()
-    top_targets = get_top_targets(5)
+    # Use session state to force refresh if requested
+    refresh_now = st.session_state.geo_refresh > 0
+    predictions = predict_country_attacks(refresh=refresh_now)
+    top_targets = get_top_targets(5, refresh=refresh_now)
     
     # Summary banner
     top_country, top_data = top_targets[0]
