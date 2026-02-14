@@ -9,6 +9,8 @@ import streamlit as st
 import os
 import sys
 import json
+import json
+import time
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -502,7 +504,21 @@ with tab5:
                 "application/json"
             )
 
+            )
+            
     with col_q3:
+        if st.button("Generate Mock Data", type="primary"):
+            try:
+                from services.siem_service import simulate_siem_ingestion
+                events = simulate_siem_ingestion(50)
+                st.success(f"Generated {len(events)} mock events.")
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Generation failed: {e}")
+
+    col_q4, col_q5, col_q6 = st.columns(3)
+    with col_q4:
         if st.button("Encrypt Config File", type="secondary"):
             try:
                 from services.secret_manager import encrypt_existing_config
