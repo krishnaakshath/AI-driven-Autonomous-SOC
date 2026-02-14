@@ -11,7 +11,7 @@ Output: "USA: 78% probability of attack in next 6 hours"
 import random
 import math
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple, Any
 from collections import defaultdict
 from services.threat_intel import threat_intel
 
