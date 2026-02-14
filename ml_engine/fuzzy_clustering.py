@@ -180,6 +180,86 @@ class FuzzyCMeans:
             'trained_at': datetime.now().isoformat()
         }
 
+    def predict(self, events: List[Dict]) -> List[Dict]:
+        """
+        Predict threat categories for a list of events.
+        """
+        if not events:
+            return []
+            
+        if not self.is_trained:
+            # Auto-train if not yet trained
+            self.fit_on_dataset()
+            
+        X = self._extract_features(events)
+        # Apply scaling
+        try:
+            X_scaled = self.scaler.transform(X)
+        except:
+            # Fallback if scaler isn't fitted properly
+            X_scaled = self.scaler.fit_transform(X)
+            
+        # Get membership
+        membership = self._update_membership(X_scaled, self.centers)
+        
+        # Enriched events
+        results = []
+        for i, event in enumerate(events):
+            # Find primary cluster
+            cluster_idx = np.argmax(membership[i])
+            score = float(membership[i][cluster_idx])
+            
+            event_enriched = event.copy()
+            event_enriched['threat_category'] = self.cluster_names[cluster_idx]
+            event_enriched['confidence_score'] = round(score * 100, 2)
+            
+            # Map membership to all categories for breakdown
+            memberships = {}
+            for j, name in enumerate(self.cluster_names):
+                memberships[name] = round(float(membership[i][j]) * 100, 2)
+            
+            event_enriched['threat_breakdown'] = memberships
+            results.append(event_enriched)
+            
+        return results
+
+    def get_cluster_summary(self, events: List[Dict]) -> Dict:
+        """
+        Get a summary of threat clusters for a set of events.
+        """
+        if not events:
+            return {}
+            
+        # Predict categories first
+        clustered_events = self.predict(events)
+        
+        # Aggregate counts
+        counts = {name: 0 for name in self.cluster_names}
+        for event in clustered_events:
+            cat = event.get('threat_category', 'Unknown')
+            if cat in counts:
+                counts[cat] += 1
+                
+        # Calculate percentages and confidence
+        total = len(events)
+        distribution = []
+        for name in self.cluster_names:
+            count = counts[name]
+            percentage = (count / total * 100) if total > 0 else 0
+            distribution.append({
+                'category': name,
+                'count': count,
+                'percentage': round(percentage, 1)
+            })
+            
+        return {
+            'total_events': total,
+            'distribution': distribution,
+            'avg_confidence': round(np.mean([e.get('confidence_score', 0) for e in clustered_events]), 2) if clustered_events else 0,
+            'dominant_threat': max(counts.items(), key=lambda x: x[1])[0] if any(counts.values()) else "None",
+            'last_analysis': datetime.now().isoformat()
+        }
+
     def fit_on_dataset(self) -> Dict:
         """
         Train on NSL-KDD dataset using optimized centroids.
