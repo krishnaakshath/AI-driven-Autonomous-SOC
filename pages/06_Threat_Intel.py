@@ -33,15 +33,7 @@ if 'last_refresh' not in st.session_state:
 col_refresh, col_time = st.columns([1, 3])
 with col_refresh:
     if st.button("Refresh Now", type="primary"):
-        st.cache_data.clear()
-        # Also clear the service-level file cache so OTX API is re-fetched
-        try:
-            import os as _os
-            cache_file = ".threat_intel_cache.json"
-            if _os.path.exists(cache_file):
-                _os.remove(cache_file)
-        except Exception:
-            pass
+        st.session_state.force_refresh_next_run = True
         st.session_state.last_refresh = time.time()
         st.rerun()
 
@@ -55,22 +47,14 @@ with col_time:
 
 # Auto-refresh logic (every 5 minutes)
 if time.time() - st.session_state.last_refresh > 300:
-    st.cache_data.clear()
-    try:
-        import os as _os
-        cache_file = ".threat_intel_cache.json"
-        if _os.path.exists(cache_file):
-            _os.remove(cache_file)
-    except Exception:
-        pass
+    st.session_state.force_refresh_next_run = True
     st.session_state.last_refresh = time.time()
     st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Generate threat data with attack connections
-@st.cache_data(ttl=60)
-def get_threat_data():
+def get_threat_data(refresh=False):
     from services.threat_intel import threat_intel
     
     # Base coordinates for major threat sources
@@ -95,7 +79,7 @@ def get_threat_data():
     target = {"lat": 20.59, "lon": 78.96, "name": "SOC HQ"}  # India as SOC location
     
     # Fetch real counts
-    counts = threat_intel.get_country_threat_counts()
+    counts = threat_intel.get_country_threat_counts(force_refresh=refresh)
     
     results = {}
     for country, params in coords.items():
@@ -121,7 +105,11 @@ def get_threat_data():
     
     return results, target
 
-threats, target = get_threat_data()
+# Call site
+refresh_needed = st.session_state.get('force_refresh_next_run', False)
+threats, target = get_threat_data(refresh=refresh_needed)
+if refresh_needed:
+    st.session_state.force_refresh_next_run = False
 
 # Stats
 total = sum([c["real_count"] for c in threats.values()])

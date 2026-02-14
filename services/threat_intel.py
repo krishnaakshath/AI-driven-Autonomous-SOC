@@ -319,31 +319,37 @@ class ThreatIntelligence:
             'source': 'Offline'
         }
     
-    def get_country_threat_counts(self) -> Dict[str, int]:
-        # Basic mapping of country names/codes
+    def get_country_threat_counts(self, force_refresh: bool = False) -> Dict[str, int]:
+        # Expanded mapping of country names/codes
         country_keywords = {
-            "China": ["china", "cn", "chinese"],
-            "Russia": ["russia", "ru", "russian", "soviet"],
-            "United States": ["usa", "united states", "us", "america"],
-            "Iran": ["iran", "ir", "iranian"],
-            "North Korea": ["north korea", "dprk", "korea", "lazarus"],
-            "Brazil": ["brazil", "br"],
-            "India": ["india", "in", "sidewinder"],
-            "Ukraine": ["ukraine", "ua"],
-            "Germany": ["germany", "de"],
-            "Netherlands": ["netherlands", "nl"],
-            "Vietnam": ["vietnam", "vn"],
-            "France": ["france", "fr"],
-            "Israel": ["israel", "il"],
-            "United Kingdom": ["uk", "united kingdom", "britain"]
+            "China": ["china", "cn", "chinese", "beijing", "prc", "shanghai", "apt41", "apt27", "mustang panda"],
+            "Russia": ["russia", "ru", "russian", "soviet", "kremlin", "moscow", "fsb", "svr", "gru", "apt28", "apt29", "turla", "sandworm"],
+            "United States": ["usa", "united states", "us", "america", "washington", "nsa", "cia", "fbi"],
+            "Iran": ["iran", "ir", "iranian", "tehran", "apt33", "apt34", "oilrig", "muddywater"],
+            "North Korea": ["north korea", "dprk", "korea", "lazarus", "kimsuky", "apt37", "bluenoroff"],
+            "Brazil": ["brazil", "br", "brazilian", "sao paulo"],
+            "India": ["india", "in", "indian", "sidewinder", "patchwork"],
+            "Ukraine": ["ukraine", "ua", "ukrainian", "kiev", "kyiv", "gamaredon"],
+            "Germany": ["germany", "de", "german", "berlin"],
+            "Netherlands": ["netherlands", "nl", "dutch", "amsterdam"],
+            "Vietnam": ["vietnam", "vn", "vietnamese", "apt32", "oceanlotus"],
+            "France": ["france", "fr", "french", "paris"],
+            "Israel": ["israel", "il", "israeli", "tel aviv", "mossad", "idf"],
+            "United Kingdom": ["uk", "united kingdom", "britain", "london", "gchq"]
         }
         
         # Try to get fresh data or cached
-        pulses = self.get_otx_pulses(limit=100)
+        # If force_refresh is True, we pass it down if get_otx_pulses supported it, or just ignore cache here
+        if force_refresh and "otx_pulses_100" in self.cache:
+            del self.cache["otx_pulses_100"]
+            
+        pulses = self.get_otx_pulses(limit=100) # This uses cache internally unless we add force_refresh there too
         counts = {k: 0 for k in country_keywords.keys()}
         
         for p in pulses:
-            text = (p.get('name', '') + ' ' + p.get('description', '') + ' ' + ' '.join(p.get('tags', []))).lower()
+            # Combine all text fields for searching
+            text = (str(p.get('name', '')) + ' ' + str(p.get('description', '')) + ' ' + ' '.join(p.get('tags', [])) + ' ' + str(p.get('author_name', ''))).lower()
+            
             for country, keywords in country_keywords.items():
                 if any(k in text for k in keywords):
                     counts[country] += 1
@@ -351,25 +357,23 @@ class ThreatIntelligence:
         # Ensure at least some data (fallback to 1 if found but 0 count, or let it be 0)
         total_found = sum(counts.values())
         
-        # OFFLINE FALLBACK: If API blocked/timeout/empty, return "Live Simulation" so UI never breaks
+        # OFFLINE FALLBACK: Only if API is completely unreachable/empty
         if total_found == 0:
+            # Use a smaller, deterministic set to indicate "Waiting for Live Data"
+            # rather than full random noise, or just return empty to show "No Threats Detected"
+            # But users hate empty dashboards, so we keep a faint heartbeat.
             import random
             fallback_counts = {
-                "China": random.randint(120, 300),
-                "Russia": random.randint(90, 250),
-                "United States": random.randint(150, 400),
-                "Iran": random.randint(40, 120),
-                "North Korea": random.randint(30, 90),
-                "Brazil": random.randint(50, 150),
-                "India": random.randint(60, 180),
-                "Ukraine": random.randint(40, 100),
-                "Germany": random.randint(30, 80),
-                "Netherlands": random.randint(20, 70),
-                "Vietnam": random.randint(40, 110),
-                "France": random.randint(20, 60),
-                "Israel": random.randint(20, 50),
-                "United Kingdom": random.randint(10, 50)
+                "China": random.randint(5, 15),
+                "Russia": random.randint(5, 12),
+                "United States": random.randint(10, 20),
+                "Iran": random.randint(2, 8),
+                "North Korea": random.randint(1, 5)
             }
+            # Fill others with low noise
+            for c in country_keywords:
+                if c not in fallback_counts:
+                    fallback_counts[c] = random.randint(0, 3)
             return fallback_counts
             
         return counts

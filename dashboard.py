@@ -7,6 +7,30 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 st.set_page_config(page_title="SOC Platform", page_icon="S", layout="wide")
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# SERVICE STARTUP (Background Threads)
+# ═══════════════════════════════════════════════════════════════════════════════
+@st.cache_resource
+def start_active_services():
+    """Start background services for Log Ingestion and Live Monitoring."""
+    try:
+        from services.log_ingestor import log_ingestor
+        from services.background_monitor import background_monitor
+        
+        # Start Log Ingestor (Reads logs -> DB)
+        log_ingestor.start_background_thread()
+        
+        # Start Background Monitor (Generates logs/Simulates Traffic)
+        background_monitor.start()
+        
+        return True
+    except Exception as e:
+        print(f"Failed to start services: {e}")
+        return False
+
+# Initialize services once
+start_active_services()
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # NAVIGATION — Clean text-only sidebar with grouped sections
 # ═══════════════════════════════════════════════════════════════════════════════
 

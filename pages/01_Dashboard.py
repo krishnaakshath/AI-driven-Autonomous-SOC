@@ -317,22 +317,19 @@ def load_soc_data():
         return pd.read_csv(DATA_PATH)
     else:
         # Dynamic Simulation enriched with Real OTX Data
-        from services.threat_intel import get_latest_threats, get_threat_stats
+        from services.threat_intel import threat_intel
         
-        # 1. Fetch live intel
-        real_countries = ["United States", "China", "Russia", "Germany", "Brazil", "India"] # Fallback
-        real_ips = []
-        try:
-            pulses = get_latest_threats()
-            for p in pulses:
-                # Basic parsing of pulse description for country context
-                desc = (p.get('name', '') + ' ' + p.get('description', '')).lower()
-                for c_name in ["China", "Russia", "Iran", "Korea", "Vietnam", "India", "Brazil", "Ukraine", "France", "Germany", "Israel", "United States"]:
-                    if c_name.lower() in desc:
-                        real_countries.append(c_name)
-        except:
-            pass
-            
+        # 1. Fetch live intel country distribution
+        country_counts = threat_intel.get_country_threat_counts()
+        real_countries = []
+        for country, count in country_counts.items():
+            if count > 0:
+                real_countries.extend([country] * count) # Weight by count
+        
+        # If no real countries found, fallback (get_country_threat_counts handles this partially, but we need list)
+        if not real_countries:
+            real_countries = ["United States", "China", "Russia", "Germany", "Brazil", "India"]
+
         # Vary total events to make it look "live"
         base_n = 2000
         volatility = random.randint(-300, 500)
@@ -366,18 +363,25 @@ def load_soc_data():
         
         # Use Real Countries if found
         uniq_countries = list(set(real_countries))
-        if len(uniq_countries) < 5:
+        if len(uniq_countries) < 2:
             uniq_countries = ["United States", "China", "Russia", "Germany", "Brazil", "India", "Ukraine", "Iran", "North Korea", "Netherlands"]
             
-        # Shuffle countries bias
-        country_p = np.random.dirichlet(np.ones(len(uniq_countries)))
-        
+        # Shuffle countries bias using real weights
+        # If real_countries has weights, use them
+        if len(real_countries) > 20: 
+             # Use the weighted distribution directly
+             sim_countries = np.random.choice(real_countries, size=n)
+        else:
+             # Fallback to dirichlet if too few real samples
+             country_p = np.random.dirichlet(np.ones(len(uniq_countries)))
+             sim_countries = np.random.choice(uniq_countries, size=n, p=country_p)
+            
         return pd.DataFrame({
             "timestamp": timestamps,
             "attack_type": attack_types,
             "risk_score": risk_scores,
             "access_decision": decisions,
-            "source_country": np.random.choice(uniq_countries, size=n, p=country_p),
+            "source_country": sim_countries,
             "source_ip": [f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}" for _ in range(n)],
             "dest_port": np.random.choice([22, 80, 443, 3389, 445, 8080, 3306, 21], size=n)
         })
@@ -419,13 +423,17 @@ with c_head:
 
 with c_live:
     st.markdown("""
-        <div style="height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-top: 1rem;">
+        <div style="height: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding-top: 1rem;">
             <div class="live-badge" style="padding: 0.8rem 1.5rem;">
                 <span class="live-dot"></span>
                 LIVE SYSTEM
             </div>
         </div>
     """, unsafe_allow_html=True)
+    
+    if st.button("Refresh System"):
+        st.cache_data.clear()
+        st.rerun()
 
 
 # Calculate metrics
