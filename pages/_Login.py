@@ -134,42 +134,42 @@ if 'pending_email' not in st.session_state:
 # Header with Typing Effect
 st.markdown("""
 <div style="text-align: center; padding: 40px 0 30px 0;" class="float-title">
-    <div style="font-size: 4rem; margin-bottom: 10px;"></div>
-    <h1 style="
-        font-family: 'Orbitron', sans-serif !important;
-        font-size: 3rem;
-        background: linear-gradient(135deg, #00f3ff, #bc13fe);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: 4px;
-        margin: 0;
-        text-shadow: 0 0 30px rgba(0,243,255,0.5);
-    ">SOC <span style="color: #fff; -webkit-text-fill-color: #fff;">PLATFORM</span></h1>
-    
-    <div style="height: 30px; margin-top: 15px;">
-        <p id="typing-text" style="
-            color: #8B95A5; 
-            font-family: 'Share Tech Mono', monospace; 
-            letter-spacing: 2px; 
-            font-size: 1.1rem;
-            border-right: 2px solid #00f3ff;
-            display: inline-block;
-            white-space: nowrap;
-            overflow: hidden;
-            animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
-        ">AUTONOMOUS SECURITY OPERATIONS</p>
-    </div>
-    
-    <style>
-        @keyframes typing {
-            from { width: 0 }
-            to { width: 100% }
-        }
-        @keyframes blink-caret {
-            from, to { border-color: transparent }
-            50% { border-color: #00f3ff; }
-        }
-    </style>
+<div style="font-size: 4rem; margin-bottom: 10px;"></div>
+<h1 style="
+    font-family: 'Orbitron', sans-serif !important;
+    font-size: 3rem;
+    background: linear-gradient(135deg, #00f3ff, #bc13fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 4px;
+    margin: 0;
+    text-shadow: 0 0 30px rgba(0,243,255,0.5);
+">SOC <span style="color: #fff; -webkit-text-fill-color: #fff;">PLATFORM</span></h1>
+
+<div style="height: 30px; margin-top: 15px;">
+    <p id="typing-text" style="
+        color: #8B95A5; 
+        font-family: 'Share Tech Mono', monospace; 
+        letter-spacing: 2px; 
+        font-size: 1.1rem;
+        border-right: 2px solid #00f3ff;
+        display: inline-block;
+        white-space: nowrap;
+        overflow: hidden;
+        animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+    ">AUTONOMOUS SECURITY OPERATIONS</p>
+</div>
+
+<style>
+    @keyframes typing {
+        from { width: 0 }
+        to { width: 100% }
+    }
+    @keyframes blink-caret {
+        from, to { border-color: transparent }
+        50% { border-color: #00f3ff; }
+    }
+</style>
 </div>
 """, unsafe_allow_html=True)
 
