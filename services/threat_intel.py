@@ -269,13 +269,32 @@ class ThreatIntelligence:
         if not pulses:
             return fallback_ips
 
-        # If we have pulses, we might want to extract indicators from them in a real scenario.
-        # However, the public pulse summary often doesn't contain the actual indicator list (IOcs).
-        # We would need to query each pulse details `pulses/{id}/indicators`.
-        # For performance/simplicity in this demo, we will mix real pulse names with fallback IPs 
-        # or just return fallbacks if no deep scanning is enabled.
+        # Real Extraction: Attempt to get indicators from pulse names/descriptions if deep scan is limited
+        # In a full-key environment, we would iterate and call pulses/{id}/indicators
+        # For simplicity and performance, we'll extract common IP patterns from text or return subset
+        extracted = []
+        import re
+        ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
         
-        return fallback_ips
+        for p in pulses[:limit]:
+            text = (p.get('name', '') + ' ' + p.get('description', '')).lower()
+            found_ips = re.findall(ip_pattern, text)
+            for ip in found_ips:
+                if ip not in [e['indicator'] for e in extracted] and not ip.startswith('192.168.'):
+                    extracted.append({
+                        "indicator": ip,
+                        "type": "IPv4",
+                        "description": p.get('name', 'OTX Pulse Match')[:40]
+                    })
+            
+            if len(extracted) >= limit:
+                break
+        
+        # Merge with fallback if extracted is low
+        if len(extracted) < 5:
+            return extracted + fallback_ips[:5-len(extracted)]
+        
+        return extracted
     
     def get_global_threat_stats(self) -> Dict:
         cache_key = "global_stats"

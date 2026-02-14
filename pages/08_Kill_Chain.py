@@ -11,12 +11,14 @@ from services.database import db
 
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 
-# Session state for manual refresh
+# Session state for manual/auto refresh
 if 'kill_chain_refresh' not in st.session_state:
     st.session_state.kill_chain_refresh = 0
+if 'kill_chain_auto' not in st.session_state:
+    st.session_state.kill_chain_auto = False
 
-# Header with refresh button
-h_col1, h_col2 = st.columns([4, 1])
+# Header with refresh controls
+h_col1, h_col2, h_col3 = st.columns([3, 1, 1])
 with h_col1:
     st.markdown("""
     <div style="padding: 10px 0;">
@@ -28,11 +30,26 @@ with h_col1:
         </p>
     </div>
     """, unsafe_allow_html=True)
+
 with h_col2:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    if st.button("🔄 Refresh Chain", use_container_width=True):
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.session_state.kill_chain_auto = st.toggle("🔄 Auto-Live", value=st.session_state.kill_chain_auto)
+
+with h_col3:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🔄 Refresh Data", use_container_width=True):
         st.cache_data.clear()
         st.session_state.kill_chain_refresh += 1
+        st.rerun()
+
+# Non-blocking auto-refresh logic
+if st.session_state.kill_chain_auto:
+    if 'last_kill_auto' not in st.session_state:
+        st.session_state.last_kill_auto = time.time()
+    
+    if time.time() - st.session_state.last_kill_auto > 60:
+        st.session_state.last_kill_auto = time.time()
+        st.cache_data.clear()
         st.rerun()
 
 # MITRE ATT&CK Tactics

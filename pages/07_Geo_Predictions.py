@@ -8,32 +8,51 @@ to be attacked next, with probability percentages.
 import streamlit as st
 import sys
 import os
+import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from ui.theme import CYBERPUNK_CSS
 
-# Session state for manual refresh
+# Session state for manual/auto refresh
 if 'geo_refresh' not in st.session_state:
     st.session_state.geo_refresh = 0
+if 'auto_refresh' not in st.session_state:
+    st.session_state.auto_refresh = False
 
-# Header
-h_col1, h_col2 = st.columns([4, 1])
+# Header with refresh controls
+h_col1, h_col2, h_col3 = st.columns([3, 1, 1])
 with h_col1:
     st.markdown("""
     <div style="padding: 10px 0;">
         <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0; color: #fff;">
-             Geo-Attack Predictions
+            Geo-Attack Predictions
         </h1>
         <p style="color: #888; font-size: 0.9rem; letter-spacing: 2px; margin-top: 5px;">
-            ML-POWERED COUNTRY THREAT FORECASTING
+            REAL-TIME GLOBAL THREAT INTELLIGENCE
         </p>
     </div>
     """, unsafe_allow_html=True)
+
 with h_col2:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    if st.button("🔄 Refresh Intelligence", use_container_width=True):
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.session_state.auto_refresh = st.toggle("🔄 Auto-Live", value=st.session_state.auto_refresh)
+
+with h_col3:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🔄 Refresh Data", use_container_width=True):
         st.cache_data.clear()
         st.session_state.geo_refresh += 1
+        st.rerun()
+
+# Non-blocking auto-refresh logic
+if st.session_state.auto_refresh:
+    # Check if we should refresh (every 60 seconds)
+    if 'last_auto_refresh' not in st.session_state:
+        st.session_state.last_auto_refresh = time.time()
+    
+    if time.time() - st.session_state.last_auto_refresh > 60:
+        st.session_state.last_auto_refresh = time.time()
+        st.cache_data.clear()
         st.rerun()
 
 # Import geo predictor
