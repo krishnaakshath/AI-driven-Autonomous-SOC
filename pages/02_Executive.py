@@ -79,6 +79,7 @@ def get_executive_metrics(refresh_counter=0):
             # Fetch dynamic chart data from DB
             trend_data = db.get_monthly_counts()
             cat_data = db.get_threat_categories()
+            kpi_stats = db.get_kpi_stats()
             
             if trend_data:
                 metrics["trend_data"] = trend_data
