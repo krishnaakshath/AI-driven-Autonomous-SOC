@@ -60,8 +60,8 @@ class AlertService:
         
         # Load user preferences for broadcasting
         try:
-            from auth.auth_manager import load_users
-            users_data = load_users().get("users", {})
+            from services.auth_service import auth_service
+            users_data = auth_service.get_all_users()
         except Exception as e:
             print(f"Error loading users: {e}")
             users_data = {}
@@ -78,9 +78,10 @@ class AlertService:
         is_critical = risk_score >= 80
 
         for email, u in users_data.items():
+             prefs = u.get('preferences', {})
              # Email
-             if u.get('email_alerts', True):
-                 if u.get('critical_only', False) and not is_critical:
+             if prefs.get('email_alerts', True):
+                 if prefs.get('critical_only', False) and not is_critical:
                      pass
                  else:
                      if email not in email_recipients:

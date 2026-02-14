@@ -176,7 +176,9 @@ class SOCMonitor:
         for threat in all_threats:
             if threat['access_decision'] == 'BLOCK':
                 self.block_ip(threat['source_ip'])
-                self.send_alert(threat)
+            
+            # Send alert for every detected threat (AlertService will handle thresholding)
+            self.send_alert(threat)
         
         self._log(f"Scan complete. Threats: {len(all_threats)}, Blocked IPs: {len(self.blocked_ips)}")
         return all_threats
