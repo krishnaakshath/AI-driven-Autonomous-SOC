@@ -534,7 +534,12 @@ if "User Preferences" in current_tab:
                 "emoji_usage": emoji,
                 "email_alerts": enable_email_alerts
             }
-            if auth_service.update_preferences(st.session_state.user_email, new_prefs):
+            # DEBUG: Print email and known users
+            email = st.session_state.get('user_email')
+            print(f"DEBUG: Saving prefs for email: {email}")
+            print(f"DEBUG: Known users: {list(auth_service.get_all_users().keys())}")
+            
+            if auth_service.update_preferences(email, new_prefs):
                 # Update running AI instance immediately
                 try:
                     from services.ai_assistant import ai_assistant
@@ -545,7 +550,8 @@ if "User Preferences" in current_tab:
                 time.sleep(1)
                 st.rerun()
             else:
-                st.error("Failed to save preferences.")
+                users = list(auth_service.get_all_users().keys())
+                st.error(f"Failed to save preferences. Debug: Email='{email}', Known Users={users}")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # TAB: SYSTEM CONFIGURATION (Admin Only)

@@ -22,7 +22,8 @@ from typing import Dict, Optional, Tuple
 import streamlit as st
 
 # Data file path
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+# Data file path
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 SESSIONS_FILE = os.path.join(DATA_DIR, 'sessions.json')
 
