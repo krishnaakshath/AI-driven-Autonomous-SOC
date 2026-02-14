@@ -16,7 +16,7 @@ st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
 
 # Check if user is admin
-from services.auth_service import is_authenticated, is_admin
+from services.auth_service import is_authenticated, is_admin, auth_service, get_user_preferences, get_current_user
 
 # Must be logged in to access settings
 if not is_authenticated():
@@ -511,7 +511,8 @@ if "User Preferences" in current_tab:
     st.info("Customize how the AI Security Assistant interacts with you.")
     
     # Load current preferences
-    current_prefs = auth_service.get_user_preferences()
+    # Load current preferences
+    current_prefs = get_user_preferences()
     
     with st.form("user_prefs_form"):
         c1, c2 = st.columns(2)
