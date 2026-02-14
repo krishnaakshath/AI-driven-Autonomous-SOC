@@ -34,6 +34,14 @@ col_refresh, col_time = st.columns([1, 3])
 with col_refresh:
     if st.button("Refresh Now", type="primary"):
         st.cache_data.clear()
+        # Also clear the service-level file cache so OTX API is re-fetched
+        try:
+            import os as _os
+            cache_file = ".threat_intel_cache.json"
+            if _os.path.exists(cache_file):
+                _os.remove(cache_file)
+        except Exception:
+            pass
         st.session_state.last_refresh = time.time()
         st.rerun()
 
@@ -41,13 +49,20 @@ with col_time:
     st.markdown(f'''
         <div style="display: flex; align-items: center; gap: 0.5rem; height: 38px;">
             <span style="color: #0aff0a;"></span>
-            <span style="color: #8B95A5; font-family: 'Share Tech Mono', monospace;">LIVE FEED // AUTO-REFRESH 30s</span>
+            <span style="color: #8B95A5; font-family: 'Share Tech Mono', monospace;">LIVE FEED // AUTO-REFRESH 5min</span>
         </div>
     ''', unsafe_allow_html=True)
 
-# Auto-refresh logic
-if time.time() - st.session_state.last_refresh > 30:
+# Auto-refresh logic (every 5 minutes)
+if time.time() - st.session_state.last_refresh > 300:
     st.cache_data.clear()
+    try:
+        import os as _os
+        cache_file = ".threat_intel_cache.json"
+        if _os.path.exists(cache_file):
+            _os.remove(cache_file)
+    except Exception:
+        pass
     st.session_state.last_refresh = time.time()
     st.rerun()
 

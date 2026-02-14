@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 import time
 
 CACHE_FILE = ".threat_intel_cache.json"
-CACHE_DURATION = 3600
+CACHE_DURATION = 300  # 5 minutes — keep data fresh
 CONFIG_FILE = ".soc_config.json"
 
 
@@ -179,7 +179,7 @@ class ThreatIntelligence:
         return {"error": "API request failed", "verdict": "UNKNOWN", "score": 0}
 
     def get_otx_pulses(self, limit: int = 10) -> List[Dict]:
-        cache_key = "otx_pulses"
+        cache_key = f"otx_pulses_{limit}"
         if self._is_cached(cache_key):
             return self.cache[cache_key]['data']
         
