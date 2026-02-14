@@ -32,7 +32,7 @@ def inject_sidebar_filter():
     """
     
     # Admin-only pages to hide for non-admin users
-    admin_pages = ['16_Security_Testing', '22_API']
+    admin_pages = ['16_Security_Testing', '22_API', '25_Admin']
     
     # Hide admin pages if user is not admin
     if is_authenticated() and not is_admin():

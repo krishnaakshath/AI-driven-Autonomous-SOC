@@ -21,7 +21,12 @@ except st.errors.StreamlitAPIException:
 
 # Import theme and auth
 from ui.theme import CYBERPUNK_CSS, inject_particles
-from services.auth_service import auth_service, is_authenticated
+
+from services.auth_service import auth_service, is_authenticated, check_persistent_session, login_user
+
+# Auto-login check (persistent session)
+if check_persistent_session():
+    st.switch_page("pages/01_Dashboard.py")
 
 # Check if already logged in
 if is_authenticated():
@@ -34,30 +39,59 @@ inject_particles()
 # Hide sidebar completely
 st.markdown("""
 <style>
+    /* Sidebar hidden */
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="stSidebarNav"] { display: none !important; }
-    .css-1d391kg { display: none !important; }
+
+    /* Animated background gradient */
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    .stApp {
+        background: linear-gradient(-45deg, #0a0e17, #151c2c, #1a0b2e, #0f1623);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+    }
     
     /* Center the login form */
     .login-container {
         max-width: 420px;
         margin: 0 auto;
+        padding: 40px;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 243, 255, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 0 40px rgba(0, 243, 255, 0.1);
     }
     
-    /* Form styling */
+    /* Input Glow */
     .stTextInput > div > div {
         background: rgba(0, 0, 0, 0.5) !important;
-        border: 1px solid rgba(0, 243, 255, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 8px !important;
+        transition: all 0.3s ease;
+    }
+    
+    .stTextInput > div > div:focus-within {
+        border-color: #00f3ff !important;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.2) !important;
+        transform: scale(1.02);
     }
     
     .stTextInput input {
         color: #fff !important;
+        letter-spacing: 1px;
     }
     
+    /* Button Animation */
     .stButton > button {
         width: 100%;
-        background: linear-gradient(135deg, var(--neon-cyan, #00f3ff), var(--neon-purple, #bc13fe)) !important;
+        background: linear-gradient(90deg, #00f3ff, #bc13fe, #00f3ff) !important;
+        background-size: 200% auto !important;
         color: #000 !important;
         font-family: 'Orbitron', sans-serif !important;
         font-weight: 700 !important;
@@ -66,15 +100,30 @@ st.markdown("""
         border-radius: 8px !important;
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
-        transition: all 0.3s !important;
+        transition: all 0.4s ease !important;
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 5px 20px rgba(0, 243, 255, 0.4) !important;
+        background-position: right center !important;
+        transform: translateY(-3px) !important;
+        box-shadow: 0 5px 25px rgba(188, 19, 254, 0.5) !important;
+    }
+    
+    /* Floating Title Animation */
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+    
+    .float-title {
+        animation: float 6s ease-in-out infinite;
     }
 </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+    
+    # Particles only if not already running (handled by theme)
+    inject_particles()
 
 # Initialize session states
 if 'login_step' not in st.session_state:
@@ -82,23 +131,45 @@ if 'login_step' not in st.session_state:
 if 'pending_email' not in st.session_state:
     st.session_state.pending_email = None
 
-# Header
+# Header with Typing Effect
 st.markdown("""
-<div style="text-align: center; padding: 40px 0 30px 0;">
+<div style="text-align: center; padding: 40px 0 30px 0;" class="float-title">
     <div style="font-size: 4rem; margin-bottom: 10px;"></div>
     <h1 style="
         font-family: 'Orbitron', sans-serif !important;
-        font-size: 2.5rem;
+        font-size: 3rem;
         background: linear-gradient(135deg, #00f3ff, #bc13fe);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: 4px;
         margin: 0;
         text-shadow: 0 0 30px rgba(0,243,255,0.5);
-    ">SOC PLATFORM</h1>
-    <p style="color: #666; font-family: 'Rajdhani', sans-serif; letter-spacing: 3px; margin-top: 8px;">
-        AUTONOMOUS SECURITY OPERATIONS
-    </p>
+    ">SOC <span style="color: #fff; -webkit-text-fill-color: #fff;">PLATFORM</span></h1>
+    
+    <div style="height: 30px; margin-top: 15px;">
+        <p id="typing-text" style="
+            color: #8B95A5; 
+            font-family: 'Share Tech Mono', monospace; 
+            letter-spacing: 2px; 
+            font-size: 1.1rem;
+            border-right: 2px solid #00f3ff;
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+        ">AUTONOMOUS SECURITY OPERATIONS</p>
+    </div>
+    
+    <style>
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #00f3ff; }
+        }
+    </style>
 </div>
 """, unsafe_allow_html=True)
 
@@ -108,6 +179,8 @@ if st.session_state.login_step == 'credentials':
     
     email = st.text_input("Email Address", placeholder="your@email.com", key="login_email")
     password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
+    
+    remember_me = st.checkbox("Remember this device", value=False)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -119,12 +192,11 @@ if st.session_state.login_step == 'credentials':
                 if requires_2fa:
                     st.session_state.pending_email = email
                     st.session_state.login_step = '2fa_select'
+                    st.session_state.remember_me = remember_me
                     st.rerun()
                 else:
-                    st.session_state.authenticated = True
-                    st.session_state.user_email = email
-                    user = auth_service.get_user(email)
-                    st.session_state.user_name = user.get('name', 'User')
+                    # Login successful without 2FA (e.g. Admin)
+                    login_user(email, remember=remember_me)
                     st.session_state.session_start = __import__('time').time()
                     
                     try:
@@ -234,10 +306,10 @@ elif st.session_state.login_step == '2fa_verify':
                     success, message = auth_service.verify_otp(st.session_state.pending_email, otp)
                 
                 if success:
-                    st.session_state.authenticated = True
-                    st.session_state.user_email = st.session_state.pending_email
-                    user = auth_service.get_user(st.session_state.pending_email)
-                    st.session_state.user_name = user.get('name', 'User')
+                    # Verified 2FA login
+                    remember = st.session_state.get('remember_me', False)
+                    login_user(st.session_state.pending_email, remember=remember)
+                    
                     st.session_state.session_start = __import__('time').time()
                     st.session_state.login_step = 'credentials'
                     

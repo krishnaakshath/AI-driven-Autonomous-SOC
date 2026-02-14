@@ -33,6 +33,20 @@ class AIAssistant:
             self.messages = []  # Chat history
             self._initialize_system()
         else:
+        else:
+            self.client = None
+
+    def reload_config(self):
+        """Reload configuration from disk."""
+        self.api_key = self._get_api_key()
+        if self.api_key:
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url="https://api.groq.com/openai/v1"
+            )
+            # Re-initialize system prompt with potentially new preferences
+            self._initialize_system()
+        else:
             self.client = None
 
     def _get_api_key(self):

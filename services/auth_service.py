@@ -24,6 +24,7 @@ import streamlit as st
 # Data file path
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
+SESSIONS_FILE = os.path.join(DATA_DIR, 'sessions.json')
 
 class AuthService:
     """Authentication service with 2FA support and persistent storage."""
@@ -222,6 +223,72 @@ class AuthService:
         
         return True, "Login successful!", False
     
+    # ── Session Management ───────────────────────────────────────────────────
+    
+    def _load_sessions(self) -> Dict:
+        """Load active sessions from disk."""
+        if os.path.exists(SESSIONS_FILE):
+            try:
+                with open(SESSIONS_FILE, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
+        return {}
+    
+    def _save_sessions(self, sessions: Dict):
+        """Save active sessions to disk."""
+        self._ensure_data_dir()
+        with open(SESSIONS_FILE, 'w') as f:
+            json.dump(sessions, f, indent=2)
+
+    def create_session(self, email: str, remember: bool = False) -> str:
+        """Create a new persistent session token."""
+        token = secrets.token_urlsafe(32)
+        sessions = self._load_sessions()
+        
+        # Expiry: 7 days if remember me, else 24 hours
+        duration = timedelta(days=7) if remember else timedelta(hours=24)
+        expiry = (datetime.now() + duration).isoformat()
+        
+        sessions[token] = {
+            "email": email,
+            "expires": expiry,
+            "created": datetime.now().isoformat()
+        }
+        
+        # Clean up expired sessions while we're at it
+        now = datetime.now().isoformat()
+        sessions = {k: v for k, v in sessions.items() if v['expires'] > now}
+        
+        self._save_sessions(sessions)
+        return token
+    
+    def validate_session(self, token: str) -> Optional[str]:
+        """Validate a session token and return the email if valid."""
+        if not token:
+            return None
+            
+        sessions = self._load_sessions()
+        if token not in sessions:
+            return None
+            
+        session = sessions[token]
+        if datetime.now().isoformat() > session['expires']:
+            del sessions[token]
+            self._save_sessions(sessions)
+            return None
+            
+        return session['email']
+    
+    def invalidate_session(self, token: str):
+        """Invalidate a session token (logout)."""
+        if not token:
+            return
+        sessions = self._load_sessions()
+        if token in sessions:
+            del sessions[token]
+            self._save_sessions(sessions)
+
     def generate_otp(self, email: str) -> Tuple[bool, str]:
         """
         Generate and send OTP for 2FA.
@@ -629,7 +696,48 @@ def get_current_user() -> Optional[Dict]:
     if is_authenticated():
         email = st.session_state.get('user_email')
         return auth_service.get_user(email)
-    return None
+    return None 
+
+def check_persistent_session():
+    """Run at startup: Check for persistent session token file."""
+    if is_authenticated():
+        return
+    
+    # Check for local token file (simulating cookie for desktop app)
+    token_file = os.path.join(DATA_DIR, '.session_token')
+    if os.path.exists(token_file):
+        try:
+            with open(token_file, 'r') as f:
+                token = f.read().strip()
+            
+            email = auth_service.validate_session(token)
+            if email:
+                # Auto-login
+                st.session_state['authenticated'] = True
+                st.session_state['user_email'] = email
+                user = auth_service.get_user(email)
+                st.session_state['user_name'] = user.get('name') if user else email
+                st.session_state['auth_token'] = token
+                return True
+        except:
+            pass
+    return False
+
+def login_user(email: str, remember: bool = False):
+    """Log in the user and set persistence."""
+    st.session_state['authenticated'] = True
+    st.session_state['user_email'] = email
+    user = auth_service.get_user(email)
+    st.session_state['user_name'] = user.get('name') if user else email
+    
+    # Create and save session token
+    token = auth_service.create_session(email, remember)
+    st.session_state['auth_token'] = token
+    
+    # Save to local file for persistence across restarts
+    token_file = os.path.join(DATA_DIR, '.session_token')
+    with open(token_file, 'w') as f:
+        f.write(token)
 
 
 def get_user_preferences() -> Dict:
@@ -673,7 +781,21 @@ def logout():
     """Logout current user."""
     st.session_state['authenticated'] = False
     st.session_state['user_email'] = None
+    st.session_state['user_email'] = None
     st.session_state['user_name'] = None
+    
+    # Clear persistence
+    token = st.session_state.get('auth_token')
+    if token:
+        auth_service.invalidate_session(token)
+        st.session_state.pop('auth_token', None)
+        
+    token_file = os.path.join(DATA_DIR, '.session_token')
+    if os.path.exists(token_file):
+        try:
+            os.remove(token_file)
+        except:
+            pass
 
 
 def require_auth():

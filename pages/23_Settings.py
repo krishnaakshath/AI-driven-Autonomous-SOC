@@ -487,99 +487,151 @@ if IS_ADMIN:
             st.success("OAuth settings saved! Google Login will activate if Client ID is present.")
 
     with tab5:
-        st.markdown(section_title("Notification Settings"), unsafe_allow_html=True)
-        
-        st.markdown("""<div class="glass-card" style="margin-bottom: 1.5rem;">
-<h4 style="color: #FF4444; margin: 0 0 1rem 0;">Email Alerts (Gmail)</h4>
-<p style="color: #8B95A5; margin: 0 0 1rem 0; font-size: 0.9rem;">
-Configure SMTP settings to receive critical security alerts. 
-Use an App Password for Gmail.
-</p>
-<div style="background: rgba(255, 68, 68, 0.1); border-left: 3px solid #FF4444; padding: 0.8rem; border-radius: 4px; margin-bottom: 1rem;">
-<p style="color: #FAFAFA; margin: 0; font-size: 0.85rem;"> Alerts are sent securely using TLS encryption.</p>
-</div>
-</div>""", unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            gmail_email = st.text_input("Gmail Address", value=config.get("gmail_email", ""), key="gmail_email")
-            gmail_password = st.text_input("App Password", value=config.get("gmail_password", ""), type="password", key="gmail_pass")
-        
-        with col2:
-            gmail_recipient = st.text_input("Alert Recipient", value=config.get("gmail_recipient", ""), key="gmail_to")
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.info("Tip: You can add multiple recipients separated by commas.")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        col_save, col_test = st.columns(2)
-        
-        with col_save:
-            if st.button("Save Notifications", type="primary", use_container_width=True):
-                config["gmail_email"] = gmail_email
-                config["gmail_password"] = gmail_password
-                config["gmail_recipient"] = gmail_recipient
-                # Clean up old keys
-                config.pop("telegram_token", None)
-                config.pop("telegram_chat_id", None)
-                config.pop("notification_telegram", None)
-                
-                save_config(config)
-                st.success("Notification settings saved!")
-        
-        with col_test:
-            if st.button("Send Test Alert", use_container_width=True):
-                try:
-                    from alerting.alert_service import send_test_alert
-                    result = send_test_alert()
-                    if result.get("email"):
-                        st.success("Test alert sent to email! ")
-                    else:
-                        st.warning("Failed to send email. Check your credentials.")
-                except Exception as e:
-                    st.error(f"Error: {e}")
+        # ══════════════════════════════════════════════════════════════════════════════
+# SETTINGS & CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════════
+st.markdown(page_header("Settings & Configuration", "Manage system parameters and user preferences"))
 
-    with tab6:
-        st.markdown(section_title("Alert Thresholds"), unsafe_allow_html=True)
-        
+# ── Role-Based Access Control ────────────────────────────────────────────────
+is_admin_user = is_admin()
+
+# Tabs based on role
+tabs = ["👤 User Preferences"]
+if is_admin_user:
+    tabs.append("🛠️ System Configuration")
+tabs.append("ℹ️ About")
+
+current_tab = st.radio("Category", tabs, horizontal=True, label_visibility="collapsed")
+st.markdown("---")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TAB: USER PREFERENCES (Available to ALL)
+# ──────────────────────────────────────────────────────────────────────────────
+if "User Preferences" in current_tab:
+    st.markdown("#### 🤖 CORTEX Personality")
+    st.info("Customize how the AI Security Assistant interacts with you.")
+    
+    # Load current preferences
+    current_prefs = auth_service.get_user_preferences()
+    
+    with st.form("user_prefs_form"):
         c1, c2 = st.columns(2)
-        
         with c1:
-            st.markdown("""
-                <div class="glass-card" style="margin-bottom: 1rem;">
-                    <h4 style="color: #FF8C00; margin: 0 0 0.5rem 0;">Alert Threshold</h4>
-                    <p style="color: #8B95A5; margin: 0; font-size: 0.85rem;">Trigger alerts when risk exceeds this value</p>
-                </div>
-            """, unsafe_allow_html=True)
-            alert_threshold = st.slider("", 0, 100, config.get("alert_threshold", 70), key="alert_thresh", label_visibility="collapsed")
-        
+            humor = st.slider("Humor Level", 1, 5, current_prefs.get('humor_level', 3), help="1=Robot, 5=Comedian")
+            formality = st.selectbox("Formality", ["professional", "casual", "friendly"], index=["professional", "casual", "friendly"].index(current_prefs.get('formality', 'professional')))
         with c2:
-            st.markdown("""
-                <div class="glass-card" style="margin-bottom: 1rem;">
-                    <h4 style="color: #FF4444; margin: 0 0 0.5rem 0;">Auto-Block Threshold</h4>
-                    <p style="color: #8B95A5; margin: 0; font-size: 0.85rem;">Automatically block when risk exceeds this value</p>
-                </div>
-            """, unsafe_allow_html=True)
-            block_threshold = st.slider("", 0, 100, config.get("block_threshold", 90), key="block_thresh", label_visibility="collapsed")
+            verbosity = st.select_slider("Response Length", ["concise", "balanced", "detailed"], value=current_prefs.get('verbosity', 'balanced'))
+            emoji = st.selectbox("Emoji Usage", ["none", "minimal", "expressive"], index=["none", "minimal", "expressive"].index(current_prefs.get('emoji_usage', 'minimal')))
+            
+        st.markdown("#### 🔔 Notification Preferences")
+        enable_email_alerts = st.checkbox("Receive Email Alerts", value=current_prefs.get('email_alerts', True))
         
-        st.markdown("<br>", unsafe_allow_html=True)
+        if st.form_submit_button("Save Preferences", type="primary"):
+            new_prefs = {
+                "humor_level": humor,
+                "formality": formality,
+                "verbosity": verbosity,
+                "emoji_usage": emoji,
+                "email_alerts": enable_email_alerts
+            }
+            if auth_service.update_preferences(st.session_state.user_email, new_prefs):
+                # Update running AI instance immediately
+                try:
+                    from services.ai_assistant import ai_assistant
+                    ai_assistant.update_personality(new_prefs)
+                except:
+                    pass
+                st.success("Preferences saved successfully!")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("Failed to save preferences.")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TAB: SYSTEM CONFIGURATION (Admin Only)
+# ──────────────────────────────────────────────────────────────────────────────
+if "System Configuration" in current_tab and is_admin_user:
+    st.markdown("#### 🔑 Global API Keys & Integrations")
+    st.warning("⚠️ These settings affect the entire platform. Only modify if you know what you are doing.")
+    
+    # Load config
+    config = load_config()
+
+    with st.form("system_config_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            vt_key = st.text_input("VirusTotal API Key", value=config.get('virustotal_api_key', ''), type="password")
+            otx_key = st.text_input("AlienVault OTX Key", value=config.get('otx_api_key', ''), type="password")
+        with c2:
+            groq_key = st.text_input("Groq API Key (Llama 3)", value=config.get('groq_api_key', ''), type="password")
+            abuse_key = st.text_input("AbuseIPDB API Key", value=config.get('abuseipdb_api_key', ''), type="password")
+            
+        st.markdown("##### 📧 System Email (SMTP) Settings")
+        st.caption("Used for sending OTPs and Critical Alerts to all users.")
+        c3, c4 = st.columns(2)
+        with c3:
+            gmail_user = st.text_input("Gmail User (Sender)", value=config.get('gmail_email', ''), placeholder="system@soc.com")
+            gmail_pass = st.text_input("Gmail App Password", value=config.get('gmail_password', ''), type="password")
+        with c4:
+            twilio_sid = st.text_input("Twilio Account SID", value=config.get('twilio_account_sid', ''), type="password")
+            twilio_token = st.text_input("Twilio Auth Token", value=config.get('twilio_auth_token', ''), type="password")
+            twilio_phone = st.text_input("Twilio Phone Number", value=config.get('twilio_phone_number', ''))
+
+        st.markdown("---")
+        st.markdown("##### 🚨 Alert Thresholds")
         
+        c5, c6 = st.columns(2)
+        with c5:
+            st.markdown("Trigger alerts when risk > X")
+            alert_threshold = st.slider("Alert Threshold", 0, 100, config.get("alert_threshold", 70), label_visibility="collapsed")
+        with c6:
+            st.markdown("Auto-block IP when risk > X")
+            block_threshold = st.slider("Block Threshold", 0, 100, config.get("block_threshold", 90), label_visibility="collapsed")
+            
         auto_block = st.checkbox("Enable Auto-Block", value=config.get("auto_block", True))
         auto_notify = st.checkbox("Enable Auto-Notify", value=config.get("auto_notify", True))
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if st.button("Save Thresholds", type="primary"):
-            config["alert_threshold"] = alert_threshold
-            config["block_threshold"] = block_threshold
-            config["auto_block"] = auto_block
-            config["auto_notify"] = auto_notify
-            save_config(config)
-            st.success("Thresholds saved!")
 
-# About tab - available to all users
-with tab7:
+        if st.form_submit_button("Save System Configuration", type="primary"):
+            # Update config dict
+            config['groq_api_key'] = groq_key
+            config['virustotal_api_key'] = vt_key
+            config['otx_api_key'] = otx_key
+            config['abuseipdb_api_key'] = abuse_key
+            
+            # OTP / Email Settings
+            config['gmail_email'] = gmail_user
+            config['gmail_password'] = gmail_pass
+            config['twilio_account_sid'] = twilio_sid
+            config['twilio_auth_token'] = twilio_token
+            config['twilio_phone_number'] = twilio_phone
+            
+            # Thresholds
+            config['alert_threshold'] = alert_threshold
+            config['block_threshold'] = block_threshold
+            config['auto_block'] = auto_block
+            config['auto_notify'] = auto_notify
+
+            save_config(config)
+            
+            # Reload services immediately
+            try:
+                from services.threat_intel import threat_intel
+                threat_intel.reload_config()
+                
+                from services.ai_assistant import ai_assistant
+                ai_assistant.reload_config()
+                
+                st.success("System configuration saved and services reloaded!")
+            except Exception as e:
+                st.warning(f"Settings saved, but service reload failed: {e}")
+                
+            time.sleep(1)
+            st.rerun()
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TAB: ABOUT (Available to ALL)
+# ──────────────────────────────────────────────────────────────────────────────
+if "About" in current_tab:
     st.markdown(section_title("About This Platform"), unsafe_allow_html=True)
     
     st.markdown("""

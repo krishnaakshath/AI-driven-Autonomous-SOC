@@ -504,7 +504,7 @@ with tab5:
                 "application/json"
             )
 
-            )
+
             
     with col_q3:
         if st.button("Generate Mock Data", type="primary"):

@@ -29,6 +29,13 @@ class ThreatIntelligence:
         self.otx_key = config.get('otx_api_key') or os.getenv("OTX_API_KEY", "")
         self.cache = self._load_cache()
     
+    def reload_config(self):
+        """Reload configuration from disk."""
+        config = load_config()
+        self.abuseipdb_key = config.get('abuseipdb_api_key') or os.getenv("ABUSEIPDB_API_KEY", "")
+        self.virustotal_key = config.get('virustotal_api_key') or os.getenv("VIRUSTOTAL_API_KEY", "")
+        self.otx_key = config.get('otx_api_key') or os.getenv("OTX_API_KEY", "")
+    
     def _load_cache(self) -> dict:
         if os.path.exists(CACHE_FILE):
             try:
