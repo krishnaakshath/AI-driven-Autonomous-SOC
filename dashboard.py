@@ -49,6 +49,7 @@ pg = st.navigation({
     "AI & Config": [
         st.Page("pages/21_CORTEX.py", title="CORTEX AI"),
         st.Page("pages/23_Settings.py", title="Settings"),
+        st.Page("pages/25_Admin.py", title="Admin"),
     ],
 }, position="sidebar")
 

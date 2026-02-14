@@ -733,13 +733,14 @@ if ML_LOADED:
                 
                 cat_acc = fcm_m.get('category_accuracy', {})
                 avg_acc = np.mean(list(cat_acc.values())) if cat_acc else 0
+                db_idx = fcm_m.get('davies_bouldin_index', 0)
                 
                 for label, val, color in [
                     ("Cluster Purity", f"{fcm_m['overall_purity']}%", "#8B5CF6"),
                     ("Silhouette Score", f"{fcm_m['silhouette_score']:.4f}", "#00D4FF"),
+                    ("Davies-Bouldin Index", f"{db_idx:.4f}", "#FF6B00"),
                     ("Avg Category Accuracy", f"{avg_acc:.1f}%", "#00C853"),
                     ("Test Samples", str(fcm_m['test_samples']), "#FF8C00"),
-                    ("Categories", str(len(fcm_m.get('categories_found', []))), "#FF0066")
                 ]:
                     st.markdown(f"""
                     <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -749,6 +750,60 @@ if ML_LOADED:
                     """, unsafe_allow_html=True)
                 
                 st.markdown("</div>", unsafe_allow_html=True)
+            
+            # Cluster-Label Alignment
+            alignment = fcm_m.get('cluster_label_alignment', {})
+            if alignment:
+                st.markdown("---")
+                st.markdown("### Cluster-Label Alignment (Hungarian Algorithm)")
+                st.markdown("""
+                <div class="glass-card">
+                    <p style="color: #8B95A5; margin: 0 0 0.75rem 0;">
+                        Optimal cluster-to-category mapping computed via the Hungarian algorithm 
+                        for maximum purity alignment.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                for cluster_name, category in alignment.items():
+                    st.markdown(f"""
+                    <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span style="color: #8B5CF6;">{cluster_name}</span>
+                        <span style="color: #00C853; font-weight: 600;">{category}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # Decision Fusion Summary
+            st.markdown("---")
+            st.markdown("###  Decision Fusion Summary")
+            
+            if_acc = if_m.get('accuracy', 0)
+            fcm_purity = fcm_m.get('overall_purity', 0)
+            # Weighted fusion: IF handles binary anomaly, FCM handles categorization
+            fusion_score = round(if_acc * 0.6 + fcm_purity * 0.4, 2)
+            
+            st.markdown(f"""
+            <div class="glass-card" style="border-left: 4px solid #00f3ff;">
+                <h4 style="color: #00f3ff; margin: 0 0 0.75rem 0;">Multi-Model Fusion Assessment</h4>
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div>
+                        <span style="color: #8B95A5;">IF Detection (60%)</span><br>
+                        <span style="color: #00D4FF; font-size: 1.5rem; font-weight: 700;">{if_acc}%</span>
+                    </div>
+                    <div>
+                        <span style="color: #8B95A5;">FCM Categorization (40%)</span><br>
+                        <span style="color: #8B5CF6; font-size: 1.5rem; font-weight: 700;">{fcm_purity}%</span>
+                    </div>
+                    <div>
+                        <span style="color: #8B95A5;">Combined Fusion Score</span><br>
+                        <span style="color: #00C853; font-size: 1.5rem; font-weight: 700;">{fusion_score}%</span>
+                    </div>
+                </div>
+                <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.8rem;">
+                    Isolation Forest provides binary anomaly detection — FCM categorizes detected threats into 5 categories.
+                    The fusion score reflects overall pipeline quality (detection + categorization).
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
             
             # Run combined pipeline
             st.markdown("---")

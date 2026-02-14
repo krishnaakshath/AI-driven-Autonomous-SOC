@@ -26,12 +26,24 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 
 class AuthService:
-    """Authentication service with 2FA support."""
+    """Authentication service with 2FA support and persistent storage."""
     
     def __init__(self):
         self._ensure_data_dir()
-        self.users = self._load_users()
-        # OTP store moved to session state for persistence across requests
+        # NOTE: users are loaded fresh from disk on every access via the
+        # `users` property — this fixes the persistence bug where
+        # registrations were lost because the old singleton cached data
+        # in memory at import time.
+    
+    @property
+    def users(self) -> Dict:
+        """Always read users from disk to ensure persistence across sessions."""
+        return self._load_users()
+    
+    @users.setter
+    def users(self, value: Dict):
+        """Write-through: setting users writes immediately to disk."""
+        self._save_users_data(value)
     
     @property
     def otp_store(self):
@@ -42,23 +54,59 @@ class AuthService:
     
     def _ensure_data_dir(self):
         """Ensure data directory exists."""
-        if not os.path.exists(DATA_DIR):
-            os.makedirs(DATA_DIR)
+        os.makedirs(DATA_DIR, exist_ok=True)
     
     def _load_users(self) -> Dict:
-        """Load users from JSON file."""
+        """Load users from JSON file (called on every access)."""
         if os.path.exists(USERS_FILE):
             try:
                 with open(USERS_FILE, 'r') as f:
-                    return json.load(f)
-            except:
-                pass
+                    data = json.load(f)
+                return data if isinstance(data, dict) else {}
+            except (json.JSONDecodeError, IOError) as e:
+                # Corrupted file — try backup
+                backup = USERS_FILE + '.bak'
+                if os.path.exists(backup):
+                    try:
+                        with open(backup, 'r') as f:
+                            return json.load(f)
+                    except Exception:
+                        pass
+                print(f"[AUTH] Warning: corrupted users.json: {e}")
         return {}
     
+    def _save_users_data(self, data: Dict):
+        """Atomically save users to JSON file (temp write + rename)."""
+        import tempfile
+        self._ensure_data_dir()
+        # Write to temp file first, then atomic rename
+        tmp_fd, tmp_path = tempfile.mkstemp(
+            dir=DATA_DIR, suffix='.tmp', prefix='users_'
+        )
+        try:
+            with os.fdopen(tmp_fd, 'w') as f:
+                json.dump(data, f, indent=2)
+            # Keep a backup of the previous file
+            if os.path.exists(USERS_FILE):
+                backup = USERS_FILE + '.bak'
+                try:
+                    import shutil
+                    shutil.copy2(USERS_FILE, backup)
+                except Exception:
+                    pass
+            # Atomic rename
+            os.replace(tmp_path, USERS_FILE)
+        except Exception as e:
+            # Clean up temp file on failure
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise e
+    
     def _save_users(self):
-        """Save users to JSON file."""
-        with open(USERS_FILE, 'w') as f:
-            json.dump(self.users, f, indent=2)
+        """Save current in-memory users to disk."""
+        self._save_users_data(self._load_users())
     
     def _hash_password(self, password: str, salt: str = None) -> Tuple[str, str]:
         """Hash password using bcrypt (salt is part of hash)."""
@@ -113,14 +161,20 @@ class AuthService:
         # Hash password and store user
         hashed, salt = self._hash_password(password)
         
-        self.users[email] = {
+        # Determine role: owner for ADMIN_EMAILS, user for everyone else
+        role = 'owner' if email in [e.lower() for e in ADMIN_EMAILS] else 'user'
+        
+        # Load current users, add new user, save back
+        current_users = self._load_users()
+        current_users[email] = {
             "name": name,
             "password_hash": hashed,
             "password_salt": salt,
+            "role": role,
             "created_at": datetime.now().isoformat(),
             "last_login": None,
             "two_factor_enabled": True,
-            "two_factor_method": "email",  # email, sms, whatsapp
+            "two_factor_method": "email",
             "phone": None,
             "preferences": {
                 "humor_level": 3,
@@ -130,7 +184,7 @@ class AuthService:
             }
         }
         
-        self._save_users()
+        self._save_users_data(current_users)
         return True, "Registration successful! Please login."
     
     def login(self, email: str, password: str) -> Tuple[bool, str, bool]:
@@ -142,28 +196,29 @@ class AuthService:
         """
         email = email.lower().strip()
         
-        if email not in self.users:
+        current_users = self._load_users()
+        
+        if email not in current_users:
             return False, "Invalid email or password", False
         
-        user = self.users[email]
+        user = current_users[email]
         
         if not self._verify_password(password, user["password_hash"], user["password_salt"]):
             return False, "Invalid email or password", False
         
-        # ADMIN BYPASS: Admins skip 2FA entirely
+        # ADMIN/OWNER BYPASS: Admins skip 2FA entirely
         if email in [e.lower() for e in ADMIN_EMAILS]:
-            # Update last login for admin
-            self.users[email]["last_login"] = datetime.now().isoformat()
-            self._save_users()
-            return True, "Admin login successful!", False  # No 2FA required
+            current_users[email]["last_login"] = datetime.now().isoformat()
+            self._save_users_data(current_users)
+            return True, "Admin login successful!", False
         
         # Check if 2FA is enabled for regular users
         if user.get("two_factor_enabled", True):
             return True, "Password verified. 2FA required.", True
         
         # Update last login
-        self.users[email]["last_login"] = datetime.now().isoformat()
-        self._save_users()
+        current_users[email]["last_login"] = datetime.now().isoformat()
+        self._save_users_data(current_users)
         
         return True, "Login successful!", False
     
@@ -176,7 +231,7 @@ class AuthService:
         """
         email = email.lower().strip()
         
-        if email not in self.users:
+        if email not in self._load_users():
             return False, "User not found"
         
         # Generate 6-digit OTP
@@ -190,7 +245,7 @@ class AuthService:
         }
         
         # Get delivery method
-        user = self.users[email]
+        user = self._load_users()[email]
         method = user.get("two_factor_method", "email")
         
         if method == "email":
@@ -238,8 +293,10 @@ class AuthService:
         
         # OTP verified - clean up and update login
         del self.otp_store[email]
-        self.users[email]["last_login"] = datetime.now().isoformat()
-        self._save_users()
+        current_users = self._load_users()
+        if email in current_users:
+            current_users[email]["last_login"] = datetime.now().isoformat()
+            self._save_users_data(current_users)
         
         return True, "2FA verified. Login successful!"
     
@@ -403,31 +460,155 @@ class AuthService:
             return False
     
     def get_user(self, email: str) -> Optional[Dict]:
-        """Get user data."""
-        return self.users.get(email.lower().strip())
+        """Get user data (reads fresh from disk)."""
+        return self._load_users().get(email.lower().strip())
+    
+    def get_all_users(self) -> Dict:
+        """Get all users (reads fresh from disk). For admin use."""
+        return self._load_users()
+    
+    def update_user_role(self, email: str, role: str) -> bool:
+        """Update a user's role. Admin-only operation."""
+        email = email.lower().strip()
+        if role not in ('owner', 'admin', 'user'):
+            return False
+        current_users = self._load_users()
+        if email in current_users:
+            current_users[email]['role'] = role
+            self._save_users_data(current_users)
+            return True
+        return False
+    
+    def disable_user(self, email: str) -> bool:
+        """Disable a user account. Admin-only operation."""
+        email = email.lower().strip()
+        current_users = self._load_users()
+        if email in current_users:
+            current_users[email]['disabled'] = True
+            self._save_users_data(current_users)
+            return True
+        return False
+    
+    def enable_user(self, email: str) -> bool:
+        """Re-enable a disabled user account."""
+        email = email.lower().strip()
+        current_users = self._load_users()
+        if email in current_users:
+            current_users[email]['disabled'] = False
+            self._save_users_data(current_users)
+            return True
+        return False
     
     def update_preferences(self, email: str, preferences: Dict) -> bool:
         """Update user preferences."""
         email = email.lower().strip()
-        if email in self.users:
-            self.users[email]["preferences"].update(preferences)
-            self._save_users()
+        current_users = self._load_users()
+        if email in current_users:
+            current_users[email].setdefault('preferences', {}).update(preferences)
+            self._save_users_data(current_users)
             return True
         return False
     
     def update_2fa_method(self, email: str, method: str, phone: str = None) -> bool:
         """Update 2FA delivery method."""
         email = email.lower().strip()
-        if email in self.users:
-            self.users[email]["two_factor_method"] = method
+        current_users = self._load_users()
+        if email in current_users:
+            current_users[email]["two_factor_method"] = method
             if phone:
-                self.users[email]["phone"] = phone
-            self._save_users()
+                current_users[email]["phone"] = phone
+            self._save_users_data(current_users)
             return True
         return False
-
-
-# Singleton instance
+    
+    # ── TOTP-based MFA ───────────────────────────────────────────────────
+    
+    def setup_totp(self, email: str) -> Tuple[bool, str]:
+        """
+        Generate a TOTP secret for a user and return the provisioning URI.
+        The user scans this URI as a QR code in Google Authenticator / Authy.
+        
+        Returns:
+            Tuple of (success, provisioning_uri_or_error)
+        """
+        email = email.lower().strip()
+        current_users = self._load_users()
+        if email not in current_users:
+            return False, "User not found"
+        
+        try:
+            import pyotp
+            secret = pyotp.random_base32()
+            totp = pyotp.TOTP(secret)
+            uri = totp.provisioning_uri(
+                name=email,
+                issuer_name="SOC Platform"
+            )
+            
+            # Store the TOTP secret in the user record
+            current_users[email]['totp_secret'] = secret
+            current_users[email]['two_factor_method'] = 'totp'
+            current_users[email]['two_factor_enabled'] = True
+            self._save_users_data(current_users)
+            
+            return True, uri
+        except ImportError:
+            return False, "pyotp not installed. Run: pip install pyotp"
+        except Exception as e:
+            return False, f"TOTP setup failed: {e}"
+    
+    def verify_totp(self, email: str, code: str) -> Tuple[bool, str]:
+        """
+        Verify a TOTP code from an authenticator app.
+        
+        Returns:
+            Tuple of (success, message)
+        """
+        email = email.lower().strip()
+        current_users = self._load_users()
+        
+        if email not in current_users:
+            return False, "User not found"
+        
+        user = current_users[email]
+        totp_secret = user.get('totp_secret')
+        
+        if not totp_secret:
+            return False, "TOTP not set up. Please set up authenticator first."
+        
+        try:
+            import pyotp
+            totp = pyotp.TOTP(totp_secret)
+            # valid_window=1 allows 1 step before/after (±30sec tolerance)
+            if totp.verify(code, valid_window=1):
+                current_users[email]["last_login"] = datetime.now().isoformat()
+                self._save_users_data(current_users)
+                return True, "TOTP verified. Login successful!"
+            else:
+                return False, "Invalid code. Please try again."
+        except ImportError:
+            return False, "pyotp not installed"
+        except Exception as e:
+            return False, f"Verification error: {e}"
+    
+    def get_totp_uri(self, email: str) -> Optional[str]:
+        """Get TOTP provisioning URI for existing setup (for re-displaying QR)."""
+        email = email.lower().strip()
+        user = self._load_users().get(email)
+        if not user or not user.get('totp_secret'):
+            return None
+        try:
+            import pyotp
+            totp = pyotp.TOTP(user['totp_secret'])
+            return totp.provisioning_uri(name=email, issuer_name="SOC Platform")
+        except Exception:
+            return None
+    
+    def has_totp_setup(self, email: str) -> bool:
+        """Check if user has TOTP configured."""
+        email = email.lower().strip()
+        user = self._load_users().get(email)
+        return bool(user and user.get('totp_secret'))
 auth_service = AuthService()
 
 # Admin email list - add your admin emails here

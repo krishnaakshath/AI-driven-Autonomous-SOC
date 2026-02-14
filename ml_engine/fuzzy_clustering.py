@@ -283,7 +283,7 @@ class FuzzyCMeans:
         train_df = load_nsl_kdd_train()
         
         # Subsample for performance (FCM is computationally expensive O(N*C^2))
-        max_samples = 5000
+        max_samples = 15000
         if len(train_df) > max_samples:
             train_df = train_df.sample(n=max_samples, random_state=42)
             
@@ -329,9 +329,9 @@ class FuzzyCMeans:
         Evaluate clustering on NSL-KDD test data.
         
         Computes:
-        - Cluster purity (how homogeneous each cluster is)
+        - Cluster purity via Hungarian algorithm (optimal cluster-label alignment)
         - Per-category distribution across clusters
-        - Silhouette score
+        - Silhouette score and Davies-Bouldin index
         
         Returns:
             Evaluation metrics dictionary
@@ -355,12 +355,40 @@ class FuzzyCMeans:
         # Assign each sample to primary cluster
         cluster_assignments = np.argmax(membership, axis=1)
         
-        # Map category names to numbers for purity calculation
+        # Map category names to numbers
         cat_names = sorted(set(y_true_labels))
         cat_to_idx = {name: idx for idx, name in enumerate(cat_names)}
         y_true_idx = np.array([cat_to_idx[label] for label in y_true_labels])
         
-        # Cluster purity: for each cluster, find most common true label
+        # ── Hungarian Algorithm for optimal cluster-to-label alignment ──
+        # Build a cost matrix: cost[cluster][category] = -count
+        n_cats = len(cat_names)
+        cost_matrix = np.zeros((self.n_clusters, n_cats))
+        for c in range(self.n_clusters):
+            mask = cluster_assignments == c
+            if mask.sum() == 0:
+                continue
+            for cat_idx in range(n_cats):
+                cost_matrix[c, cat_idx] = -(mask & (y_true_idx == cat_idx)).sum()
+        
+        # Solve assignment problem (Hungarian algorithm)
+        try:
+            from scipy.optimize import linear_sum_assignment
+            row_ind, col_ind = linear_sum_assignment(cost_matrix)
+            # Create mapping: cluster -> best category
+            cluster_to_cat = {}
+            for r, c_idx in zip(row_ind, col_ind):
+                cluster_to_cat[r] = cat_names[c_idx]
+        except ImportError:
+            # Fallback to naive argmax
+            cluster_to_cat = {}
+            for c in range(self.n_clusters):
+                if cost_matrix[c].sum() != 0:
+                    cluster_to_cat[c] = cat_names[np.argmin(cost_matrix[c])]
+                else:
+                    cluster_to_cat[c] = 'N/A'
+        
+        # Compute purity using Hungarian-aligned mapping
         total_correct = 0
         cluster_details = {}
         for c in range(self.n_clusters):
@@ -373,50 +401,63 @@ class FuzzyCMeans:
             
             cluster_true = y_true_labels[mask]
             unique, counts = np.unique(cluster_true, return_counts=True)
-            dominant_idx = np.argmax(counts)
-            dominant_cat = unique[dominant_idx]
-            purity = counts[dominant_idx] / mask.sum()
-            total_correct += counts[dominant_idx]
             
-            cat_dist = {str(u): int(c) for u, c in zip(unique, counts)}
+            # Use Hungarian-aligned category
+            aligned_cat = cluster_to_cat.get(c, unique[np.argmax(counts)])
+            aligned_correct = (cluster_true == aligned_cat).sum()
+            purity = aligned_correct / mask.sum()
+            total_correct += aligned_correct
+            
+            cat_dist = {str(u): int(cnt) for u, cnt in zip(unique, counts)}
             
             cluster_details[self.cluster_names[c]] = {
                 'size': int(mask.sum()),
-                'dominant_category': dominant_cat,
+                'dominant_category': aligned_cat,
                 'purity': round(purity * 100, 2),
                 'category_distribution': cat_dist
             }
         
         overall_purity = total_correct / len(y_true_labels) if len(y_true_labels) > 0 else 0
         
-        # Silhouette score (sampled for speed)
+        # ── Clustering quality metrics ──
+        sil_score = 0.0
+        db_index = 0.0
         try:
-            from sklearn.metrics import silhouette_score
-            sample_size = min(1000, len(X_test_scaled))
+            from sklearn.metrics import silhouette_score, davies_bouldin_score
+            sample_size = min(2000, len(X_test_scaled))
             indices = np.random.choice(len(X_test_scaled), sample_size, replace=False)
             sil_score = silhouette_score(X_test_scaled[indices], cluster_assignments[indices])
+            db_index = davies_bouldin_score(X_test_scaled[indices], cluster_assignments[indices])
         except Exception:
-            sil_score = 0.0
+            pass
         
-        # Per-category accuracy
+        # Per-category accuracy using Hungarian alignment
         category_accuracy = {}
+        # Reverse map: category -> cluster
+        cat_to_cluster = {v: k for k, v in cluster_to_cat.items()}
         for cat in cat_names:
             cat_mask = y_true_labels == cat
             if cat_mask.sum() == 0:
                 continue
-            # Find which cluster this category maps to most
-            cat_clusters = cluster_assignments[cat_mask]
-            most_common = np.bincount(cat_clusters, minlength=self.n_clusters).argmax()
-            correct = (cat_clusters == most_common).sum()
+            best_cluster = cat_to_cluster.get(cat)
+            if best_cluster is not None:
+                correct = (cluster_assignments[cat_mask] == best_cluster).sum()
+            else:
+                # Fallback: most common cluster for this category
+                cat_clusters = cluster_assignments[cat_mask]
+                most_common = np.bincount(cat_clusters, minlength=self.n_clusters).argmax()
+                correct = (cat_clusters == most_common).sum()
             category_accuracy[cat] = round(correct / cat_mask.sum() * 100, 2)
         
         self.dataset_metrics = {
             'overall_purity': round(overall_purity * 100, 2),
             'silhouette_score': round(sil_score, 4),
+            'davies_bouldin_index': round(db_index, 4),
             'cluster_details': cluster_details,
             'category_accuracy': category_accuracy,
             'test_samples': len(y_true_labels),
-            'categories_found': cat_names
+            'categories_found': cat_names,
+            'cluster_label_alignment': {self.cluster_names[k]: v for k, v in cluster_to_cat.items()}
         }
         
         return self.dataset_metrics

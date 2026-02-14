@@ -159,8 +159,27 @@ elif st.session_state.login_step == '2fa_select':
     with col1:
         st.markdown("""
         <div style="text-align: center; padding: 20px; background: rgba(0,243,255,0.1); border-radius: 12px; border: 1px solid rgba(0,243,255,0.3);">
-            <div style="font-size: 2.5rem;"></div>
-            <div style="color: #00f3ff; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">EMAIL</div>
+            <div style="font-size: 2.5rem;">📱</div>
+            <div style="color: #00f3ff; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">AUTHENTICATOR</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Check if user has TOTP setup
+        has_totp = auth_service.has_totp_setup(st.session_state.pending_email)
+        
+        if st.button("USE APP", key="2fa_app_btn", use_container_width=True):
+            if has_totp:
+                st.session_state.login_step = '2fa_verify'
+                st.session_state.otp_method = 'totp'
+                st.rerun()
+            else:
+                st.warning(" Authenticator not set up. Please use email then configure in Settings.")
+
+    with col2:
+        st.markdown("""
+        <div style="text-align: center; padding: 20px; background: rgba(188,19,254,0.1); border-radius: 12px; border: 1px solid rgba(188,19,254,0.3);">
+            <div style="font-size: 2.5rem;">✉️</div>
+            <div style="color: #bc13fe; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">EMAIL</div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("SEND EMAIL", key="2fa_email", use_container_width=True):
@@ -173,42 +192,14 @@ elif st.session_state.login_step == '2fa_select':
             else:
                 st.error(message)
     
-    with col2:
-        st.markdown("""
-        <div style="text-align: center; padding: 20px; background: rgba(188,19,254,0.1); border-radius: 12px; border: 1px solid rgba(188,19,254,0.3);">
-            <div style="font-size: 2.5rem;"></div>
-            <div style="color: #bc13fe; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">SMS</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        if 'show_sms_input' not in st.session_state:
-            st.session_state.show_sms_input = False
-        
-        if st.button("SEND SMS", key="2fa_sms_btn", use_container_width=True):
-            st.session_state.show_sms_input = True
-            st.rerun()
-        
-        if st.session_state.get('show_sms_input'):
-            phone = st.text_input("Phone", placeholder="+1234567890", key="sms_phone")
-            if phone and st.button("SEND CODE", key="send_sms_code"):
-                auth_service.update_2fa_method(st.session_state.pending_email, "sms", phone)
-                success, message = auth_service.generate_otp(st.session_state.pending_email)
-                if success:
-                    st.session_state.login_step = '2fa_verify'
-                    st.session_state.otp_method = 'sms'
-                    st.session_state.show_sms_input = False
-                    st.rerun()
-                else:
-                    st.error(message)
-    
     with col3:
         st.markdown("""
         <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 2.5rem; opacity: 0.5;"></div>
-            <div style="color: #666; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">WHATSAPP</div>
+            <div style="font-size: 2.5rem; opacity: 0.5;">💬</div>
+            <div style="color: #666; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">SMS</div>
         </div>
         """, unsafe_allow_html=True)
-        st.button("COMING SOON", disabled=True, key="2fa_wa", use_container_width=True)
+        st.button("COMING SOON", disabled=True, key="2fa_sms_btn", use_container_width=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("← BACK", key="back_from_2fa"):
@@ -233,7 +224,15 @@ elif st.session_state.login_step == '2fa_verify':
     with col1:
         if st.button("VERIFY", type="primary", use_container_width=True):
             if otp and len(otp) == 6:
-                success, message = auth_service.verify_otp(st.session_state.pending_email, otp)
+                method = st.session_state.get('otp_method', 'email')
+                
+                if method == 'totp':
+                    # Verify using TOTP
+                    success, message = auth_service.verify_totp(st.session_state.pending_email, otp)
+                else:
+                    # Verify using Email/SMS OTP
+                    success, message = auth_service.verify_otp(st.session_state.pending_email, otp)
+                
                 if success:
                     st.session_state.authenticated = True
                     st.session_state.user_email = st.session_state.pending_email

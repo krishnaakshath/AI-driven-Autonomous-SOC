@@ -69,9 +69,9 @@ def logout():
 
 # Create tabs based on admin status
 if IS_ADMIN:
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([" Account", " CORTEX AI", " API Keys", " OAuth", " Notifications", " Thresholds", " About"])
+    tab1, tab_sec, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([" Account", " Security", " CORTEX AI", " API Keys", " OAuth", " Notifications", " Thresholds", " About"])
 else:
-    tab1, tab2, tab7 = st.tabs([" Account", " CORTEX AI", " About"])
+    tab1, tab_sec, tab2, tab7 = st.tabs([" Account", " Security", " CORTEX AI", " About"])
 
 # Account Tab with Logout
 with tab1:
@@ -115,6 +115,99 @@ with tab1:
         if st.button(" Refresh Session", use_container_width=True):
             st.session_state.last_activity = time.time()
             st.success("Session refreshed!")
+
+# Security Tab (MFA Setup)
+with tab_sec:
+    st.markdown(section_title("Security & MFA"), unsafe_allow_html=True)
+    
+    st.markdown("""
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <h4 style="color: #00f3ff; margin: 0 0 0.5rem 0;">Two-Factor Authentication</h4>
+            <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">
+                Protect your account with an Authenticator App (Recommended) or Email OTP.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    try:
+        from services.auth_service import auth_service, is_authenticated, get_current_user
+        
+        if is_authenticated():
+            user = get_current_user()
+            email = st.session_state.get('user_email')
+            
+            # Current Method Status
+            current_method = user.get('two_factor_method', 'email')
+            has_totp = auth_service.has_totp_setup(email)
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"**Current Method:** `{current_method.upper()}`")
+                st.markdown(f"**TOTP Setup:** {'✅ Configured' if has_totp else '❌ Not Set'}")
+            
+            with c2:
+                # Toggle Method
+                if has_totp and current_method != 'totp':
+                    if st.button("Switch to Authenticator App"):
+                        auth_service.update_2fa_method(email, 'totp')
+                        st.rerun()
+                elif current_method != 'email':
+                    if st.button("Switch to Email OTP"):
+                        auth_service.update_2fa_method(email, 'email')
+                        st.rerun()
+            
+            st.markdown("---")
+            
+            # TOTP Setup Flow
+            st.markdown("##### Setup Authenticator App")
+            if st.button("Generate New QR Code"):
+                success, uri = auth_service.setup_totp(email)
+                if success:
+                    st.session_state.totp_uri = uri
+                else:
+                    st.error(uri)
+            
+            if 'totp_uri' in st.session_state:
+                st.info("Scan this QR code with Google Authenticator or Authy:")
+                
+                # Generate QR code
+                import qrcode
+                import io
+                from PIL import Image
+                
+                qr = qrcode.QRCode(box_size=10, border=4)
+                qr.add_data(st.session_state.totp_uri)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+                
+                # specific layout for QR
+                col_qr, col_info = st.columns([1, 2])
+                with col_qr:
+                    st.image(img.get_image(), width=200)
+                with col_info:
+                    st.markdown("1. Open Authenticator App")
+                    st.markdown("2. Select '+' -> 'Scan QR code'")
+                    st.markdown("3. Scan the image on the left")
+                    st.markdown("4. Verify by entering the code below")
+                
+                # Verification
+                code = st.text_input("Enter 6-digit code to verify setup", max_chars=6)
+                if st.button("Verify Setup"):
+                    success, msg = auth_service.verify_totp(email, code)
+                    if success:
+                        st.success("✅ Setup Complete! 2FA method set to TOTP.")
+                        auth_service.update_2fa_method(email, 'totp')
+                        del st.session_state.totp_uri
+                        st.rerun()
+                    else:
+                        st.error(msg)
+        else:
+            st.warning("Please log in to configure security.")
+            
+    except ImportError:
+        st.error("Auth module not available")
+    except Exception as e:
+        st.error(f"Error loading security settings: {e}")
 
 # CORTEX AI Personality Settings
 with tab2:
