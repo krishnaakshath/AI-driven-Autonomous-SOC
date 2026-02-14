@@ -87,17 +87,35 @@ def get_alerts():
 def get_otx_enrichment():
     """Get OTX threat pulse data for enrichment."""
     try:
-        from services.threat_intel import get_latest_threats
+        from services.threat_intel import get_latest_threats, threat_intel
         pulses = get_latest_threats()
+        
+        # Check AbuseIPDB/Indicators too
+        indicators = threat_intel.get_recent_indicators(limit=5)
+        
         if pulses:
             return {
                 "active_pulses": len(pulses),
-                "latest": pulses[0].get("name", "Unknown") if pulses else "None",
+                "latest": pulses[0].get("name", "Unknown"),
                 "source": "OTX Live"
             }
-    except:
+        elif indicators:
+             return {
+                "active_pulses": len(indicators),
+                "latest": f"Indicator: {indicators[0].get('indicator')}",
+                "source": "Threat Intel Live"
+            }
+        else:
+             return {
+                "active_pulses": 0,
+                "latest": "No recent pulses",
+                "source": "OTX Active (No Pulses)"
+            }
+            
+    except Exception as e:
+        # st.error(f"Intel Error: {e}") # Debug
         pass
-    return {"active_pulses": 0, "latest": "N/A", "source": "Offline"}
+    return {"active_pulses": 0, "latest": "Check Config", "source": "Offline"}
 
 alerts_df = get_alerts()
 otx_data = get_otx_enrichment()

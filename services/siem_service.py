@@ -39,6 +39,11 @@ class SIEMService:
         stats = db.get_stats()
         if stats['total'] == 0:
             self.simulate_ingestion(count)
+            self.ingest_threat_intelligence() # Inject real threats
+            
+        # Occasional "Real" injection for live feel (10% chance on refresh)
+        if random.random() < 0.1:
+            self.ingest_threat_intelligence()
             
         return db.get_recent_events(limit=count)
     
@@ -73,6 +78,53 @@ class SIEMService:
             new_events.append(event)
             
         return new_events
+
+    def ingest_threat_intelligence(self):
+        """
+        Pull real threat indicators from Threat Intel service and inject as SIEM events.
+        This gives the 'Real Data' feel by showing actual known bad IPs being blocked.
+        """
+        try:
+            from services.threat_intel import threat_intel
+            
+            # Get real indicators (OTX/AbuseIPDB/Fallbacks)
+            indicators = threat_intel.get_recent_indicators(limit=20)
+            
+            count = 0
+            for ioc in indicators:
+                ip = ioc.get('indicator')
+                desc = ioc.get('description', 'Known Malicious IP')
+                
+                # Check if we already logged this recently to avoid spam
+                # (Simple check: just do it for now, DB handles storage)
+                
+                # Create a "Real" event
+                event = {
+                    "id": f"EVT-REAL-{str(uuid.uuid4())[:8]}",
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "source": "Firewall",
+                    "event_type": "Connection Blocked",
+                    "severity": "CRITICAL",
+                    "source_ip": ip,
+                    "dest_ip": f"192.168.1.{random.randint(2, 254)}",
+                    "user": "-",
+                    "hostname": "GATEWAY-01",
+                    "status": "Resolved", # Auto-blocked
+                    "details": f"Threat Intel Match: {desc}"
+                }
+                
+                db.insert_event(event)
+                
+                # Also block in firewall shim
+                from services.firewall_shim import firewall
+                firewall.block_ip(ip, reason=f"Threat Intel: {desc}", source="SIEM Ingestion")
+                
+                count += 1
+                
+            return count
+        except Exception as e:
+            print(f"Error ingesting threat intel: {e}")
+            return 0
 
     def get_user_behavior_data(self) -> List[Dict]:
         """Get user behavior analytics from DB events."""

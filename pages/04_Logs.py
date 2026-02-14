@@ -144,14 +144,30 @@ with col3:
 with col4:
     auto_refresh = st.toggle("Auto-Refresh (5s)", value=True)
 
-# Generate logs
-if 'log_entries' not in st.session_state:
-    st.session_state.log_entries = [generate_log_entry() for _ in range(50)]
-
-# Add new logs on refresh
-if auto_refresh:
-    new_logs = [generate_log_entry() for _ in range(random.randint(1, 5))]
-    st.session_state.log_entries = new_logs + st.session_state.log_entries[:100]
+# Generate logs or fetch from SIEM
+if HAS_SIEM:
+    # Fetch real logs from DB
+    real_logs = get_siem_logs(limit=200)
+    # Convert to format expected by UI
+    formatted_logs = []
+    for log in real_logs:
+        formatted_logs.append({
+            "timestamp": log.get("timestamp"),
+            "source": log.get("source"),
+            "severity": log.get("severity"),
+            "message": f"{log.get('event_type')} - {log.get('details', '') or log.get('source_ip')}",
+            "event_id": log.get("id")
+        })
+    st.session_state.log_entries = formatted_logs
+else:
+    # Fallback simulation
+    if 'log_entries' not in st.session_state:
+        st.session_state.log_entries = [generate_log_entry() for _ in range(50)]
+    
+    # Add new logs on refresh
+    if auto_refresh:
+        new_logs = [generate_log_entry() for _ in range(random.randint(1, 5))]
+        st.session_state.log_entries = new_logs + st.session_state.log_entries[:100]
 
 # Filter logs
 filtered_logs = [

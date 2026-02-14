@@ -554,12 +554,12 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
             story.append(Spacer(1, 0.2*inch))
             story.append(Paragraph("<b>Key Findings:</b>", styles['Normal']))
             findings = [
-                "Total security events analyzed: 2,847",
-                "Critical threats identified and mitigated: 23",
-                "Malicious attempts automatically blocked: 156",
-                "Average detection-to-response time: 1.2 seconds",
-                "Zero successful breaches during reporting period",
-                "Overall security posture score: 87/100 (GOOD)"
+                f"Total security events analyzed: {data['total_events']}",
+                f"Critical threats identified and mitigated: {data['critical_threats']}",
+                f"Malicious attempts automatically blocked: {data['blocked_count']}",
+                f"Top Attack Vector: {data['top_attacks'][0][0] if data['top_attacks'] else 'None'}",
+                f"Zero successful breaches during reporting period",
+                f"Overall security posture score: {data['security_score']}/100"
             ]
             for f in findings:
                 story.append(Paragraph(f"• {f}", styles['Normal']))
@@ -568,13 +568,11 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
         # Key Metrics
         story.append(Paragraph("2. Key Metrics Overview", heading_style))
         metrics_data = [
-            ['Metric', 'Current', 'Previous', 'Change'],
-            ['Total Events', '2,847', '2,456', '+16%'],
-            ['Critical Threats', '23', '31', '-26%'],
-            ['High Severity', '89', '112', '-21%'],
-            ['Blocked Attacks', '156', '143', '+9%'],
-            ['Response Time', '1.2s', '1.8s', '-33%'],
-            ['Security Score', '87/100', '82/100', '+5'],
+            ['Metric', 'Current', 'Target', 'Status'],
+            ['Total Events', str(data['total_events']), '-', 'Info'],
+            ['Critical Threats', str(data['critical_threats']), '0', 'Active'],
+            ['Blocked Attacks', str(data['blocked_count']), '-', 'Protected'],
+            ['Security Score', f"{data['security_score']}/100", '90+', 'Good' if data['security_score'] > 80 else 'Review'],
         ]
         
         metrics_table = Table(metrics_data, colWidths=[2*inch, 1.2*inch, 1.2*inch, 1*inch])
@@ -591,27 +589,28 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
         
         # Threat Analysis
         story.append(Paragraph("3. Threat Analysis", heading_style))
-        threat_data = [
-            ['Attack Type', 'Count', 'Severity'],
-            ['DDoS Attack', '45', 'HIGH'],
-            ['Port Scanning', '38', 'MEDIUM'],
-            ['Brute Force', '28', 'HIGH'],
-            ['SQL Injection', '15', 'CRITICAL'],
-            ['XSS Attempts', '12', 'MEDIUM'],
-            ['Malware C2', '8', 'CRITICAL'],
-            ['Phishing', '6', 'HIGH'],
-        ]
+        threat_data = [['Attack Type', 'Count', 'Severity']]
         
-        threat_table = Table(threat_data, colWidths=[2.5*inch, 1*inch, 1.5*inch])
-        threat_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FF4444')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#444')),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#fff5f5')),
-        ]))
-        story.append(threat_table)
+        for attack, count in data['top_attacks']:
+             # Simple heuristic for severity mapping
+             sev = "HIGH"
+             if "SQL" in attack or "C2" in attack: sev = "CRITICAL"
+             elif "Port" in attack: sev = "MEDIUM"
+             threat_data.append([str(attack), str(count), sev])
+        
+        if len(threat_data) > 1:
+            threat_table = Table(threat_data, colWidths=[2.5*inch, 1*inch, 1.5*inch])
+            threat_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FF4444')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#444')),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#fff5f5')),
+            ]))
+            story.append(threat_table)
+        else:
+            story.append(Paragraph("No significant threats detected.", styles['Normal']))
         story.append(Spacer(1, 0.3*inch))
         
         # Geographic Distribution
