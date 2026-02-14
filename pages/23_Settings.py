@@ -486,8 +486,7 @@ if IS_ADMIN:
             save_config(config)
             st.success("OAuth settings saved! Google Login will activate if Client ID is present.")
 
-    with tab5:
-        # ══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
 # SETTINGS & CONFIGURATION
 # ══════════════════════════════════════════════════════════════════════════════
 st.markdown(page_header("Settings & Configuration", "Manage system parameters and user preferences"))
