@@ -6,12 +6,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from services.ai_assistant import ai_assistant
 
 # Page Config
-st.set_page_config(
-    page_title="CORTEX AI | Autonomous SOC",
-    page_icon="",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+try:
+    st.set_page_config(
+        page_title="CORTEX AI | Autonomous SOC",
+        page_icon="",
+        layout="wide",
+        initial_sidebar_state="collapsed"
+    )
+except st.errors.StreamlitAPIException:
+    pass  # Already set by dashboard.py
 
 # Initialize chat history
 if "cortex_messages" not in st.session_state:

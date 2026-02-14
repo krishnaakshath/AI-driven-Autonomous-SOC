@@ -9,7 +9,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="ML Insights | SOC", page_icon="", layout="wide")
+try:
+    st.set_page_config(page_title="ML Insights | SOC", page_icon="", layout="wide")
+except st.errors.StreamlitAPIException:
+    pass  # Already set by dashboard.py
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -39,6 +42,23 @@ try:
     DATASET_AVAILABLE = True
 except ImportError:
     DATASET_AVAILABLE = False
+
+# Cached training functions — train only once per Streamlit session
+@st.cache_resource(show_spinner=False)
+def _train_isolation_forest():
+    """Train Isolation Forest on NSL-KDD (cached, runs only once)."""
+    iforest = SOCIsolationForest()
+    train_stats = iforest.train_on_dataset()
+    metrics = iforest.evaluate()
+    return iforest, train_stats, metrics
+
+@st.cache_resource(show_spinner=False)
+def _train_fuzzy_cmeans():
+    """Train Fuzzy C-Means on NSL-KDD (cached, runs only once)."""
+    fcm = FuzzyCMeans()
+    train_stats = fcm.fit_on_dataset()
+    metrics = fcm.evaluate()
+    return fcm, train_stats, metrics
 
 # Import SIEM for real event data
 SIEM_AVAILABLE = False
@@ -284,10 +304,8 @@ if ML_LOADED:
         st.markdown("### Dataset Training & Accuracy")
         
         if st.button("Train on NSL-KDD Dataset", type="primary", key="train_if"):
-            with st.spinner("Loading NSL-KDD dataset and training Isolation Forest..."):
-                iforest = SOCIsolationForest()
-                train_stats = iforest.train_on_dataset()
-                metrics = iforest.evaluate()
+            with st.spinner("Training Isolation Forest on NSL-KDD dataset (125K records)..."):
+                iforest, train_stats, metrics = _train_isolation_forest()
                 
                 # Store in session state
                 st.session_state['if_metrics'] = metrics
@@ -494,10 +512,8 @@ if ML_LOADED:
         st.markdown("### Dataset Training & Accuracy")
         
         if st.button("Train on NSL-KDD Dataset", type="primary", key="train_fcm"):
-            with st.spinner("Loading NSL-KDD dataset and training Fuzzy C-Means..."):
-                fcm = FuzzyCMeans()
-                train_stats = fcm.fit_on_dataset()
-                metrics = fcm.evaluate()
+            with st.spinner("Training Fuzzy C-Means on NSL-KDD dataset (125K records)..."):
+                fcm, train_stats, metrics = _train_fuzzy_cmeans()
                 
                 st.session_state['fcm_metrics'] = metrics
                 st.session_state['fcm_train_stats'] = train_stats
@@ -655,16 +671,9 @@ if ML_LOADED:
         st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("Train & Compare Both Models", type="primary", key="train_both"):
-            with st.spinner("Training both models on NSL-KDD dataset..."):
-                # Train IF
-                iforest = SOCIsolationForest()
-                if_stats = iforest.train_on_dataset()
-                if_metrics = iforest.evaluate()
-                
-                # Train FCM
-                fcm = FuzzyCMeans()
-                fcm_stats = fcm.fit_on_dataset()
-                fcm_metrics = fcm.evaluate()
+            with st.spinner("Training both models on NSL-KDD dataset (125K records)..."):
+                iforest, if_stats, if_metrics = _train_isolation_forest()
+                fcm, fcm_stats, fcm_metrics = _train_fuzzy_cmeans()
                 
                 st.session_state['if_metrics'] = if_metrics
                 st.session_state['if_train_stats'] = if_stats

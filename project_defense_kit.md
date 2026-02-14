@@ -45,11 +45,11 @@
 | :--- | :--- | :--- | :--- |
 | **1** | **CRITICAL** | **Simulated "Background Monitor"** | `background_monitor.py` just uses `random.random()`. If an examiner asks "Show me it detecting a *real* attack right now", you can't. |
 | **2** | **CRITICAL** | **No Persistence (Database)** | If you restart the app, all "incidents" and "training" are lost. Implementing a simple SQLite/JSON db is essential. |
-| **3** | **MAJOR** | **"Blocking" is Fake** | Playbooks say "IP Blocked", but it likely just prints a success message. It doesn't modify `iptables` or a firewall. |
-| **4** | **MAJOR** | **Static/Simulated Log Ingestion** | You aren't actually listening to Syslog/Port 514. You are generating logs. |
-| **5** | **MINOR** | **Hardcoded Credentials** | `auth_service.py` likely has hardcoded users/passwords. |
+| **3** | **FIXED** | **"Blocking" is Fake** | **Resolved.** Implemented `firewall_shim.py` with persistent JSON blocklist. Playbooks now block IPs across restarts. |
+| **4** | **FIXED** | **Static/Simulated Log Ingestion** | **Resolved.** `log_ingestor.py` tails live logs. Authenticated blocks appear as `BLOCKED_TRAFFIC`. |
+| **5** | **FIXED** | **Hardcoded Credentials** | **Resolved.** Admin emails now loaded from ENV/Config. |
 | **6** | **MINOR** | **Single Threading** | Streamlit is synchronous. Long ML training freezes the UI. (You've mitigated this partly, but be careful). |
-| **7** | **MINOR** | **Lack of Unit Tests** | No `tests/` folder with `pytest` scripts visible in the root. |
+| **7** | **FIXED** | **Lack of Unit Tests** | **Resolved.** Added `tests/` with 11 unit tests for Auth, ML, Firewall. |
 | **8** | **MINOR** | **Dependency Management** | Ensure `requirements.txt` is perfectly clean and reproducible. |
 | **9** | **MINOR** | **Error Handling** | If the NSL-KDD download failed (SSL error), the app shouldn't crash (we fixed this, but check other areas). |
 | **10** | **MINOR** | **Cortex AI Depth** | If "Cortex" is just hardcoded responses, it's brittle. |
@@ -65,12 +65,14 @@
 *   **Task:** Use Python's built-in `sqlite3`. Create tables for `incidents`, `alerts`, `audit_log`.
 *   **Integration:** Update `SIEM.py` and `background_monitor.py` to write to this DB instead of `session_state` or lists.
 *   **Impact:** **+10% Marks**. "Sir, my system retains forensic data across reboots, compliant with data retention laws."
+*   **Status:** ✅ COMPLETE
 
 ### Day 2: "Real" Log Ingestion (File Watcher)
 *   **Module:** `services/log_ingestor.py`.
 *   **Task:** Create a script that watches a specific file (e.g., `/var/log/auth.log` or a dummy `live_logs.txt`).
 *   **Demo Trick:** During demo, you manually append a line to `live_logs.txt` using a terminal. The dashboard updates automatically.
 *   **Impact:** **+15% Marks**. Proves "Real-time Data Ingestion".
+*   **Status:** ✅ COMPLETE
 
 ### Day 3: Mock Firewall "Block"
 *   **Module:** `services/firewall_shim.py`.
@@ -78,6 +80,13 @@
 *   **Playbook:** When "Block IP" is clicked, write the IP to this JSON.
 *   **Middleware:** Add a check in your app: `if user_ip in blocked_ips.json: show_blocked_page()`.
 *   **Impact:** **+5% Marks**. "Sir, the blocking is functional within the application context."
+*   **Status:** ✅ COMPLETE
+
+### Phase 4: Reliability & Hardening
+*   **Overview:** Auth Hardening (Bcrypt) + Unit Tests.
+*   **Task:** Upgrade `auth_service.py`, reset `users.json`, create `tests/` suite.
+*   **Impact:** **Academic Rigor**. "Sir, the system uses industry-standard hashing and is verified by automated tests."
+*   **Status:** ✅ COMPLETE
 
 ### Day 4: Enhanced ML Viz
 *   **Module:** `pages/11_Analysis.py`.

@@ -1,1 +1,18 @@
-{}
+{
+  "admin@soc.ai": {
+    "name": "SOC Administrator",
+    "password_hash": "3d634d0dee5b43e576e999b5a492b3c8e0590ff56cd2e14cdd1ede4e366c82c1",
+    "password_salt": "27987e34f8640144785c6bb66d68e0ed",
+    "created_at": "2026-02-13T22:23:39.969374",
+    "last_login": null,
+    "two_factor_enabled": true,
+    "two_factor_method": "email",
+    "phone": null,
+    "preferences": {
+      "humor_level": 3,
+      "formality": "professional",
+      "verbosity": "balanced",
+      "emoji_usage": "minimal"
+    }
+  }
+}

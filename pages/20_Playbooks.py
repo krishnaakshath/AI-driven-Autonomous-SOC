@@ -13,11 +13,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from ui.theme import CYBERPUNK_CSS
 from services.playbook_engine import playbook_engine, list_playbooks, get_playbook_details, execute_playbook
 
-st.set_page_config(
-    page_title="Playbooks | SOC",
-    page_icon="",
-    layout="wide"
-)
+try:
+    st.set_page_config(
+        page_title="Playbooks | SOC",
+        page_icon="",
+        layout="wide"
+    )
+except st.errors.StreamlitAPIException:
+    pass  # Already set by dashboard.py
 
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 

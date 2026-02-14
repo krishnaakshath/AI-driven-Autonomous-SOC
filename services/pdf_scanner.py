@@ -62,6 +62,23 @@ class PDFScanner:
         file_hash = self.calculate_hash(file_path)
         result['file_hash'] = file_hash
         
+        # Check against Threat Intel API (VirusTotal)
+        try:
+            from services.threat_intel import threat_intel
+            vt_result = threat_intel.check_file_hash(file_hash)
+            
+            if vt_result.get('is_malicious'):
+                 result['risk_score'] = 100
+                 result['verdict'] = 'MALICIOUS'
+                 result['threats_found'].append(f"VirusTotal Detection: {vt_result.get('threat_name', 'Malicious File')}")
+                 result['metadata']['virustotal'] = vt_result
+                 return result
+            elif vt_result.get('is_suspicious'):
+                 result['risk_score'] = max(result['risk_score'], 80)
+                 result['threats_found'].append(f"VirusTotal Suspicion: {vt_result.get('threat_name', 'Suspicious File')}")
+        except Exception as e:
+            pass
+        
         if file_hash in self.MALWARE_HASHES:
             result['risk_score'] = 100
             result['verdict'] = 'MALWARE'

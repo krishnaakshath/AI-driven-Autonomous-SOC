@@ -61,16 +61,35 @@ class AuthService:
             json.dump(self.users, f, indent=2)
     
     def _hash_password(self, password: str, salt: str = None) -> Tuple[str, str]:
-        """Hash password with salt using SHA-256."""
-        if salt is None:
-            salt = secrets.token_hex(16)
-        hashed = hashlib.sha256((password + salt).encode()).hexdigest()
-        return hashed, salt
+        """Hash password using bcrypt (salt is part of hash)."""
+        try:
+            import bcrypt
+            # Bcrypt handles salt internally
+            pwd_bytes = password.encode('utf-8')
+            salt_bytes = bcrypt.gensalt()
+            hashed = bcrypt.hashpw(pwd_bytes, salt_bytes)
+            return hashed.decode('utf-8'), salt_bytes.decode('utf-8')
+        except ImportError:
+            # Fallback
+            if salt is None:
+                salt = secrets.token_hex(16)
+            hashed = hashlib.sha256((password + salt).encode()).hexdigest()
+            return hashed, salt
     
     def _verify_password(self, password: str, hashed: str, salt: str) -> bool:
-        """Verify password against hash."""
-        check_hash, _ = self._hash_password(password, salt)
-        return check_hash == hashed
+        """Verify password using bcrypt or SHA-256."""
+        try:
+            import bcrypt
+            # Check if stored password looks like bcrypt
+            if hashed.startswith('$2b$') or hashed.startswith('$2a$'):
+                return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+            else:
+                # Legacy SHA-256
+                legacy_hashed = hashlib.sha256((password + salt).encode()).hexdigest()
+                return legacy_hashed == hashed
+        except ImportError:
+            legacy_hashed = hashlib.sha256((password + salt).encode()).hexdigest()
+            return legacy_hashed == hashed
     
     def register(self, email: str, password: str, name: str) -> Tuple[bool, str]:
         """

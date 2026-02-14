@@ -133,6 +133,51 @@ class ThreatIntelligence:
         
         return {"error": "API request failed", "is_malicious": False}
     
+    def check_file_hash(self, file_hash: str) -> Dict:
+        """Check file hash against VirusTotal."""
+        cache_key = f"vt_hash_{file_hash}"
+        if self._is_cached(cache_key):
+            return self.cache[cache_key]['data']
+            
+        if not self.virustotal_key:
+            return {"error": "API key not configured", "verdict": "UNKNOWN", "score": 0}
+            
+        try:
+            headers = {'x-apikey': self.virustotal_key}
+            response = requests.get(
+                f'https://www.virustotal.com/api/v3/files/{file_hash}',
+                headers=headers,
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                data = response.json().get('data', {}).get('attributes', {})
+                stats = data.get('last_analysis_stats', {})
+                malicious = stats.get('malicious', 0)
+                suspicious = stats.get('suspicious', 0)
+                
+                result = {
+                    'hash': file_hash,
+                    'is_malicious': malicious > 0,
+                    'is_suspicious': suspicious > 0,
+                    'malicious_votes': malicious,
+                    'suspicious_votes': suspicious,
+                    'verdict': 'MALICIOUS' if malicious > 0 else 'SUSPICIOUS' if suspicious > 0 else 'CLEAN',
+                    'threat_name': data.get('type_description', 'Unknown File'),
+                    'tags': data.get('tags', [])[:5],
+                    'source': 'VirusTotal'
+                }
+                self.cache[cache_key] = {'data': result, 'timestamp': time.time()}
+                self._save_cache()
+                return result
+            elif response.status_code == 404:
+                return {"error": "Hash not found", "verdict": "UNKNOWN", "score": 0}
+                
+        except Exception as e:
+            return {"error": str(e), "verdict": "UNKNOWN", "score": 0}
+            
+        return {"error": "API request failed", "verdict": "UNKNOWN", "score": 0}
+
     def get_otx_pulses(self, limit: int = 10) -> List[Dict]:
         cache_key = "otx_pulses"
         if self._is_cached(cache_key):

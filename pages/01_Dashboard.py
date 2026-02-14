@@ -9,7 +9,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Dashboard | SOC", page_icon="D", layout="wide")
+try:
+    st.set_page_config(page_title="Dashboard | SOC", page_icon="D", layout="wide")
+except st.errors.StreamlitAPIException:
+    pass  # Already set by dashboard.py
 
 # Premium animated theme
 st.markdown("""
@@ -246,8 +249,70 @@ inject_particles()
 DATA_PATH = "data/parsed_logs/incident_responses.csv"
 FULL_MODE = os.path.exists(DATA_PATH)
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=10)
 def load_soc_data():
+    # Try to load from Real Database
+    try:
+        from services.database import db
+        events = db.get_recent_events(limit=2000)
+        
+        if events:
+            # Convert DB events to Dashboard DataFrame format
+            data = []
+            for e in events:
+                # Map Severity to Risk Score
+                sev = e.get('severity', 'LOW')
+                risk_score = 10
+                if sev == 'CRITICAL': risk_score = 95
+                elif sev == 'HIGH': risk_score = 75
+                elif sev == 'MEDIUM': risk_score = 50
+                
+                # Check Block Status
+                msg = str(e.get('event_type', '')).upper()
+                decision = "ALLOW"
+                if "BLOCKED" in msg or "BLOCK" in msg:
+                    decision = "BLOCK"
+                elif risk_score > 60:
+                    decision = "RESTRICT"
+                    
+                # Parse Port (Simple heuristic)
+                port = 80
+                if "SSH" in msg: port = 22
+                elif "RDP" in msg: port = 3389
+                elif "SQL" in msg: port = 3306
+                
+                # Attack Type extraction
+                attack_type = "Normal"
+                if "SQL" in msg: attack_type = "SQL Injection"
+                elif "XSS" in msg: attack_type = "XSS"
+                elif "DDOS" in msg: attack_type = "DDoS"
+                elif "BRUTE" in msg: attack_type = "Brute Force"
+                elif "MALWARE" in msg: attack_type = "Malware"
+                elif risk_score > 50: attack_type = msg[:20] # Truncate long messages
+                
+                try:
+                    ts = datetime.fromisoformat(e.get('timestamp'))
+                except:
+                    ts = datetime.now()
+
+                data.append({
+                    "timestamp": ts,
+                    "attack_type": attack_type,
+                    "risk_score": float(risk_score),
+                    "access_decision": decision,
+                    "source_country": "Unknown", # Could use geoip if we had it, or OTX lookup
+                    "source_ip": e.get('source_ip', '0.0.0.0'),
+                    "dest_port": port
+                })
+            
+            # Enrich with Country using Threat Intel (Optional/Slow? Maybe cache/limit)
+            # For now, let's just make it fast.
+            return pd.DataFrame(data)
+            
+    except Exception as e:
+        print(f"DB Load Error: {e}")
+
+    # Fallback to Dynamic Simulation if DB empty or error
     if FULL_MODE:
         return pd.read_csv(DATA_PATH)
     else:

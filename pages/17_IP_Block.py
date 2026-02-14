@@ -9,7 +9,10 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Bulk IP Blocking | SOC", page_icon="", layout="wide")
+try:
+    st.set_page_config(page_title="Bulk IP Blocking | SOC", page_icon="", layout="wide")
+except st.errors.StreamlitAPIException:
+    pass  # Already set by dashboard.py
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -17,36 +20,10 @@ inject_particles()
 
 st.markdown(page_header("Bulk IP Blocking", "Upload and manage IP blocklists for automated threat blocking"), unsafe_allow_html=True)
 
-# Persistent storage file
-BLOCKLIST_FILE = ".ip_blocklist.json"
+# Persistent storage via FirewallShim
+from services.firewall_shim import firewall
 
-def load_blocklist():
-    """Load blocklist from persistent file."""
-    if os.path.exists(BLOCKLIST_FILE):
-        try:
-            with open(BLOCKLIST_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            pass
-    return [
-        {"ip": "185.220.101.1", "reason": "Known TOR Exit Node", "added": "2024-02-01", "status": "Active"},
-        {"ip": "91.219.236.222", "reason": "C2 Server", "added": "2024-02-02", "status": "Active"},
-        {"ip": "45.155.205.233", "reason": "Brute Force Source", "added": "2024-02-03", "status": "Active"},
-    ]
-
-def save_blocklist(blocklist):
-    """Save blocklist to persistent file."""
-    try:
-        with open(BLOCKLIST_FILE, 'w') as f:
-            json.dump(blocklist, f, indent=2)
-    except Exception as e:
-        st.error(f"Failed to save blocklist: {e}")
-
-# Initialize blocklist from file
-if 'blocklist' not in st.session_state:
-    st.session_state.blocklist = load_blocklist()
-
-st.success(" Persistent storage enabled - blocklist saved to file")
+st.success(" Persistent Firewal Service Connected")
 
 # Tabs
 tab1, tab2, tab3 = st.tabs([" Upload Blocklist", " Current Blocklist", " Statistics"])
@@ -94,17 +71,11 @@ with tab1:
             if st.button(" Block All IPs", type="primary"):
                 added_count = 0
                 for ip in ips:
-                    if not any(b['ip'] == ip for b in st.session_state.blocklist):
-                        st.session_state.blocklist.append({
-                            "ip": ip,
-                            "reason": default_reason,
-                            "added": datetime.now().strftime("%Y-%m-%d"),
-                            "status": "Active"
-                        })
+                    if firewall.block_ip(ip, reason=default_reason, source="Bulk Upload"):
                         added_count += 1
                 
-                save_blocklist(st.session_state.blocklist)
                 st.success(f" Added **{added_count}** IPs to blocklist")
+                time.sleep(1)
                 st.rerun()
                 
         except Exception as e:
@@ -122,21 +93,18 @@ with tab1:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Add", use_container_width=True):
             if single_ip:
-                if not any(b['ip'] == single_ip for b in st.session_state.blocklist):
-                    st.session_state.blocklist.append({
-                        "ip": single_ip,
-                        "reason": single_reason or "Manual block",
-                        "added": datetime.now().strftime("%Y-%m-%d"),
-                        "status": "Active"
-                    })
-                    save_blocklist(st.session_state.blocklist)
+                if firewall.block_ip(single_ip, reason=single_reason or "Manual block", source="Dashboard"):
                     st.success(f"Added {single_ip} to blocklist")
+                    time.sleep(1)
                     st.rerun()
                 else:
-                    st.warning("IP already in blocklist")
+                    st.warning("Failed to block IP")
 
 with tab2:
     st.markdown(section_title("Current Blocklist"), unsafe_allow_html=True)
+    
+    # Load from Shim
+    blocklist = firewall.get_all_blocked_ips()
     
     # Search and filter
     col1, col2 = st.columns([3, 1])
@@ -146,7 +114,7 @@ with tab2:
         status_filter = st.selectbox("Status", ["All", "Active", "Disabled"])
     
     # Filter blocklist
-    filtered = st.session_state.blocklist
+    filtered = blocklist
     if search:
         filtered = [b for b in filtered if search in b['ip']]
     if status_filter != "All":
@@ -165,12 +133,12 @@ with tab2:
         with col2:
             st.markdown(f"<span style='color: #8B95A5;'>{entry['reason']}</span>", unsafe_allow_html=True)
         with col3:
-            st.markdown(f"<span style='color: #8B95A5;'>{entry['added']}</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='color: #8B95A5;'>{entry.get('added', 'N/A')}</span>", unsafe_allow_html=True)
         with col4:
             st.markdown(f"<span style='color: {status_color};'></span> {entry['status']}", unsafe_allow_html=True)
         with col5:
             if st.button("", key=f"remove_{i}"):
-                st.session_state.blocklist.remove(entry)
+                firewall.unblock_ip(entry['ip'])
                 st.rerun()
     
     # Bulk actions
@@ -178,7 +146,7 @@ with tab2:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        df = pd.DataFrame(st.session_state.blocklist)
+        df = pd.DataFrame(blocklist)
         csv = df.to_csv(index=False)
         st.download_button(" Export Blocklist", csv, "ip_blocklist.csv", "text/csv", use_container_width=True)
     
@@ -188,18 +156,23 @@ with tab2:
     
     with col3:
         if st.button(" Clear All", use_container_width=True):
-            st.session_state.blocklist = []
+            # Not implemented in Shim yet, but we can loop unblock or clear file?
+            # Safe option: Loop
+            for entry in blocklist:
+                firewall.unblock_ip(entry['ip'])
             st.rerun()
 
 with tab3:
     st.markdown(section_title("Blocking Statistics"), unsafe_allow_html=True)
     
+    blocklist = firewall.get_all_blocked_ips()
+    
     col1, col2, col3, col4 = st.columns(4)
     
-    total = len(st.session_state.blocklist)
-    active = len([b for b in st.session_state.blocklist if b['status'] == 'Active'])
+    total = len(blocklist)
+    active = len([b for b in blocklist if b['status'] == 'Active'])
     today_str = datetime.now().strftime("%Y-%m-%d")
-    blocked_today = len([b for b in st.session_state.blocklist if b.get('added', '') == today_str])
+    blocked_today = len([b for b in blocklist if b.get('added', '').startswith(today_str)])
     prevention_rate = f"{int(active / total * 100)}%" if total > 0 else "0%"
     
     metrics = [
@@ -229,7 +202,7 @@ with tab3:
     st.markdown("### Top Block Reasons")
     
     reasons = {}
-    for entry in st.session_state.blocklist:
+    for entry in blocklist:
         reasons[entry['reason']] = reasons.get(entry['reason'], 0) + 1
     
     for reason, count in sorted(reasons.items(), key=lambda x: x[1], reverse=True)[:5]:

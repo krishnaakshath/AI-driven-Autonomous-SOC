@@ -9,7 +9,10 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-st.set_page_config(page_title="Scanners | SOC", page_icon="S", layout="wide")
+try:
+    st.set_page_config(page_title="Scanners | SOC", page_icon="S", layout="wide")
+except st.errors.StreamlitAPIException:
+    pass  # Already set by dashboard.py
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)

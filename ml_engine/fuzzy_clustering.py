@@ -36,8 +36,8 @@ class FuzzyCMeans:
     - Insider Threat
     """
     
-    def __init__(self, n_clusters: int = 5, m: float = 2.0, max_iter: int = 150, 
-                 error: float = 1e-5, random_state: int = 42):
+    def __init__(self, n_clusters: int = 5, m: float = 2.0, max_iter: int = 25, 
+                 error: float = 1e-3, random_state: int = 42):
         """
         Initialize Fuzzy C-Means model.
         
@@ -110,25 +110,37 @@ class FuzzyCMeans:
         return centers
     
     def _update_membership(self, X: np.ndarray, centers: np.ndarray) -> np.ndarray:
-        """Update membership matrix based on distances to centers."""
+        """Update membership matrix based on distances to centers using vectorization."""
         n_samples = X.shape[0]
-        membership = np.zeros((n_samples, self.n_clusters))
         
-        for i in range(n_samples):
-            for j in range(self.n_clusters):
-                dist_j = np.linalg.norm(X[i] - centers[j])
-                if dist_j == 0:
-                    membership[i, :] = 0
-                    membership[i, j] = 1
-                    break
-                else:
-                    total = 0
-                    for k in range(self.n_clusters):
-                        dist_k = np.linalg.norm(X[i] - centers[k])
-                        if dist_k == 0:
-                            continue
-                        total += (dist_j / dist_k) ** (2 / (self.m - 1))
-                    membership[i, j] = 1 / total if total > 0 else 0
+        # Calculate distances (N x C) using broadcasting
+        # Expanding dims: (N, 1, D) - (1, C, D) -> (N, C, D) -> norm -> (N, C)
+        # This can be memory intensive for large N*C*D. 
+        # Alternative: ||x-c||^2 = ||x||^2 + ||c||^2 - 2<x,c>
+        
+        # Using sklearn if available for efficiency, else numpy
+        try:
+             from sklearn.metrics.pairwise import euclidean_distances
+             dist = euclidean_distances(X, centers)
+        except ImportError:
+             # Manual broadcasting fallback
+             dist = np.linalg.norm(X[:, None, :] - centers[None, :, :], axis=2)
+             
+        # Avoid division by zero
+        dist = np.fmax(dist, 1e-10)
+        
+        # Calculate membership: u_ij = 1 / sum_k ( (d_ij / d_k)^ (2/(m-1)) )
+        power = 2.0 / (self.m - 1)
+        dist_pow = dist ** power
+        
+        # Inverse distance power
+        inv_dist_pow = 1.0 / dist_pow
+        
+        # Sum over clusters for each sample
+        sum_inv_dist_pow = np.sum(inv_dist_pow, axis=1, keepdims=True)
+        
+        # Compute membership
+        membership = inv_dist_pow / sum_inv_dist_pow
         
         return membership
     
@@ -269,6 +281,12 @@ class FuzzyCMeans:
         )
         
         train_df = load_nsl_kdd_train()
+        
+        # Subsample for performance (FCM is computationally expensive O(N*C^2))
+        max_samples = 5000
+        if len(train_df) > max_samples:
+            train_df = train_df.sample(n=max_samples, random_state=42)
+            
         summary = get_dataset_summary(train_df)
         
         X = get_numeric_features(train_df)

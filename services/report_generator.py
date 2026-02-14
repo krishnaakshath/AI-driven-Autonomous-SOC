@@ -3,9 +3,213 @@ import io
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 import random
+import logging
+
+try:
+    from services.database import db
+    HAS_DB = True
+except ImportError:
+    HAS_DB = False
+
+def _get_report_data(date_range: str) -> Dict[str, Any]:
+    """Fetch real data from DB for reports."""
+    if not HAS_DB:
+        return _get_mock_data()
+        
+    # Calculate start date
+    days = 7
+    if "30" in date_range: days = 30
+    elif "Quarter" in date_range: days = 90
+    
+    start_date = (datetime.now() - timedelta(days=days)).isoformat()
+    
+    # Fetch data
+    events = db.get_recent_events(limit=5000) # Get enough sample
+    alerts = db.get_alerts(limit=1000)
+    
+    # Filter by date (simple string comparison works for ISO format)
+    events = [e for e in events if e.get('timestamp', '') >= start_date]
+    alerts = [a for a in alerts if a.get('timestamp', '') >= start_date]
+    
+    total_events = len(events)
+    critical_threats = len([a for a in alerts if a.get('severity') == 'CRITICAL'])
+    blocked_count = len([e for e in events if 'BLOCKED' in str(e.get('event_type', '')).upper()])
+    
+    # Attack Types
+    attack_counts = {}
+    for a in alerts:
+        atype = a.get('title', 'Unknown').split(':')[-1].strip()
+        attack_counts[atype] = attack_counts.get(atype, 0) + 1
+    
+    top_attacks = sorted(attack_counts.items(), key=lambda x: x[1], reverse=True)[:8]
+    if not top_attacks:
+        top_attacks = [("No Significant Threats", 0)]
+        
+    # Geo Distribution (Mock extraction from source_ip if geoip not avail)
+    # real log ingestor puts ip in source_ip. 
+    # For reporting, we might need a lookup, but for now we can infer or use mock distribution if IP is private
+    # Let's just aggregate source IPs
+    ip_counts = {}
+    for e in events:
+        src = e.get('source_ip', 'Unknown')
+        if src != 'Unknown':
+             ip_counts[src] = ip_counts.get(src, 0) + 1
+    
+    top_ips = sorted(ip_counts.items(), key=lambda x: x[1], reverse=True)[:8]
+    
+    return {
+        "total_events": total_events,
+        "critical_threats": critical_threats,
+        "blocked_count": blocked_count,
+        "top_attacks": top_attacks,
+        "top_ips": top_ips,
+        "security_score": 100 - (min(critical_threats * 2, 100)),
+        "alerts": alerts
+    }
+
+def _get_mock_data():
+    return {
+        "total_events": 0, "critical_threats": 0, "blocked_count": 0,
+        "top_attacks": [], "top_ips": [], "security_score": 100, "alerts": []
+    }
 
 def generate_security_report(report_type: str, date_range: str, include_charts: bool = True, 
                              include_raw: bool = False, executive_summary: bool = True) -> bytes:
+    """Generate a comprehensive security report in text format"""
+    
+    data = _get_report_data(date_range)
+    
+    report_lines = []
+    
+    # Header
+    report_lines.append("=" * 80)
+    report_lines.append("")
+    report_lines.append("                      AI-DRIVEN AUTONOMOUS SOC")
+    report_lines.append("                    COMPREHENSIVE SECURITY REPORT")
+    report_lines.append("")
+    report_lines.append("=" * 80)
+    report_lines.append("")
+    report_lines.append(f"Report Type:     {report_type}")
+    report_lines.append(f"Date Range:      {date_range}")
+    report_lines.append(f"Generated:       {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    report_lines.append(f"Report ID:       SOC-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+    report_lines.append(f"Classification:  CONFIDENTIAL")
+    report_lines.append("")
+    report_lines.append("=" * 80)
+    report_lines.append("")
+    
+    # 1. Executive Summary
+    if executive_summary:
+        report_lines.append("1. EXECUTIVE SUMMARY")
+        report_lines.append("-" * 40)
+        report_lines.append("")
+        report_lines.append("This report provides a comprehensive analysis of the security posture")
+        report_lines.append("based on real-time data collected by the SOC.")
+        report_lines.append("")
+        report_lines.append("KEY FINDINGS:")
+        report_lines.append("")
+        report_lines.append(f"  * Total Events Analyzed: {data['total_events']}")
+        report_lines.append(f"  * Critical Threats Identified: {data['critical_threats']}")
+        report_lines.append(f"  * Attacks Automatically Blocked: {data['blocked_count']}")
+        report_lines.append(f"  * Security Score: {data['security_score']}/100")
+        report_lines.append("")
+        report_lines.append("-" * 80)
+        report_lines.append("")
+    
+    # 2. Threat Analysis
+    report_lines.append("2. THREAT ANALYSIS")
+    report_lines.append("-" * 40)
+    report_lines.append("")
+    report_lines.append("Top Observed Threats:")
+    for attack, count in data['top_attacks']:
+        report_lines.append(f"  - {attack}: {count} occurrences")
+    report_lines.append("")
+    
+    # 3. Top Source IPs
+    report_lines.append("3. TOP SOURCE OBJECTS")
+    report_lines.append("-" * 40)
+    for ip, count in data['top_ips']:
+        report_lines.append(f"  - {ip}: {count} events")
+    report_lines.append("")
+    
+    # Footer
+    report_lines.append("=" * 80)
+    report_lines.append("END OF REPORT")
+    
+    return "\n".join(report_lines).encode('utf-8')
+
+
+def generate_pdf_report(report_type: str, date_range: str, include_charts: bool = True,
+                        include_raw: bool = False, executive_summary: bool = True) -> bytes:
+    """Generate PDF report using reportlab"""
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+        from reportlab.lib import colors
+        
+        data = _get_report_data(date_range)
+        
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # Custom styles
+        title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=24, alignment=1, textColor=colors.HexColor('#00D4FF'))
+        heading_style = ParagraphStyle('Heading', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor('#00D4FF'), spaceAfter=10)
+        
+        # Title Page
+        story.append(Spacer(1, 2*inch))
+        story.append(Paragraph("AI-Driven Autonomous SOC", title_style))
+        story.append(Spacer(1, 0.3*inch))
+        story.append(Paragraph("Comprehensive Security Report", styles['Heading2']))
+        story.append(Spacer(1, 1*inch))
+        story.append(Paragraph(f"<b>Report Type:</b> {report_type}", styles['Normal']))
+        story.append(Paragraph(f"<b>Date Range:</b> {date_range}", styles['Normal']))
+        story.append(Paragraph(f"<b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        story.append(PageBreak())
+        
+        # Executive Summary
+        if executive_summary:
+            story.append(Paragraph("1. Executive Summary", heading_style))
+            story.append(Paragraph(
+                "This report provides a comprehensive analysis of the security posture based on real-time data.",
+                styles['Normal']
+            ))
+            story.append(Spacer(1, 0.2*inch))
+            story.append(Paragraph("<b>Key Findings:</b>", styles['Normal']))
+            findings = [
+                f"Total Events: {data['total_events']}",
+                f"Critical Threats: {data['critical_threats']}",
+                f"Blocked Attacks: {data['blocked_count']}",
+                f"Security Score: {data['security_score']}/100"
+            ]
+            for f in findings:
+                story.append(Paragraph(f"• {f}", styles['Normal']))
+            story.append(Spacer(1, 0.3*inch))
+        
+        # Threats Table
+        story.append(Paragraph("2. Threat Analysis", heading_style))
+        if data['top_attacks']:
+            t_data = [['Attack Type', 'Count']] + [[k, str(v)] for k, v in data['top_attacks']]
+            t = Table(t_data, colWidths=[4*inch, 2*inch])
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#00D4FF')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+            ]))
+            story.append(t)
+        else:
+            story.append(Paragraph("No significant threats detected in this period.", styles['Normal']))
+
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
+        
+    except ImportError:
+        return generate_security_report(report_type, date_range, include_charts, include_raw, executive_summary)
     """Generate a comprehensive security report in text format"""
     
     report_lines = []

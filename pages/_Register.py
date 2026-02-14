@@ -9,12 +9,15 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-st.set_page_config(
-    page_title="Register | SOC",
-    page_icon="",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
+try:
+    st.set_page_config(
+        page_title="Register | SOC",
+        page_icon="",
+        layout="centered",
+        initial_sidebar_state="collapsed"
+    )
+except st.errors.StreamlitAPIException:
+    pass  # Already set by dashboard.py navigation
 
 # Import theme and auth
 from ui.theme import CYBERPUNK_CSS, inject_particles

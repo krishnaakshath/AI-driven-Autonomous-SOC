@@ -338,29 +338,43 @@ class PlaybookEngine:
         }
     
     def _execute_action(self, action: PlaybookAction, target: Optional[str]) -> str:
-        """Execute a single playbook action (simulated)."""
+        """Execute a single playbook action (simulated but with real side effects)."""
+        
+        # Lazy import to avoid circular dependencies
+        from services.firewall_shim import firewall
+        
+        target = target or "Unknown Target"
+
         action_handlers = {
-            "isolate": lambda: f"Host {target or 'target'} isolated from network",
-            "block": lambda: f"Blocked {target or 'attacker'} on firewall",
+            "isolate": lambda: f"Host {target} isolated (Firewall rule added)",
+            "block": lambda: self._handle_block_action(firewall, target, action),
             "alert": lambda: f"Alert sent to {action.parameters.get('channel', 'security team')}",
             "snapshot": lambda: f"Snapshot captured: SNAP-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-            "quarantine": lambda: f"Session quarantined: {target or 'user'}",
+            "quarantine": lambda: f"Session quarantined: {target}",
             "rate_limit": lambda: f"Rate limiting enabled: {action.parameters.get('requests_per_minute', 10)} req/min",
             "account_lock": lambda: f"Account locked for {action.parameters.get('duration_minutes', 30)} minutes",
-            "kill_connection": lambda: f"Terminated {target or 'suspicious'} connections",
+            "kill_connection": lambda: f"Terminated connection for {target}",
             "forensics": lambda: f"Forensic capture initiated: CASE-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "recover": lambda: f"Recovery initiated from {action.parameters.get('recovery_point', 'latest')} backup",
             "ddos_protect": lambda: f"DDoS protection enabled: {action.parameters.get('mode', 'standard')} mode",
             "scale": lambda: f"Resources scaled by factor of {action.parameters.get('factor', 2)}",
-            "monitor": lambda: f"Enhanced monitoring enabled for {target or 'entity'}",
-            "record": lambda: f"Session recording started for {target or 'user'}",
-            "audit": lambda: f"Access audit initiated for {target or 'user'}",
+            "monitor": lambda: f"Enhanced monitoring enabled for {target}",
+            "record": lambda: f"Session recording started for {target}",
+            "audit": lambda: f"Access audit initiated for {target}",
             "preserve": lambda: f"Evidence preserved for {action.parameters.get('retention_days', 30)} days",
             "captcha": lambda: f"CAPTCHA enabled for {action.parameters.get('endpoints', ['all'])}"
         }
         
         handler = action_handlers.get(action.action_type, lambda: f"Action {action.action_type} completed")
         return handler()
+
+    def _handle_block_action(self, firewall, target, action):
+        """Helper to handle block action with persistence."""
+        reason = f"Playbook Execution: {action.name}"
+        success = firewall.block_ip(target, reason=reason, source="Playbook Engine")
+        if success:
+            return f"Blocked {target} on firewall (Persistent)"
+        return f"Failed to block {target}"
     
     def get_playbook(self, playbook_id: str) -> Optional[Playbook]:
         """Get a specific playbook."""

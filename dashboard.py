@@ -11,6 +11,10 @@ st.set_page_config(page_title="SOC Platform", page_icon="S", layout="wide")
 # ═══════════════════════════════════════════════════════════════════════════════
 
 pg = st.navigation({
+    "Account": [
+        st.Page("pages/_Login.py", title="Login"),
+        st.Page("pages/_Register.py", title="Register"),
+    ],
     "Dashboards": [
         st.Page("pages/01_Dashboard.py", title="Dashboard"),
         st.Page("pages/02_Executive.py", title="Executive"),
