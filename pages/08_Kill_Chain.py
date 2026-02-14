@@ -1,4 +1,15 @@
+import streamlit as st
+import sys
+import os
+import random
+from datetime import datetime, timedelta
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from ui.theme import CYBERPUNK_CSS
 from services.database import db
+
+st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 
 # Session state for manual refresh
 if 'kill_chain_refresh' not in st.session_state:
