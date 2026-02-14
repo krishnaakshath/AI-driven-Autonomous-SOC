@@ -31,7 +31,7 @@ except ImportError:
 # Get user behavior data from SIEM
 @st.cache_data(ttl=300)
 def generate_user_data():
-    if HAS_SIEM:
+    if HAS_REAL_DATA:
         try:
             data = get_user_behavior()
             if data:
