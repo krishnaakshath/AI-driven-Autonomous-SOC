@@ -83,7 +83,7 @@ def get_executive_metrics(refresh_counter=0):
             if trend_data:
                 metrics["trend_data"] = trend_data
                 metrics["incidents_month"] = sum(d['count'] for d in trend_data[-1:]) if trend_data else 0
-                metrics["incidents_resolved"] = int(metrics["incidents_month"] * 0.95)
+                metrics["incidents_resolved"] = kpi_stats.get('resolved_alerts', 0)
             
             if cat_data:
                 metrics["category_data"] = cat_data
@@ -209,15 +209,19 @@ with roi1:
     st.markdown(f"""
     <div class="glass-card" style="text-align: center;">
         <div style="font-size: 2.5rem; color: #00C853; font-weight: 800;">${metrics['cost_savings']:,}</div>
-        <div style="color: #8B95A5;">Direct Cost Avengance (Daily)</div>
+        <div style="color: #8B95A5;">Direct Cost Avoidance (Daily)</div>
         <div style="font-size: 0.8rem; color: #00D4FF; margin-top: 10px;">Based on industry average threat impact</div>
     </div>
     """, unsafe_allow_html=True)
 
 with roi2:
+    # SNR: Signal is real threats, Noise is FPs. 
+    # If FP rate is 2.5%, SNR is 97.5% signal.
+    # We display Signal Percentage for "Signal-to-Noise Ratio" context
+    snr = round(100 - metrics['false_positive_rate'], 1)
     st.markdown(f"""
     <div class="glass-card" style="text-align: center;">
-        <div style="font-size: 2.5rem; color: #FF8C00; font-weight: 800;">{metrics['false_positive_rate']}%</div>
+        <div style="font-size: 2.5rem; color: #FF8C00; font-weight: 800;">{snr}%</div>
         <div style="color: #8B95A5;">Signal-to-Noise Ratio</div>
         <div style="font-size: 0.8rem; color: #00D4FF; margin-top: 10px;">Managed by AI Suppression</div>
     </div>

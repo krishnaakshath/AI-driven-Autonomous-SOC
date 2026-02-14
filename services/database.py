@@ -30,7 +30,7 @@ class DatabaseService:
             c.execute('''CREATE TABLE IF NOT EXISTS events
                          (id TEXT PRIMARY KEY, timestamp TEXT, source TEXT, 
                           event_type TEXT, severity TEXT, source_ip TEXT, 
-                          dest_ip TEXT, user TEXT, raw_log TEXT)''')
+                          dest_ip TEXT, user TEXT, status TEXT, raw_log TEXT)''')
             
             # Alerts Table
             c.execute('''CREATE TABLE IF NOT EXISTS alerts
@@ -48,11 +48,12 @@ class DatabaseService:
             try:
                 # Ensure all fields are present
                 c.execute('''INSERT OR IGNORE INTO events 
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                           (event_data.get('id'), event_data.get('timestamp'), 
                            event_data.get('source'), event_data.get('event_type'),
                            event_data.get('severity'), event_data.get('source_ip'), 
                            event_data.get('dest_ip'), event_data.get('user'),
+                           event_data.get('status', 'Open'),
                            json.dumps(event_data)))
                 conn.commit()
             except Exception as e:
@@ -176,6 +177,31 @@ class DatabaseService:
             rows = c.fetchall()
             conn.close()
             return [{"category": row[0], "count": row[1]} for row in rows]
+
+    def get_kpi_stats(self):
+        """Get specialized counts for Executive KPIs (Resolved, FP, etc)."""
+        with _db_lock:
+            conn = self._get_conn()
+            c = conn.cursor()
+            
+            # Count resolved alerts
+            c.execute("SELECT COUNT(*) FROM alerts WHERE status IN ('Resolved', 'Contained')")
+            resolved = c.fetchone()[0]
+            
+            # Count False Positives
+            c.execute("SELECT COUNT(*) FROM events WHERE status='False Positive'")
+            false_positives = c.fetchone()[0]
+            
+            # Count total alerts
+            c.execute("SELECT COUNT(*) FROM alerts")
+            total_alerts = c.fetchone()[0]
+            
+            conn.close()
+            return {
+                "resolved_alerts": resolved,
+                "false_positives": false_positives,
+                "total_alerts": total_alerts
+            }
 
 # Singleton instance
 db = DatabaseService()
