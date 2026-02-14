@@ -32,6 +32,12 @@ class DatabaseService:
                           event_type TEXT, severity TEXT, source_ip TEXT, 
                           dest_ip TEXT, user TEXT, status TEXT, raw_log TEXT)''')
             
+            # Auto-migrate: Add status column if not exists (for existing DBs)
+            c.execute("PRAGMA table_info(events)")
+            columns = [col[1] for col in c.fetchall()]
+            if 'status' not in columns:
+                c.execute("ALTER TABLE events ADD COLUMN status TEXT DEFAULT 'Open'")
+            
             # Alerts Table
             c.execute('''CREATE TABLE IF NOT EXISTS alerts
                          (id TEXT PRIMARY KEY, timestamp TEXT, title TEXT, 
@@ -47,6 +53,8 @@ class DatabaseService:
             c = conn.cursor()
             try:
                 # Ensure all fields are present
+                # INSERT order must match table schema: 
+                # (id, timestamp, source, event_type, severity, source_ip, dest_ip, user, status, raw_log)
                 c.execute('''INSERT OR IGNORE INTO events 
                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                           (event_data.get('id'), event_data.get('timestamp'), 
