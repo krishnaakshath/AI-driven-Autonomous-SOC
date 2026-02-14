@@ -348,7 +348,7 @@ class PlaybookEngine:
         action_handlers = {
             "isolate": lambda: f"Host {target} isolated (Firewall rule added)",
             "block": lambda: self._handle_block_action(firewall, target, action),
-            "alert": lambda: f"Alert sent to {action.parameters.get('channel', 'security team')}",
+            "alert": lambda: self._handle_alert_action(action, target),
             "snapshot": lambda: f"Snapshot captured: SNAP-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "quarantine": lambda: f"Session quarantined: {target}",
             "rate_limit": lambda: f"Rate limiting enabled: {action.parameters.get('requests_per_minute', 10)} req/min",
@@ -375,6 +375,31 @@ class PlaybookEngine:
         if success:
             return f"Blocked {target} on firewall (Persistent)"
         return f"Failed to block {target}"
+
+    def _handle_alert_action(self, action, target):
+        """Helper to send real email alerts."""
+        try:
+            from alerting.email_sender import EmailNotifier, send_email_alert
+            notifier = EmailNotifier()
+            if notifier.is_configured():
+                subject = f"🚨 PLAYBOOK ALERT: {action.name}"
+                body = f"""
+                AUTONOMOUS RESPONSE TRIGGERED
+                =============================
+                Action: {action.name}
+                Target: {target}
+                Severity: {action.parameters.get('priority', 'High').upper()}
+                Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                
+                System has taken automated action to contain this threat.
+                """
+                # Send to admin/configured sender
+                send_email_alert(subject, body, notifier.username)
+                return f"Alert email sent to {notifier.username}"
+            else:
+                return "Alert logged (Email not configured)"
+        except Exception as e:
+            return f"Failed to send alert: {e}"
     
     def get_playbook(self, playbook_id: str) -> Optional[Playbook]:
         """Get a specific playbook."""

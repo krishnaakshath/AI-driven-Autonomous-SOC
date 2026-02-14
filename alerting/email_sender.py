@@ -11,11 +11,34 @@ class EmailNotifier:
     def __init__(self, smtp_server: Optional[str] = None, smtp_port: int = 587,
                  username: Optional[str] = None, password: Optional[str] = None,
                  from_email: Optional[str] = None):
-        self.smtp_server = smtp_server or os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        
+        # 1. Try Config File First (User Preferences from UI)
+        config = {}
+        try:
+            config_paths = [
+                '.soc_config.json',
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), '.soc_config.json'),
+                os.path.join(os.getcwd(), '.soc_config.json')
+            ]
+            for path in config_paths:
+                if os.path.exists(path):
+                    import json
+                    with open(path, 'r') as f:
+                        config = json.load(f)
+                    break
+        except Exception:
+            pass
+
+        # 2. Set Attributes (Args > Env > Config File > Defaults)
+        self.smtp_server = smtp_server or os.getenv("SMTP_SERVER") or "smtp.gmail.com"
         self.smtp_port = smtp_port
-        self.username = username or os.getenv("SENDER_EMAIL")
-        _password = password or os.getenv("SENDER_PASSWORD")
+        
+        # Username/Password priority
+        self.username = username or os.getenv("SENDER_EMAIL") or config.get("gmail_email")
+        
+        _password = password or os.getenv("SENDER_PASSWORD") or config.get("gmail_password")
         self.password = _password.replace(" ", "") if _password else None
+        
         self.from_email = from_email or self.username
     
     def is_configured(self) -> bool:

@@ -58,11 +58,17 @@ def check_threats():
             Access Dashboard for full details.
             """
             
-            if os.getenv('SENDER_EMAIL') and os.getenv('SENDER_PASSWORD'):
-                send_email_alert(subject, body, os.getenv('SENDER_EMAIL')) # Send to self for now
-                logger.info(" Alert email dispatched.")
+            # Check if email is configured (via Env or UI Settings)
+            from alerting.email_sender import EmailNotifier
+            notifier = EmailNotifier()
+            
+            if notifier.is_configured():
+                # Send to self (the configured sender email)
+                recipient = notifier.username
+                send_email_alert(subject, body, recipient)
+                logger.info(f" Alert email dispatched to {recipient}")
             else:
-                logger.warning(" Email credentials not set. Alert skipped.")
+                logger.warning(" Email credentials not set (Env or Settings). Alert skipped.")
                 
         except Exception as e:
             logger.error(f"Failed to send alert: {e}")
