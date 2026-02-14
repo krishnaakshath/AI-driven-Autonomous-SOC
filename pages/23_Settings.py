@@ -136,6 +136,13 @@ with tab_sec:
             user = get_current_user()
             email = st.session_state.get('user_email')
             
+            if not user:
+                st.error("User record not found. Please log out and log in again.")
+                if st.button("Log Out Now"):
+                    logout()
+                    st.rerun()
+                st.stop()
+            
             # Current Method Status
             current_method = user.get('two_factor_method', 'email')
             has_totp = auth_service.has_totp_setup(email)
@@ -534,12 +541,7 @@ if "User Preferences" in current_tab:
                 "emoji_usage": emoji,
                 "email_alerts": enable_email_alerts
             }
-            # DEBUG: Print email and known users
-            email = st.session_state.get('user_email')
-            print(f"DEBUG: Saving prefs for email: {email}")
-            print(f"DEBUG: Known users: {list(auth_service.get_all_users().keys())}")
-            
-            if auth_service.update_preferences(email, new_prefs):
+            if auth_service.update_preferences(st.session_state.user_email, new_prefs):
                 # Update running AI instance immediately
                 try:
                     from services.ai_assistant import ai_assistant
@@ -550,8 +552,7 @@ if "User Preferences" in current_tab:
                 time.sleep(1)
                 st.rerun()
             else:
-                users = list(auth_service.get_all_users().keys())
-                st.error(f"Failed to save preferences. Debug: Email='{email}', Known Users={users}")
+                st.error("Failed to save preferences.")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # TAB: SYSTEM CONFIGURATION (Admin Only)
