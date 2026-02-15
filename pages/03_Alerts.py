@@ -60,7 +60,31 @@ def get_alerts():
         if not alerts_data:
             return pd.DataFrame()
             
-        return pd.DataFrame(alerts_data)
+        # Parse 'details' JSON into separate columns
+        import json
+        enriched_data = []
+        for alert in alerts_data:
+            alert_dict = dict(alert)
+            try:
+                if 'details' in alert_dict and alert_dict['details']:
+                    details = json.loads(alert_dict['details'])
+                    alert_dict.update(details)  # Merge details into main dict
+            except Exception:
+                pass
+            
+            # Ensure required columns exist with defaults
+            defaults = {
+                'source': 'SIEM', 'source_ip': 'N/A', 'hostname': 'Unknown',
+                'user': 'N/A', 'risk_score': 0, 'type': alert_dict.get('title', 'Unknown'),
+                'time': alert_dict.get('timestamp', datetime.now())
+            }
+            for k, v in defaults.items():
+                if k not in alert_dict:
+                    alert_dict[k] = v
+            
+            enriched_data.append(alert_dict)
+            
+        return pd.DataFrame(enriched_data)
     except Exception as e:
         st.warning(f"DB Connection issue: {e}")
         return pd.DataFrame()
