@@ -80,15 +80,14 @@ class FuzzyCMeans:
             packets = np.log1p(event.get('packets', 1))
             duration = np.log1p(event.get('duration', 0))
             
+            # Feature vector must match NSL-KDD training features exactly
             features.append([
                 bytes_in,
                 bytes_out,
                 packets,
                 duration,
-                event.get('port', 0),
                 event.get('risk_score', 50),
-                1 if event.get('is_internal', False) else 0,
-                self._attack_type_to_num(event.get('attack_type', 'Unknown'))
+                1 if event.get('is_internal', False) else 0
             ])
         return np.array(features)
     
@@ -279,11 +278,36 @@ class FuzzyCMeans:
             
         summary = get_dataset_summary(train_df)
         
-        X = get_numeric_features(train_df)
+        # Custom feature extraction to match live data (6 features)
+        # 1. src_bytes -> bytes_in
+        # 2. dst_bytes -> bytes_out
+        # 3. count -> packets
+        # 4. duration -> duration
+        # 5. difficulty -> risk_score (proxy)
+        # 6. land -> is_internal
         
-        # Log transform high-variance features (src_bytes, dst_bytes, duration, etc.)
-        # This drastically improves clustering performance on network data
-        X = np.log1p(X)
+        # Extract raw values
+        f_bytes_in = train_df['src_bytes'].values
+        f_bytes_out = train_df['dst_bytes'].values
+        f_packets = train_df['count'].values
+        f_duration = train_df['duration'].values
+        # Normalize difficulty (1-21) to risk score (0-100)
+        f_risk = (train_df['difficulty'].values / 21.0) * 100
+        f_internal = train_df['land'].values
+        
+        # Stack and log-transform skew features
+        X = np.column_stack([
+            np.log1p(f_bytes_in),
+            np.log1p(f_bytes_out),
+            np.log1p(f_packets),
+            np.log1p(f_duration),
+            f_risk,
+            f_internal
+        ])
+        
+        # Remove old full-feature extraction
+        # X = get_numeric_features(train_df)
+        # X = np.log1p(X) -- already done above per feature
         
         # Robust Scaling
         X_train_scaled = self.scaler.fit_transform(X)
@@ -396,9 +420,22 @@ class FuzzyCMeans:
         # (FCM is for Threat Categorization, assuming Anomaly Detection filtered non-threats)
         test_df = test_df[test_df['attack_category'] != 'normal']
         
-        X_test = get_numeric_features(test_df)
-        # Apply log transform to match training
-        X_test = np.log1p(X_test)
+        # Match features with training (6 features)
+        t_bytes_in = test_df['src_bytes'].values
+        t_bytes_out = test_df['dst_bytes'].values
+        t_packets = test_df['count'].values
+        t_duration = test_df['duration'].values
+        t_risk = (test_df['difficulty'].values / 21.0) * 100
+        t_internal = test_df['land'].values
+        
+        X_test = np.column_stack([
+            np.log1p(t_bytes_in),
+            np.log1p(t_bytes_out),
+            np.log1p(t_packets),
+            np.log1p(t_duration),
+            t_risk,
+            t_internal
+        ])
         
         y_true_labels = get_category_labels(test_df)
         

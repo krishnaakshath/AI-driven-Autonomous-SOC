@@ -203,8 +203,35 @@ class SOCIsolationForest:
         summary = get_dataset_summary(train_df)
         
         # Get features and labels
-        X_all = get_numeric_features(train_df)
+        # Get features and labels
         y_all = get_binary_labels(train_df)
+        
+        # Custom feature extraction to match live event features (6 features)
+        # 1. bytes_in <- src_bytes
+        # 2. bytes_out <- dst_bytes
+        # 3. packets <- count
+        # 4. duration <- duration
+        # 5. port <- map service to port (approx)
+        # 6. protocol_num <- map protocol_type
+        
+        f_bytes_in = train_df['src_bytes'].values
+        f_bytes_out = train_df['dst_bytes'].values
+        f_packets = train_df['count'].values
+        f_duration = train_df['duration'].values
+        
+        # Map protocol (tcp=6, udp=17, icmp=1)
+        proto_map = {'tcp': 6, 'udp': 17, 'icmp': 1}
+        f_proto = train_df['protocol_type'].map(lambda x: proto_map.get(x, 0)).values
+        
+        # Map service to port (common services)
+        srv_map = {'http': 80, 'smtp': 25, 'ftp': 21, 'ftp_data': 20, 'telnet': 23, 
+                   'ssh': 22, 'pop_3': 110, 'ntp': 123, 'imap4': 143, 'domain': 53,
+                   'finger': 79, 'dhcp': 67, 'private': 0, 'ecr_i': 0}
+        f_port = train_df['service'].map(lambda x: srv_map.get(x, np.random.randint(1024, 65535))).values
+        
+        X_all = np.column_stack([
+            f_bytes_in, f_bytes_out, f_packets, f_duration, f_port, f_proto
+        ])
         
         # Scale features on ALL data
         X_all_scaled = self.scaler.fit_transform(X_all)
@@ -249,7 +276,25 @@ class SOCIsolationForest:
         
         # Load test data
         test_df = load_nsl_kdd_test()
-        X_test = get_numeric_features(test_df)
+        # Custom feature extraction to match live event features (6 features)
+        t_bytes_in = test_df['src_bytes'].values
+        t_bytes_out = test_df['dst_bytes'].values
+        t_packets = test_df['count'].values
+        t_duration = test_df['duration'].values
+        
+        # Map protocol (tcp=6, udp=17, icmp=1)
+        proto_map = {'tcp': 6, 'udp': 17, 'icmp': 1}
+        t_proto = test_df['protocol_type'].map(lambda x: proto_map.get(x, 0)).values
+        
+        # Map service to port (common services)
+        srv_map = {'http': 80, 'smtp': 25, 'ftp': 21, 'ftp_data': 20, 'telnet': 23, 
+                   'ssh': 22, 'pop_3': 110, 'ntp': 123, 'imap4': 143, 'domain': 53,
+                   'finger': 79, 'dhcp': 67, 'private': 0, 'ecr_i': 0}
+        t_port = test_df['service'].map(lambda x: srv_map.get(x, np.random.randint(1024, 65535))).values
+        
+        X_test = np.column_stack([
+            t_bytes_in, t_bytes_out, t_packets, t_duration, t_port, t_proto
+        ])
         y_true = get_binary_labels(test_df)
         
         # Scale with same scaler
