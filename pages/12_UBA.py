@@ -19,6 +19,9 @@ import time
 if 'last_uba_refresh' not in st.session_state:
     st.session_state.last_uba_refresh = time.time()
 
+# Import UI components
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+
 
 
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
