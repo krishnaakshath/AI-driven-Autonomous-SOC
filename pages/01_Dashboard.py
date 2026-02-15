@@ -422,18 +422,31 @@ with c_head:
     st.markdown(page_header("Security Operations Center", "Real-time threat monitoring and autonomous response"), unsafe_allow_html=True)
 
 with c_live:
-    st.markdown("""
+    # Prepare dynamic styles
+    badge_color = "#00C853" if not FULL_MODE else "#FF8C00"
+    badge_bg = "rgba(0, 200, 83, 0.15)" if not FULL_MODE else "rgba(255, 140, 0, 0.15)"
+    badge_text = "LIVE SYSTEM" if not FULL_MODE else "SIMULATION MODE"
+    
+    st.markdown(f"""
         <div style="height: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding-top: 1rem;">
-            <div class="live-badge" style="padding: 0.8rem 1.5rem; border-color: {'#00C853' if not FULL_MODE else '#FF8C00'}; color: {'#00C853' if not FULL_MODE else '#FF8C00'}; background: {'rgba(0, 200, 83, 0.15)' if not FULL_MODE else 'rgba(255, 140, 0, 0.15)'};">
-                <span class="live-dot" style="background: {'#00C853' if not FULL_MODE else '#FF8C00'};"></span>
-                {"LIVE SYSTEM" if not FULL_MODE else "SIMULATION MODE"}
+            <div class="live-badge" style="padding: 0.8rem 1.5rem; border-color: {badge_color}; color: {badge_color}; background: {badge_bg};">
+                <span class="live-dot" style="background: {badge_color};"></span>
+                {badge_text}
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    if st.button("Refresh System"):
-        st.cache_data.clear()
-        st.rerun()
+    col_refresh, col_auto = st.columns([1, 1])
+    with col_refresh:
+        if st.button("Refresh System"):
+            st.cache_data.clear()
+            st.rerun()
+            
+    with col_auto:
+        auto_refresh = st.checkbox("Auto-Refresh", value=True)
+        if auto_refresh:
+            time.sleep(5)
+            st.rerun()
 
 
 # Calculate metrics
