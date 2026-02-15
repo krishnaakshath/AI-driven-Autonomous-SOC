@@ -84,11 +84,17 @@ class SIEMService:
         Pull real threat indicators from Threat Intel service and inject as SIEM events.
         This gives the 'Real Data' feel by showing actual known bad IPs being blocked.
         """
+        return self.ingest_live_threats(limit=20)
+
+    def ingest_live_threats(self, limit: int = 50) -> int:
+        """
+        Extended ingestion for background jobs. Pulls fresh indicators and logs them.
+        """
         try:
             from services.threat_intel import threat_intel
             
             # Get real indicators (OTX/AbuseIPDB/Fallbacks)
-            indicators = threat_intel.get_recent_indicators(limit=20)
+            indicators = threat_intel.get_recent_indicators(limit=limit)
             
             count = 0
             for ioc in indicators:
