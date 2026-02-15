@@ -252,93 +252,87 @@ inject_particles()
 DATA_PATH = "data/parsed_logs/incident_responses.csv"
 FULL_MODE = os.path.exists(DATA_PATH)
 
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=5)
 def load_soc_data():
-    # Try to load from Real Database
     try:
-        from services.database import db
-        events = db.get_recent_events(limit=2000)
-        
-        if events:
-            # Convert DB events to Dashboard DataFrame format
-            data = []
-            for e in events:
-                # Map Severity to Risk Score
-                sev = e.get('severity', 'LOW')
-                risk_score = 10
-                if sev == 'CRITICAL': risk_score = 95
-                elif sev == 'HIGH': risk_score = 75
-                elif sev == 'MEDIUM': risk_score = 50
-                
-                # Check Block Status
-                msg = str(e.get('event_type', '')).upper()
-                decision = "ALLOW"
-                if "BLOCKED" in msg or "BLOCK" in msg:
-                    decision = "BLOCK"
-                elif risk_score > 60:
-                    decision = "RESTRICT"
+        # 1. Try to load from Real Database
+        real_df = pd.DataFrame()
+        try:
+            from services.database import db
+            events = db.get_recent_events(limit=2000)
+            
+            if events:
+                data = []
+                for e in events:
+                    sev = e.get('severity', 'LOW')
+                    risk_score = 10
+                    if sev == 'CRITICAL': risk_score = 95
+                    elif sev == 'HIGH': risk_score = 75
+                    elif sev == 'MEDIUM': risk_score = 50
                     
-                # Parse Port (Simple heuristic)
-                port = 80
-                if "SSH" in msg: port = 22
-                elif "RDP" in msg: port = 3389
-                elif "SQL" in msg: port = 3306
-                
-                # Attack Type extraction
-                attack_type = "Normal"
-                if "SQL" in msg: attack_type = "SQL Injection"
-                elif "XSS" in msg: attack_type = "XSS"
-                elif "DDOS" in msg: attack_type = "DDoS"
-                elif "BRUTE" in msg: attack_type = "Brute Force"
-                elif "MALWARE" in msg: attack_type = "Malware"
-                elif risk_score > 50: attack_type = msg[:20] # Truncate long messages
-                
-                try:
-                    ts = datetime.fromisoformat(e.get('timestamp'))
-                except:
-                    ts = datetime.now()
+                    msg = str(e.get('event_type', '')).upper()
+                    decision = "ALLOW"
+                    if "BLOCKED" in msg or "BLOCK" in msg:
+                        decision = "BLOCK"
+                    elif risk_score > 60:
+                        decision = "RESTRICT"
+                        
+                    port = 80
+                    if "SSH" in msg: port = 22
+                    elif "RDP" in msg: port = 3389
+                    elif "SQL" in msg: port = 3306
+                    
+                    attack_type = "Normal"
+                    if "SQL" in msg: attack_type = "SQL Injection"
+                    elif "XSS" in msg: attack_type = "XSS"
+                    elif "DDOS" in msg: attack_type = "DDoS"
+                    elif "BRUTE" in msg: attack_type = "Brute Force"
+                    elif "MALWARE" in msg: attack_type = "Malware"
+                    elif risk_score > 50: attack_type = msg[:20]
+                    
+                    try:
+                        ts = datetime.fromisoformat(e.get('timestamp'))
+                    except:
+                        ts = datetime.now()
 
-                data.append({
-                    "timestamp": ts,
-                    "attack_type": attack_type,
-                    "risk_score": float(risk_score),
-                    "access_decision": decision,
-                    "source_country": "Unknown", # Could use geoip if we had it, or OTX lookup
-                    "source_ip": e.get('source_ip', '0.0.0.0'),
-                    "dest_port": port
-                })
-            
-            # Enrich with Country using Threat Intel (Optional/Slow? Maybe cache/limit)
-            # For now, let's just make it fast.
-            return pd.DataFrame(data)
-            
-    except Exception as e:
-        print(f"DB Load Error: {e}")
+                    data.append({
+                        "timestamp": ts,
+                        "attack_type": attack_type,
+                        "risk_score": float(risk_score),
+                        "access_decision": decision,
+                        "source_country": "Unknown",
+                        "source_ip": e.get('source_ip', '0.0.0.0'),
+                        "dest_port": port
+                    })
+                real_df = pd.DataFrame(data)
+                
+        except Exception as e:
+            print(f"DB Load Error: {e}")
 
-    # Fallback to Dynamic Simulation if DB empty or error
-    if FULL_MODE:
-        return pd.read_csv(DATA_PATH)
-    else:
-        # Dynamic Simulation enriched with Real OTX Data
+        # 2. Return Real Data if available
+        if not real_df.empty:
+            return real_df
+
+        # 3. Fallback to Dynamic Simulation
         from services.threat_intel import threat_intel
         
-        # 1. Fetch live intel country distribution
-        country_counts = threat_intel.get_country_threat_counts()
+        try:
+            country_counts = threat_intel.get_country_threat_counts()
+        except:
+            country_counts = {}
+            
         real_countries = []
         for country, count in country_counts.items():
             if count > 0:
-                real_countries.extend([country] * count) # Weight by count
+                real_countries.extend([country] * count)
         
-        # If no real countries found, fallback (get_country_threat_counts handles this partially, but we need list)
         if not real_countries:
             real_countries = ["United States", "China", "Russia", "Germany", "Brazil", "India"]
 
-        # Vary total events to make it look "live"
         base_n = 2000
         volatility = random.randint(-300, 500)
         n = base_n + volatility
         
-        # Vary probabilities slightly for dynamic charts
         p_normal = max(0.4, 0.6 + random.uniform(-0.1, 0.05))
         remaining = 1.0 - p_normal
         other_p = np.random.dirichlet(np.ones(9)) * remaining
@@ -364,20 +358,14 @@ def load_soc_data():
         risk_scores = np.clip(risk_scores, 0, 100).round(2)
         decisions = ["BLOCK" if r >= 70 else "RESTRICT" if r >= 30 else "ALLOW" for r in risk_scores]
         
-        # Use Real Countries if found
-        uniq_countries = list(set(real_countries))
-        if len(uniq_countries) < 2:
-            uniq_countries = ["United States", "China", "Russia", "Germany", "Brazil", "India", "Ukraine", "Iran", "North Korea", "Netherlands"]
-            
-        # Shuffle countries bias using real weights
-        # If real_countries has weights, use them
         if len(real_countries) > 20: 
-             # Use the weighted distribution directly
-             sim_countries = np.random.choice(real_countries, size=n)
+                sim_countries = np.random.choice(real_countries, size=n)
         else:
-             # Fallback to dirichlet if too few real samples
-             country_p = np.random.dirichlet(np.ones(len(uniq_countries)))
-             sim_countries = np.random.choice(uniq_countries, size=n, p=country_p)
+                uniq_countries = list(set(real_countries))
+                if len(uniq_countries) < 2:
+                    uniq_countries = ["United States", "China", "Russia", "Germany", "Brazil", "India"]
+                country_p = np.random.dirichlet(np.ones(len(uniq_countries)))
+                sim_countries = np.random.choice(uniq_countries, size=n, p=country_p)
             
         return pd.DataFrame({
             "timestamp": timestamps,
@@ -387,6 +375,20 @@ def load_soc_data():
             "source_country": sim_countries,
             "source_ip": [f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}" for _ in range(n)],
             "dest_port": np.random.choice([22, 80, 443, 3389, 445, 8080, 3306, 21], size=n)
+        })
+
+    except Exception as ie:
+        # EMERGENCY FALBACK
+        print(f"CRITICAL DASHBOARD ERROR: {ie}")
+        st.error(f"Dashboard Data Error: {ie}. Using Emergency Fallback.")
+        return pd.DataFrame({
+            "timestamp": [datetime.now()],
+            "attack_type": ["Normal"],
+            "risk_score": [0],
+            "access_decision": ["ALLOW"],
+            "source_country": ["United States"],
+            "source_ip": ["127.0.0.1"],
+            "dest_port": [80]
         })
 
 df = load_soc_data()
@@ -424,11 +426,47 @@ c_head, c_live = st.columns([3, 1])
 with c_head:
     st.markdown(page_header("Security Operations Center", "Real-time threat monitoring and autonomous response"), unsafe_allow_html=True)
 
+# Calculate metrics
+total = len(df)
+blocked = (df["access_decision"] == "BLOCK").sum()
+restricted = (df["access_decision"] == "RESTRICT").sum()
+allowed = (df["access_decision"] == "ALLOW").sum()
+avg_risk = df["risk_score"].mean()
+critical = (df["risk_score"] >= 80).sum()
+
+# Check for Real SOC Monitor Connection
+IS_LIVE_CONNECTION = False
+try:
+    from services.soc_monitor import SOCMonitor
+    soc = SOCMonitor()
+    state = soc.get_current_state()
+    
+    # If we get valid state, we treat it as live for critical counters
+    if state:
+        IS_LIVE_CONNECTION = True
+        # Overlay real blocked/critical counts if they are non-zero/available
+        real_blocked = state.get('blocked_today', 0)
+        real_critical = state.get('threat_count', 0)
+        
+        if real_blocked > 0 or real_critical > 0:
+            blocked = real_blocked
+            critical = real_critical
+            
+        # Adjust allowed if blocked changed significantly to keep total sane
+        # (Optional, but keeps math cleaner if total < blocked)
+        if blocked > total:
+            total = blocked + restricted + allowed
+
+except Exception as e:
+    # Keep simulation values
+    pass
+
+# Redraw Header Badge based on Connection, not file existence
 with c_live:
     # Prepare dynamic styles
-    badge_color = "#00C853" if not FULL_MODE else "#FF8C00"
-    badge_bg = "rgba(0, 200, 83, 0.15)" if not FULL_MODE else "rgba(255, 140, 0, 0.15)"
-    badge_text = "LIVE SYSTEM" if not FULL_MODE else "SIMULATION MODE"
+    badge_color = "#00C853" if IS_LIVE_CONNECTION else "#FF8C00"
+    badge_bg = "rgba(0, 200, 83, 0.15)" if IS_LIVE_CONNECTION else "rgba(255, 140, 0, 0.15)"
+    badge_text = "LIVE SYSTEM" if IS_LIVE_CONNECTION else "SIMULATION MODE"
     
     st.markdown(f"""
         <div style="height: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding-top: 1rem;">
@@ -451,50 +489,6 @@ with c_live:
             time.sleep(5)
             st.cache_data.clear()
             st.rerun()
-
-
-# Calculate metrics
-if FULL_MODE and not df.empty:
-    # Simulation Mode (fallback)
-    total = len(df)
-    blocked = (df["access_decision"] == "BLOCK").sum()
-    restricted = (df["access_decision"] == "RESTRICT").sum()
-    allowed = (df["access_decision"] == "ALLOW").sum()
-    avg_risk = df["risk_score"].mean()
-    critical = (df["risk_score"] >= 80).sum()
-    
-    # Check if we can get real Blocked Count from SOC Monitor to overlay
-    try:
-        from services.soc_monitor import SOCMonitor
-        soc = SOCMonitor()
-        state = soc.get_current_state()
-        if state.get('blocked_today', 0) > 0:
-             blocked = state.get('blocked_today')
-             critical = state.get('threat_count', 0)
-    except:
-        pass
-else:
-    # Live Mode
-    try:
-        from services.soc_monitor import SOCMonitor
-        soc = SOCMonitor()
-        state = soc.get_current_state()
-        
-        total = len(df) if not df.empty else 0
-        blocked = state.get('blocked_today', 0)
-        critical = state.get('threat_count', 0)
-        
-        if not df.empty:
-            avg_risk = df["risk_score"].mean()
-            restricted = (df["access_decision"] == "RESTRICT").sum()
-            allowed = (df["access_decision"] == "ALLOW").sum()
-        else:
-            avg_risk = 0
-            restricted = 0
-            allowed = 0
-            
-    except Exception as e:
-        total, blocked, restricted, allowed, avg_risk, critical = 0, 0, 0, 0, 0, 0
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # AUTONOMOUS DEFENSE SIMULATION (IRON MAN UI)
