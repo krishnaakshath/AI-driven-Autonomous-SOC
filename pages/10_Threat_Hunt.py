@@ -89,12 +89,13 @@ with tab1:
                 if HAS_REAL_API and is_ip:
                     try:
                         result_data = check_ip_reputation(ioc_input)
-                        time.sleep(0.5)
                     except Exception as e:
                         st.warning(f"API error: {e}")
                         result_data = None
-                else:
-                    time.sleep(1.5)
+                
+                # CHECK LOCAL DB (Phase 18)
+                from services.database import db
+                local_hits = db.search_events(ioc_input)
                 
                 # Display results
                 if result_data and result_data.get('risk_score', 0) > 0:
@@ -117,21 +118,15 @@ with tab1:
                     4. Check for lateral movement to other systems
                     5. Reset credentials for affected users
                     """)
-                elif random.random() > 0.4:  # Fallback simulation
-                    st.error(f" **IOC Found in Environment!** (Simulated)")
                     
-                    matches = []
-                    for _ in range(random.randint(2, 8)):
-                        matches.append({
-                            "timestamp": (datetime.now() - timedelta(hours=random.randint(1, 72))).strftime("%Y-%m-%d %H:%M"),
-                            "source": random.choice(["Firewall", "EDR", "DNS", "Proxy", "SIEM"]),
-                            "hostname": random.choice(["WS-001", "SRV-DB-01", "LAPTOP-IT42", "DC-PROD-01"]),
-                            "action": random.choice(["Blocked", "Allowed", "Detected"]),
-                            "user": random.choice(["jsmith", "admin", "service-account", "SYSTEM"])
-                        })
+                elif local_hits:
+                    st.error(f" **IOC Found in Internal Logs!** ({len(local_hits)} matches)")
+                    st.dataframe(pd.DataFrame(local_hits), use_container_width=True)
                     
-                    df = pd.DataFrame(matches)
-                    st.dataframe(df, use_container_width=True)
+                elif random.random() > 0.8: # Keep small simulation chance if DB empty
+                     st.info("Simulating search...")
+                     time.sleep(1)
+                     st.success("No active threats found.")
                 else:
                     st.success(f" **IOC not found** - No matches in current data")
                     st.info("Consider expanding time range or checking additional data sources")
@@ -190,8 +185,25 @@ with tab2:
             """, unsafe_allow_html=True)
         with col2:
             if st.button(" Run", key=f"run_{query['name']}", use_container_width=True):
-                st.session_state[f"hunt_result_{query['name']}"] = random.randint(0, 50)
-                st.rerun()
+                # Execute real query (Phase 18)
+                from services.database import db
+                # Extract key term from query string for simple search
+                key_term = query['query'].split(':')[1].split(' ')[0].replace('(', '').replace(')', '')
+                results = db.search_events(key_term)
+                
+                if results:
+                    st.success(f"Found {len(results)} matches")
+                    st.session_state[f"hunt_result_{query['name']}"] = results
+                else:
+                    st.warning("No matches found in current logs")
+
+    # Display results if available
+    for query in HUNT_QUERIES:
+        if f"hunt_result_{query['name']}" in st.session_state:
+            res = st.session_state[f"hunt_result_{query['name']}"]
+            if isinstance(res, list) and res:
+                st.write(f"**Results for {query['name']}:**")
+                st.dataframe(pd.DataFrame(res).head(5), use_container_width=True)
 
 with tab3:
     st.markdown(section_title("Hypothesis-Driven Hunting"), unsafe_allow_html=True)
@@ -225,15 +237,32 @@ with tab3:
         if hypothesis:
             with st.spinner("Executing hypothesis-driven hunt..."):
                 import time
-                time.sleep(2)
+                from services.database import db
                 
-                findings = random.randint(0, 25)
+                # Map technique to search keywords
+                tech_keywords = {
+                    "PowerShell": "powershell",
+                    "Credential Dumping": "mimikatz",
+                    "SMB": "smb",
+                    "Web C2": "http",
+                    "Data Encrypted": "ransom",
+                    "Spearphishing": "email"
+                }
                 
-                if findings > 0:
-                    st.warning(f" **{findings} potential matches found**")
+                keyword = "unknown"
+                for k, v in tech_keywords.items():
+                    if k in mitre_technique:
+                        keyword = v
+                        break
+                
+                findings = db.search_events(keyword)
+                
+                if findings:
+                    st.warning(f" **{len(findings)} potential matches found**")
                     st.markdown("Results require analyst review to confirm true positives.")
+                    st.dataframe(pd.DataFrame(findings), use_container_width=True)
                 else:
-                    st.success(" No matches found for this hypothesis")
+                    st.success(" No matches found for this hypothesis in current logs")
         else:
             st.warning("Please enter a hunting hypothesis")
 

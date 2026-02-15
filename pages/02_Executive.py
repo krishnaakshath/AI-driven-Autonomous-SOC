@@ -26,9 +26,10 @@ try:
 except ImportError:
     HAS_REAL_DATA = False
 
-# Session state for manual refresh
-if 'executive_refresh' not in st.session_state:
-    st.session_state.executive_refresh = 0
+# Auto-refresh
+import time
+if 'last_exec_refresh' not in st.session_state:
+    st.session_state.last_exec_refresh = time.time()
 
 # Header with refresh button
 h_col1, h_col2 = st.columns([4, 1])
@@ -38,8 +39,14 @@ with h_col2:
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🔄 Refresh System", use_container_width=True):
         st.cache_data.clear()
-        st.session_state.executive_refresh += 1
+        st.session_state.last_exec_refresh = time.time()
         st.rerun()
+
+# Auto-refresh logic (every 60s)
+if time.time() - st.session_state.last_exec_refresh > 60:
+    st.cache_data.clear()
+    st.session_state.last_exec_refresh = time.time()
+    st.rerun()
 
 # Get real executive metrics from APIs
 @st.cache_data(ttl=300)

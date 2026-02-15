@@ -125,6 +125,28 @@ class DatabaseService:
             conn.close()
             return [dict(row) for row in rows]
             
+    def search_events(self, query, limit=50):
+        """Search events for a keyword (IP, User, etc)."""
+        with _db_lock:
+            conn = self._get_conn()
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            # Search across useful columns
+            wildcard = f"%{query}%"
+            c.execute("""
+                SELECT * FROM events 
+                WHERE source_ip LIKE ? 
+                   OR dest_ip LIKE ? 
+                   OR user LIKE ? 
+                   OR event_type LIKE ? 
+                   OR raw_log LIKE ?
+                ORDER BY timestamp DESC 
+                LIMIT ?
+            """, (wildcard, wildcard, wildcard, wildcard, wildcard, limit))
+            rows = c.fetchall()
+            conn.close()
+            return [dict(row) for row in rows]
+            
     def get_stats(self):
         """Get quick counts for dashboard."""
         with _db_lock:
