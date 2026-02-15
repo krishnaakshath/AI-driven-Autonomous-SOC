@@ -90,3 +90,8 @@ To meet the requirement for "dynamic and always updating" data, I implemented a 
 - **Enhancement**: Added **Auto-Refresh** logic to `03_Alerts.py`, `24_SIEM.py`, `05_Timeline.py`, and `06_Threat_Intel.py`.
 - **Result**: Data is consistent across the entire platform. A blocked IP appears on the Dashboard, Log Viewer, Alerts, and Threat Map simultaneously.
 
+### 6. Executive & Real-Time Expansion (Phase 18)
+- **Feature**: Connected **Executive Dashboard** and **UBA** to live `SOCMonitor` data with auto-refresh.
+- **Feature**: **Threat Hunt** now searches the local SIEM database for IOCs and executes real keyword searches for "Hypothesis Hunting".
+- **Benefit**: Leadership KPIs (e.g., "Blocked Attacks", "MTTD") now reflect actual system performance in real-time, and hunters can validate hypotheses against real logs.
+

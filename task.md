@@ -144,3 +144,9 @@
     - `06_Threat_Intel.py`
     - `24_SIEM.py`
 - [x] **Verification**: Confirm that a single ingested threat appears on Dashboard, Alerts, SIEM, and Timeline.
+
+## Phase 18: Executive & Real-Time Expansion
+- [x] **Executive Dashboard**: Add auto-refresh to `02_Executive.py` and ensure `SOCMonitor` pulls live DB stats.
+- [x] **UBA Real-Time**: Add auto-refresh to `12_UBA.py`.
+- [x] **Threat Hunt**: Connect "Hypothesis Hunt" in `10_Threat_Hunt.py` to `db.search_events()` for real results.
+- [x] **Global Sync**: Verify that a background threat block updates the Executive KPI cards immediately.
