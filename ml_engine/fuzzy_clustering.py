@@ -254,6 +254,8 @@ class FuzzyCMeans:
         return {
             'total_events': total,
             'distribution': distribution,
+            'cluster_counts': counts,
+            'cluster_percentages': {name: round(counts[name] / total * 100, 1) if total > 0 else 0 for name in self.cluster_names},
             'avg_confidence': round(np.mean([e.get('confidence_score', 0) for e in clustered_events]), 2) if clustered_events else 0,
             'dominant_threat': max(counts.items(), key=lambda x: x[1])[0] if any(counts.values()) else "None",
             'last_analysis': datetime.now().isoformat()
