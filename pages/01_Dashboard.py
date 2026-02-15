@@ -17,6 +17,15 @@ try:
 except st.errors.StreamlitAPIException:
     pass  # Already set by dashboard.py
 
+# --- CLOUD BACKGROUND SERVICE ---
+# Starts a singleton thread for continuous data ingestion (works on Streamlit Cloud)
+try:
+    from services.cloud_background import start_cloud_background_service
+    start_cloud_background_service()
+except Exception as e:
+    print(f"Failed to start background service: {e}")
+# --------------------------------
+
 # Premium animated theme
 st.markdown("""
 <style>
