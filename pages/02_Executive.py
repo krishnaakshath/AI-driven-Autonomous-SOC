@@ -42,11 +42,7 @@ with h_col2:
         st.session_state.last_exec_refresh = time.time()
         st.rerun()
 
-# Auto-refresh logic (every 60s)
-if time.time() - st.session_state.last_exec_refresh > 60:
-    st.cache_data.clear()
-    st.session_state.last_exec_refresh = time.time()
-    st.rerun()
+
 
 # Get real executive metrics from APIs
 @st.cache_data(ttl=300)

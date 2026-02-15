@@ -19,10 +19,7 @@ import time
 if 'last_uba_refresh' not in st.session_state:
     st.session_state.last_uba_refresh = time.time()
 
-if time.time() - st.session_state.last_uba_refresh > 60:
-    st.cache_data.clear()
-    st.session_state.last_uba_refresh = time.time()
-    st.rerun()
+
 
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
