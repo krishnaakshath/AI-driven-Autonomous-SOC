@@ -4,6 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import random
+import time
 import os
 import sys
 
@@ -446,6 +447,7 @@ with c_live:
         auto_refresh = st.checkbox("Auto-Refresh", value=True)
         if auto_refresh:
             time.sleep(5)
+            st.cache_data.clear()
             st.rerun()
 
 
