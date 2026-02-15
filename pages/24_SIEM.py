@@ -61,13 +61,16 @@ def get_correlation_matches(events):
     return rules
 
 
-# --- INGESTION & RETRIEVAL ---
-# 1. Simulate new events (to keep the stream alive for demo)
-#    In Day 2, we will replace this with real log ingestion running in background.
-import random
-new_simulated = simulate_siem_ingestion(count=random.randint(1, 3))
-
 # 2. Fetch latest events from DB (Persistence!)
+# Auto-refresh logic
+if 'last_siem_refresh' not in st.session_state:
+    st.session_state.last_siem_refresh = time.time()
+
+if time.time() - st.session_state.last_siem_refresh > 30:
+    st.rerun()
+
+st.session_state.last_siem_refresh = time.time()
+
 events = get_siem_events(count=200) # Get last 200 events
 
 # Update session counters

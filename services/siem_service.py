@@ -126,6 +126,18 @@ class SIEMService:
                 from services.firewall_shim import firewall
                 firewall.block_ip(ip, reason=f"Threat Intel: {desc}", source="SIEM Ingestion")
                 
+                # GENERATE ALERT (Phase 17)
+                # Ensure this threat appears on the Alerts Page
+                alert = {
+                    "id": f"ALRT-{str(uuid.uuid4())[:8]}",
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "title": f"Threat Intel Block: {desc}",
+                    "severity": "CRITICAL",
+                    "status": "New",
+                    "details": json.dumps({"source_ip": ip, "reason": desc, "action": "Blocked"})
+                }
+                db.insert_alert(alert)
+                
                 count += 1
                 
             return count

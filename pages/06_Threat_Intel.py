@@ -112,6 +112,14 @@ if refresh_needed:
     st.session_state.force_refresh_next_run = False
 
 # Stats
+# Fetch SIEM Blocked Count (Real-Time from Background Service)
+try:
+    from services.database import db
+    siem_stats = db.get_stats()
+    blocked_today = siem_stats.get('critical', 0) + siem_stats.get('high', 0) # Approximation of blocks
+except:
+    blocked_today = 0
+
 total = sum([c["real_count"] for c in threats.values()])
 if total == 0:
     top_country = ("N/A", {"threats": 0, "real_count": 0})
@@ -123,11 +131,11 @@ high_count = len([c for c in threats.values() if c["severity"] == "high"])
 
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #ff003c;">{total:,}</p><p class="metric-label">Active Threats</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #ff003c;">{total:,}</p><p class="metric-label">Global Threats (OTX)</p></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #ff6b00;">{critical_count + high_count}</p><p class="metric-label">High Priority</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #ff6b00;">{blocked_today}</p><p class="metric-label">Blocked Today (SIEM)</p></div>', unsafe_allow_html=True)
 with c3:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00f3ff;">{top_country[0][:10]}</p><p class="metric-label">Top Source</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #00f3ff;">{top_country[0][:10]}</p><p class="metric-label">Top Global Source</p></div>', unsafe_allow_html=True)
 with c4:
     active_countries = len([c for c in threats.values() if c["real_count"] > 0])
     st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #bc13fe;">{active_countries}</p><p class="metric-label">Active Regions</p></div>', unsafe_allow_html=True)

@@ -51,35 +51,18 @@ if time.time() - st.session_state.last_alert_refresh > 30:
 # ═══════════════════════════════════════════════════════════════════════════════
 @st.cache_data(ttl=30)
 def get_alerts():
-    """Pull alerts from SIEM service instead of generating random data."""
+    """Pull alerts from SIEM service (Real DB)."""
     try:
-        from services.siem_service import get_siem_events
-        events = get_siem_events(200)
+        from services.database import db
+        # Fetch real alerts (including those from Threat Intel)
+        alerts_data = db.get_alerts(limit=100)
         
-        # Convert SIEM events to alert format
-        alerts = []
-        for evt in events:
-            # Map event severity to risk score
-            risk_map = {"CRITICAL": 90, "HIGH": 70, "MEDIUM": 45, "LOW": 20}
-            base_risk = risk_map.get(evt.get("severity", "LOW"), 20)
+        if not alerts_data:
+            return pd.DataFrame()
             
-            alerts.append({
-                "id": evt.get("id", "ALT-000"),
-                "severity": evt.get("severity", "LOW"),
-                "type": evt.get("event_type", "Unknown Event"),
-                "source_ip": evt.get("source_ip", "0.0.0.0"),
-                "source": evt.get("source", "Unknown"),
-                "time": datetime.strptime(evt["timestamp"], "%Y-%m-%d %H:%M:%S") if isinstance(evt.get("timestamp"), str) else datetime.now(),
-                "status": evt.get("status", "Open"),
-                "risk_score": base_risk,
-                "hostname": evt.get("hostname", "Unknown"),
-                "user": evt.get("user", "-"),
-            })
-        
-        return pd.DataFrame(alerts)
+        return pd.DataFrame(alerts_data)
     except Exception as e:
-        st.warning(f"SIEM connection issue: {e}. Using local data.")
-        # Fallback
+        st.warning(f"DB Connection issue: {e}")
         return pd.DataFrame()
 
 # Enrich with OTX threat intel

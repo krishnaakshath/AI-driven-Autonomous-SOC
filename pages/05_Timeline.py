@@ -25,6 +25,16 @@ try:
 except ImportError:
     HAS_SIEM = False
 
+# Auto-refresh logic
+import time
+if 'last_timeline_refresh' not in st.session_state:
+    st.session_state.last_timeline_refresh = time.time()
+
+if time.time() - st.session_state.last_timeline_refresh > 60:
+    st.rerun()
+
+st.session_state.last_timeline_refresh = time.time()
+
 # Get incidents from SIEM or use samples
 def load_incidents():
     if HAS_SIEM:
