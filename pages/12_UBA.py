@@ -33,6 +33,11 @@ try:
     HAS_REAL_DATA = True
 except ImportError:
     HAS_REAL_DATA = False
+except Exception as e:
+    import traceback
+    st.error(f"CRITICAL ERROR during import: {e}")
+    st.code(traceback.format_exc())
+    HAS_REAL_DATA = False
 
 # Get user behavior data from SIEM
 @st.cache_data(ttl=300)
