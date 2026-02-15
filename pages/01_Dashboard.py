@@ -424,9 +424,9 @@ with c_head:
 with c_live:
     st.markdown("""
         <div style="height: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding-top: 1rem;">
-            <div class="live-badge" style="padding: 0.8rem 1.5rem;">
-                <span class="live-dot"></span>
-                LIVE SYSTEM
+            <div class="live-badge" style="padding: 0.8rem 1.5rem; border-color: {'#00C853' if not FULL_MODE else '#FF8C00'}; color: {'#00C853' if not FULL_MODE else '#FF8C00'}; background: {'rgba(0, 200, 83, 0.15)' if not FULL_MODE else 'rgba(255, 140, 0, 0.15)'};">
+                <span class="live-dot" style="background: {'#00C853' if not FULL_MODE else '#FF8C00'};"></span>
+                {"LIVE SYSTEM" if not FULL_MODE else "SIMULATION MODE"}
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -437,12 +437,47 @@ with c_live:
 
 
 # Calculate metrics
-total = len(df)
-blocked = (df["access_decision"] == "BLOCK").sum()
-restricted = (df["access_decision"] == "RESTRICT").sum()
-allowed = (df["access_decision"] == "ALLOW").sum()
-avg_risk = df["risk_score"].mean()
-critical = (df["risk_score"] >= 80).sum()
+if FULL_MODE and not df.empty:
+    # Simulation Mode (fallback)
+    total = len(df)
+    blocked = (df["access_decision"] == "BLOCK").sum()
+    restricted = (df["access_decision"] == "RESTRICT").sum()
+    allowed = (df["access_decision"] == "ALLOW").sum()
+    avg_risk = df["risk_score"].mean()
+    critical = (df["risk_score"] >= 80).sum()
+    
+    # Check if we can get real Blocked Count from SOC Monitor to overlay
+    try:
+        from services.soc_monitor import SOCMonitor
+        soc = SOCMonitor()
+        state = soc.get_current_state()
+        if state.get('blocked_today', 0) > 0:
+             blocked = state.get('blocked_today')
+             critical = state.get('threat_count', 0)
+    except:
+        pass
+else:
+    # Live Mode
+    try:
+        from services.soc_monitor import SOCMonitor
+        soc = SOCMonitor()
+        state = soc.get_current_state()
+        
+        total = len(df) if not df.empty else 0
+        blocked = state.get('blocked_today', 0)
+        critical = state.get('threat_count', 0)
+        
+        if not df.empty:
+            avg_risk = df["risk_score"].mean()
+            restricted = (df["access_decision"] == "RESTRICT").sum()
+            allowed = (df["access_decision"] == "ALLOW").sum()
+        else:
+            avg_risk = 0
+            restricted = 0
+            allowed = 0
+            
+    except Exception as e:
+        total, blocked, restricted, allowed, avg_risk, critical = 0, 0, 0, 0, 0, 0
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # AUTONOMOUS DEFENSE SIMULATION (IRON MAN UI)
