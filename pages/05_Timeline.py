@@ -98,6 +98,9 @@ def load_incidents():
 
 # Show data source
 # Show data source
+INCIDENTS = load_incidents()
+
+# Show data source
 if HAS_SIEM:
     # Check if we have real incidents or just templates
     real_incidents_count = len([i for i in INCIDENTS if not i.get('is_simulated', False)])
@@ -108,7 +111,7 @@ if HAS_SIEM:
 else:
     st.warning(" SIEM not available - Using sample incidents")
 
-INCIDENTS = load_incidents()
+
 
 # Incident selector
 incident_options = {f"{inc['id']} - {inc['title']}": inc for inc in INCIDENTS}
