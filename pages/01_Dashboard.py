@@ -259,9 +259,13 @@ def load_soc_data():
         real_df = pd.DataFrame()
         try:
             from services.database import db
-            events = db.get_recent_events(limit=2000)
+            events = db.get_recent_events(limit=5000)
             
             if events:
+                # DEBUG: Show prompt if count is weird
+                if len(events) < 1000:
+                    print(f"DEBUG: Loaded only {len(events)} events from DB. Total in DB: {db.get_stats()['total']}")
+                
                 data = []
                 for e in events:
                     sev = e.get('severity', 'LOW')
