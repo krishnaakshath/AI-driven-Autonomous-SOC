@@ -258,8 +258,11 @@ def load_soc_data():
         # 1. Try to load from Real Database
         real_df = pd.DataFrame()
         try:
+            from services.siem_service import siem_service
             from services.database import db
-            events = db.get_recent_events(limit=5000)
+            
+            # Use SIEM Service to trigger auto-seeding if DB is empty (Self-Healing)
+            events = siem_service.generate_events(count=5000)
             
             if events:
                 # DEBUG: Show prompt if count is weird

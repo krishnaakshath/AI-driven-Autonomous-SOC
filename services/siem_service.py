@@ -32,13 +32,14 @@ class SIEMService:
     def generate_events(self, count: int = 100) -> List[Dict]:
         """
         Produce events. 
-        Legacy wrapper: Checks if DB needs seeding, otherwise returns DB events.
-        For simulation purposes, we might still want to 'create' new events if requested.
+        Checks if DB needs seeding (Cloud Deployment Self-Healing), otherwise returns DB events.
         """
-        # If DB is empty, seed it
+        # If DB is empty or very low (fresh deploy), seed it with HISTORY
         stats = db.get_stats()
-        if stats['total'] == 0:
-            self.simulate_ingestion(count)
+        # THRESHOLD INCREASED: User sees 801, needs > 2000.
+        if stats['total'] < 1500:
+            # Backfill 2000 events to restore volume for the user
+            self.simulate_ingestion(count=2000)
             self.ingest_threat_intelligence() # Inject real threats
             
         # Occasional "Real" injection for live feel (10% chance on refresh)
