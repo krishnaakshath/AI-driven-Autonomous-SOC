@@ -35,6 +35,8 @@ except Exception as e:
 import time
 if 'last_exec_refresh' not in st.session_state:
     st.session_state.last_exec_refresh = time.time()
+if 'executive_refresh' not in st.session_state:
+    st.session_state.executive_refresh = 0
 
 # Header with refresh button
 h_col1, h_col2 = st.columns([4, 1])
@@ -45,6 +47,7 @@ with h_col2:
     if st.button("🔄 Refresh System", use_container_width=True):
         st.cache_data.clear()
         st.session_state.last_exec_refresh = time.time()
+        st.session_state.executive_refresh += 1
         st.rerun()
 
 
