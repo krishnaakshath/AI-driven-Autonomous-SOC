@@ -87,8 +87,14 @@ def load_incidents():
     ]
 
 # Show data source
+# Show data source
 if HAS_SIEM:
-    st.success(" Connected to SIEM - Displaying real incident data")
+    # Check if we have real incidents or just templates
+    real_incidents_count = len([i for i in INCIDENTS if not i.get('is_simulated', False)])
+    if real_incidents_count > 0:
+        st.success(f" Connected to SIEM - Analyzing {real_incidents_count} live incidents from database")
+    else:
+        st.warning(" Connected to SIEM - No critical events found in DB (Using Simulation Scenarios)")
 else:
     st.warning(" SIEM not available - Using sample incidents")
 
@@ -103,6 +109,11 @@ incident = incident_options[selected]
 severity_colors = {"CRITICAL": "#FF0066", "HIGH": "#FF4444", "MEDIUM": "#FF8C00", "LOW": "#FFD700"}
 status_colors = {"Contained": "#FF8C00", "Resolved": "#00C853", "Active": "#FF4444", "Investigating": "#00D4FF"}
 
+# Dynamic Badge for Source
+is_sim = incident.get('is_simulated', False)
+source_badge_color = "#FF8C00" if is_sim else "#00C853"
+source_text = "SIMULATION" if is_sim else "LIVE ANALYSIS"
+
 st.markdown(f"""
 <div style="
     background: linear-gradient(135deg, rgba(26,31,46,0.8), rgba(26,31,46,0.6));
@@ -113,8 +124,11 @@ st.markdown(f"""
 ">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h2 style="color: #FAFAFA; margin: 0;">{incident['title']}</h2>
-            <p style="color: #8B95A5; margin: 5px 0 0 0;">ID: {incident['id']} | Started: {incident['start_time'].strftime('%Y-%m-%d %H:%M')}</p>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                <h2 style="color: #FAFAFA; margin: 0;">{incident['title']}</h2>
+                <span style="border: 1px solid {source_badge_color}; color: {source_badge_color}; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem;">{source_text}</span>
+            </div>
+            <p style="color: #8B95A5; margin: 5px 0 0 0;">ID: {incident['id']} | Started: {incident.get('start_time')} | Source: {incident.get('source', 'Unknown')}</p>
         </div>
         <div style="display: flex; gap: 10px;">
             <span style="background: {severity_colors.get(incident['severity'], '#FF4444')}; color: #000; padding: 8px 16px; border-radius: 20px; font-weight: bold;">{incident['severity']}</span>

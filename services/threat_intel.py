@@ -139,7 +139,91 @@ class ThreatIntelligence:
             return {"error": str(e), "is_malicious": False}
         
         return {"error": "API request failed", "is_malicious": False}
-    
+
+    def check_domain_virustotal(self, domain: str) -> Dict:
+        """Check domain reputation against VirusTotal."""
+        cache_key = f"vt_domain_{domain}"
+        if self._is_cached(cache_key):
+            return self.cache[cache_key]['data']
+        
+        if not self.virustotal_key:
+             return {"error": "API key not configured", "is_malicious": False}
+
+        try:
+            headers = {'x-apikey': self.virustotal_key}
+            response = requests.get(
+                f'https://www.virustotal.com/api/v3/domains/{domain}',
+                headers=headers,
+                timeout=10
+            )
+
+            if response.status_code == 200:
+                data = response.json().get('data', {}).get('attributes', {})
+                stats = data.get('last_analysis_stats', {})
+                malicious = stats.get('malicious', 0)
+                suspicious = stats.get('suspicious', 0)
+
+                result = {
+                    'domain': domain,
+                    'is_malicious': malicious > 0 or suspicious > 2,
+                    'malicious_count': malicious,
+                    'suspicious_count': suspicious,
+                    'reputation': data.get('reputation', 0),
+                    'categories': data.get('categories', {}),
+                    'source': 'VirusTotal'
+                }
+                self.cache[cache_key] = {'data': result, 'timestamp': time.time()}
+                self._save_cache()
+                return result
+            elif response.status_code == 404:
+                 return {"error": "Domain not found in VT", "is_malicious": False}
+
+        except Exception as e:
+            return {"error": str(e), "is_malicious": False}
+
+        return {"error": "API request failed", "is_malicious": False}
+
+    def check_domain_otx(self, domain: str) -> Dict:
+        """Check domain against AlienVault OTX (General Section + Passive DNS)."""
+        cache_key = f"otx_domain_{domain}"
+        if self._is_cached(cache_key):
+             return self.cache[cache_key]['data']
+        
+        # OTX allows public query even without key sometimes, but better with key
+        headers = {}
+        if self.otx_key:
+            headers = {'X-OTX-API-KEY': self.otx_key}
+        
+        try:
+            # 1. Check General Info
+            url = f'https://otx.alienvault.com/api/v1/indicators/domain/{domain}/general'
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                pulse_info = data.get('pulse_info', {})
+                pulses = pulse_info.get('pulses', [])
+                count = pulse_info.get('count', 0)
+                
+                result = {
+                    'domain': domain,
+                    'pulse_count': count,
+                    'malware_samples': 0, # Could fetch from /malware section if needed
+                    'pulses': [{'name': p['name'], 'id': p['id']} for p in pulses[:5]],
+                    'source': 'AlienVault OTX'
+                }
+                
+                self.cache[cache_key] = {'data': result, 'timestamp': time.time()}
+                self._save_cache()
+                return result
+            elif response.status_code == 404:
+                 return {"error": "Domain not found in OTX", "pulse_count": 0}
+                 
+        except Exception as e:
+            return {"error": str(e), "pulse_count": 0}
+
+        return {"error": "API request failed", "pulse_count": 0}
+
     def check_file_hash(self, file_hash: str) -> Dict:
         """Check file hash against VirusTotal."""
         cache_key = f"vt_hash_{file_hash}"

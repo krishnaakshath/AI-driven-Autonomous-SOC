@@ -33,12 +33,12 @@ else:
 
 # Known breach database
 BREACH_DATABASES = [
-    {"name": "LinkedIn 2021", "date": "2021-06-22", "records": "700M", "type": "Email, Password Hash"},
-    {"name": "Facebook 2019", "date": "2019-04-03", "records": "533M", "type": "Phone, Email, Name"},
-    {"name": "Dropbox 2012", "date": "2012-07-15", "records": "68M", "type": "Email, Password Hash"},
-    {"name": "Adobe 2013", "date": "2013-10-04", "records": "153M", "type": "Email, Password, Hint"},
-    {"name": "Collection #1", "date": "2019-01-17", "records": "773M", "type": "Email, Password"},
-    {"name": "Canva 2019", "date": "2019-05-24", "records": "137M", "type": "Email, Name, Location"},
+    {"name": "LinkedIn 2021", "date": "2021-06-22", "records": "700M", "type": "Email, Password Hash", "source": "Historical Sample"},
+    {"name": "Facebook 2019", "date": "2019-04-03", "records": "533M", "type": "Phone, Email, Name", "source": "Historical Sample"},
+    {"name": "Dropbox 2012", "date": "2012-07-15", "records": "68M", "type": "Email, Password Hash", "source": "Historical Sample"},
+    {"name": "Adobe 2013", "date": "2013-10-04", "records": "153M", "type": "Email, Password, Hint", "source": "Historical Sample"},
+    {"name": "Collection #1", "date": "2019-01-17", "records": "773M", "type": "Email, Password", "source": "Historical Sample"},
+    {"name": "Canva 2019", "date": "2019-05-24", "records": "137M", "type": "Email, Name, Location", "source": "Historical Sample"},
 ]
 
 def check_email_breach(email):
@@ -58,7 +58,8 @@ def check_email_breach(email):
                         "name": f"OTX Intelligence ({pulse_count} pulses)",
                         "date": datetime.now().strftime("%Y-%m-%d"),
                         "records": "Real-time",
-                        "type": f"Domain associated with {pulse_count} threat pulses"
+                        "type": f"Domain associated with {pulse_count} threat pulses",
+                        "source": "Live Intelligence"
                     })
         except Exception as e:
             pass
@@ -92,7 +93,8 @@ def check_domain_exposure(domain):
                         "source": "AlienVault OTX",
                         "date": datetime.now().strftime("%Y-%m-%d"),
                         "severity": "CRITICAL",
-                        "detail": f"Domain appears in {pulse_count} threat intelligence pulses"
+                        "detail": f"Domain appears in {pulse_count} threat intelligence pulses",
+                        "data_source": "Live Intelligence"
                     })
                 elif pulse_count > 0:
                     exposures.append({
@@ -100,7 +102,8 @@ def check_domain_exposure(domain):
                         "source": "AlienVault OTX",
                         "date": datetime.now().strftime("%Y-%m-%d"),
                         "severity": "HIGH",
-                        "detail": f"Domain found in {pulse_count} threat pulses"
+                        "detail": f"Domain found in {pulse_count} threat pulses",
+                        "data_source": "Live Intelligence"
                     })
                 
                 # Check related malware
@@ -111,7 +114,8 @@ def check_domain_exposure(domain):
                         "source": "OTX Malware DB",
                         "date": datetime.now().strftime("%Y-%m-%d"),
                         "severity": "CRITICAL",
-                        "detail": f"{malware} malware samples associated with this domain"
+                        "detail": f"{malware} malware samples associated with this domain",
+                        "data_source": "Live Intelligence"
                     })
             
             # Also check VirusTotal
@@ -123,7 +127,8 @@ def check_domain_exposure(domain):
                         "source": "VirusTotal",
                         "date": datetime.now().strftime("%Y-%m-%d"),
                         "severity": "CRITICAL",
-                        "detail": f"Detected by {vt_result.get('malicious_count', 0)} security vendors"
+                        "detail": f"Detected by {vt_result.get('malicious_count', 0)} security vendors",
+                        "data_source": "Live Intelligence"
                     })
         except Exception as e:
             pass
@@ -132,7 +137,7 @@ def check_domain_exposure(domain):
     if not exposures:
         findings = [
             {"type": "Credential Leak", "source": "Pastebin", "date": "2024-01-15", "severity": "HIGH",
-             "detail": f"Found 23 email/password pairs for @{domain}"},
+             "detail": f"Found 23 email/password pairs for @{domain}", "data_source": "Simulated Sample"},
         ]
         random.shuffle(findings)
         return findings[:random.randint(0, 1)]
@@ -168,6 +173,9 @@ with tab1:
                     st.error(f" **{len(breaches)} breach(es) found** for {email_input}")
                     
                     for breach in breaches:
+                        src = breach.get("source", "Historical Sample")
+                        badge_bg = "#00C853" if src == "Live Intelligence" else "#FF8C00"
+                        
                         st.markdown(f"""
                         <div style="
                             background: rgba(255,68,68,0.1);
@@ -177,7 +185,10 @@ with tab1:
                             margin: 10px 0;
                         ">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="color: #FF4444; font-weight: bold;">{breach['name']}</span>
+                                <div>
+                                    <span style="color: #FF4444; font-weight: bold;">{breach['name']}</span>
+                                    <span style="background: {badge_bg}; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 10px;">{src}</span>
+                                </div>
                                 <span style="color: #8B95A5;">{breach['date']}</span>
                             </div>
                             <div style="color: #FAFAFA;">
@@ -228,6 +239,9 @@ with tab2:
                     
                     for exp in exposures:
                         severity_color = {"HIGH": "#FF8C00", "CRITICAL": "#FF4444", "MEDIUM": "#FFD700", "LOW": "#00D4FF"}
+                        src = exp.get("data_source", "Simulated Sample")
+                        badge_bg = "#00C853" if src == "Live Intelligence" else "#FF8C00"
+                        
                         st.markdown(f"""
                         <div style="
                             background: rgba(255,140,0,0.1);
@@ -237,7 +251,10 @@ with tab2:
                             margin: 10px 0;
                         ">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="color: {severity_color.get(exp['severity'], '#FF8C00')}; font-weight: bold;">{exp['type']}</span>
+                                <div>
+                                    <span style="color: {severity_color.get(exp['severity'], '#FF8C00')}; font-weight: bold;">{exp['type']}</span>
+                                    <span style="background: {badge_bg}; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 10px;">{src}</span>
+                                </div>
                                 <span style="background: {severity_color.get(exp['severity'], '#FF8C00')}; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">{exp['severity']}</span>
                             </div>
                             <div style="color: #FAFAFA; margin-bottom: 5px;">{exp['detail']}</div>

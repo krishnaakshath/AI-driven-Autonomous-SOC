@@ -251,15 +251,34 @@ class SIEMService:
                 "title": template["title"],
                 "severity": template["severity"],
                 "status": template["status"],
-                "source": event.get("source", "Unknown"),
+                "source": "Real (SIEM)" if i < len(critical_events) else "Simulation (Fallback)",
                 "start_time": event.get("timestamp"),
                 "affected_host": event.get("hostname", "Unknown"),
                 "affected_user": event.get("user", "Unknown"),
                 "source_ip": event.get("source_ip"),
-                "timeline": mitre_techniques.get(template["title"], [])
+                "timeline": mitre_techniques.get(template["title"], []),
+                "is_simulated": False if i < len(critical_events) else True
             }
             incidents.append(incident)
         
+        # If absolutely no critical events, return pure simulation
+        if not incidents:
+             for i, template in enumerate(incident_templates):
+                incident = {
+                    "id": f"INC-SIM-{2000 + i}",
+                    "title": template["title"],
+                    "severity": template["severity"],
+                    "status": template["status"],
+                    "source": "Simulation (Empty DB)",
+                    "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "affected_host": "SIM-HOST-01",
+                    "affected_user": "sim_user",
+                    "source_ip": "192.168.1.100",
+                    "timeline": mitre_techniques.get(template["title"], []),
+                    "is_simulated": True
+                }
+                incidents.append(incident)
+
         return incidents
     
     def get_logs(self, source_filter: str = None, severity_filter: str = None, limit: int = 100) -> List[Dict]:

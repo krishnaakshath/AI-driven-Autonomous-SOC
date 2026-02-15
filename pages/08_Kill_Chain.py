@@ -255,8 +255,13 @@ def get_active_threats_from_db():
                 "stages": stages,
                 "severity": severity,
                 "first_seen": (datetime.now() - timedelta(hours=random.randint(1, 48))).strftime("%Y-%m-%d %H:%M"),
-                "indicators": random.randint(3, 15)
+                "indicators": random.randint(3, 15),
+                "is_simulated": True
             })
+    else:
+        # Tag real threats
+        for t in threats:
+            t["is_simulated"] = False
     
     return threats
 
@@ -353,6 +358,7 @@ with tab2:
     
     for threat in threats:
         sev_color = severity_colors.get(threat['severity'], '#888')
+        is_sim = threat.get("is_simulated", False)
         
         # Build stage progress bar
         stage_indicators = ""
@@ -361,6 +367,8 @@ with tab2:
             border_color = sev_color if i in threat['stages'] else "#333"
             stage_indicators += f'<div style="width: 15px; height: 15px; border-radius: 3px; background: {stage_color}; border: 1px solid {border_color}; margin: 0 2px; display: inline-block;" title="{KILL_CHAIN_STAGES[i]["name"]}"></div>'
         
+        badge_html = f'<span style="background: #FF8C00; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 10px;">SIMULATED</span>' if is_sim else f'<span style="background: #00C853; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 10px;">REAL THREAT</span>'
+
         st.markdown(f"""
         <div style="
             background: rgba(0,0,0,0.3);
@@ -380,6 +388,7 @@ with tab2:
                         font-weight: 700;
                     ">{threat['severity'].upper()}</span>
                     <span style="font-size: 1.2rem; font-weight: 700; margin-left: 10px; color: #fff;">{threat['name']}</span>
+                    {badge_html}
                 </div>
                 <div style="color: #8B95A5; font-size: 0.85rem;">
                     Detected: {threat['first_seen']} | {threat['indicators']} Events
@@ -393,7 +402,6 @@ with tab2:
             </div>
         </div>
         """, unsafe_allow_html=True)
-
 with tab3:
     st.markdown("### Kill Chain Statistics (SIEM-Powered)")
     

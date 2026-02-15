@@ -485,17 +485,17 @@ with c_live:
             
     with col_auto:
         auto_refresh = st.checkbox("Auto-Refresh", value=True)
-        if auto_refresh:
-            time.sleep(5)
-            st.cache_data.clear()
-            st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # AUTONOMOUS DEFENSE SIMULATION (IRON MAN UI)
 # ═══════════════════════════════════════════════════════════════════════════════
-from ui.defense_module import render_autonomous_defense_log
-st.markdown("<br>", unsafe_allow_html=True)
-render_autonomous_defense_log(avg_risk)
+try:
+    from ui.defense_module import render_autonomous_defense_log
+    st.markdown("<br>", unsafe_allow_html=True)
+    render_autonomous_defense_log(avg_risk)
+except Exception as e:
+    st.error(f"Defense Module Error: {e}")
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Animated Metric Cards
@@ -511,9 +511,6 @@ metrics_data = [
 ]
 
 for col, value, label, color in metrics_data:
-    with col:
-        display_value = f"{value:,}" if isinstance(value, (int, np.integer)) else value
-
     with col:
         display_value = f"{value:,}" if isinstance(value, (int, np.integer)) else value
         
@@ -547,85 +544,96 @@ chart1, chart2 = st.columns(2)
 
 with chart1:
     st.markdown(section_title("Threat Activity Timeline"), unsafe_allow_html=True)
-    if hasattr(df["timestamp"].iloc[0], "hour"):
-        df["hour"] = df["timestamp"].apply(lambda x: x.replace(minute=0, second=0, microsecond=0))
-        hourly = df.groupby("hour").size().reset_index(name="count")
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=hourly["hour"], y=hourly["count"], 
-            mode="lines+markers", fill="tozeroy",
-            line=dict(color="#00D4FF", width=3, shape='spline'),
-            marker=dict(size=8, color="#00D4FF", line=dict(width=2, color="#FFFFFF")),
-            fillcolor="rgba(0, 212, 255, 0.15)"
-        ))
-        fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#FAFAFA",
-            xaxis=dict(showgrid=False, showline=False),
-            yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)", showline=False),
-            margin=dict(l=20, r=20, t=20, b=20), height=300
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    if not df.empty and hasattr(df["timestamp"].iloc[0], "hour"):
+        try:
+            df["hour"] = df["timestamp"].apply(lambda x: x.replace(minute=0, second=0, microsecond=0))
+            hourly = df.groupby("hour").size().reset_index(name="count")
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=hourly["hour"], y=hourly["count"], 
+                mode="lines+markers", fill="tozeroy",
+                line=dict(color="#00D4FF", width=3, shape='spline'),
+                marker=dict(size=8, color="#00D4FF", line=dict(width=2, color="#FFFFFF")),
+                fillcolor="rgba(0, 212, 255, 0.15)"
+            ))
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#FAFAFA",
+                xaxis=dict(showgrid=False, showline=False),
+                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)", showline=False),
+                margin=dict(l=20, r=20, t=20, b=20), height=300
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Chart Error: {e}")
     else:
         st.info("Timeline data loading...")
 
 with chart2:
     st.markdown(section_title("Decision Distribution"), unsafe_allow_html=True)
-    decision_counts = df["access_decision"].value_counts()
-    fig2 = go.Figure(data=[go.Pie(
-        labels=decision_counts.index, values=decision_counts.values, hole=0.6,
-        marker_colors=["#00C853", "#FF8C00", "#FF4444"],
-        textinfo="percent", textfont_size=14, textfont_color="#FFFFFF"
-    )])
-    fig2.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#FAFAFA", showlegend=True,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.1),
-        margin=dict(l=20, r=20, t=20, b=60), height=300
-    )
-    st.plotly_chart(fig2, use_container_width=True)
+    if not df.empty:
+        decision_counts = df["access_decision"].value_counts()
+        fig2 = go.Figure(data=[go.Pie(
+            labels=decision_counts.index, values=decision_counts.values, hole=0.6,
+            marker_colors=["#00C853", "#FF8C00", "#FF4444"],
+            textinfo="percent", textfont_size=14, textfont_color="#FFFFFF"
+        )])
+        fig2.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#FAFAFA", showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.1),
+            margin=dict(l=20, r=20, t=20, b=60), height=300
+        )
+        st.plotly_chart(fig2, use_container_width=True)
 
 chart3, chart4 = st.columns(2)
 
 with chart3:
     st.markdown(section_title("Top Attack Types"), unsafe_allow_html=True)
-    attack_counts = df[df["attack_type"] != "Normal"]["attack_type"].value_counts().head(6)
-    fig3 = go.Figure(go.Bar(
-        x=attack_counts.values, y=attack_counts.index, orientation="h",
-        marker=dict(
-            color=attack_counts.values,
-            colorscale=[[0, "#00D4FF"], [0.5, "#8B5CF6"], [1, "#FF4444"]],
-            line=dict(width=0)
-        )
-    ))
-    fig3.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#FAFAFA",
-        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
-        yaxis=dict(showgrid=False),
-        margin=dict(l=20, r=20, t=20, b=20), height=280
-    )
-    st.plotly_chart(fig3, use_container_width=True)
+    if not df.empty:
+        attack_counts = df[df["attack_type"] != "Normal"]["attack_type"].value_counts().head(6)
+        if not attack_counts.empty:
+            fig3 = go.Figure(go.Bar(
+                x=attack_counts.values, y=attack_counts.index, orientation="h",
+                marker=dict(
+                    color=attack_counts.values,
+                    colorscale=[[0, "#00D4FF"], [0.5, "#8B5CF6"], [1, "#FF4444"]],
+                    line=dict(width=0)
+                )
+            ))
+            fig3.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#FAFAFA",
+                xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
+                yaxis=dict(showgrid=False),
+                margin=dict(l=20, r=20, t=20, b=20), height=280
+            )
+            st.plotly_chart(fig3, use_container_width=True)
+        else:
+            st.info("No attacks detected yet.")
 
 with chart4:
     st.markdown(section_title("Attack Sources"), unsafe_allow_html=True)
-    if "source_country" in df.columns:
+    if "source_country" in df.columns and not df.empty:
         country_counts = df[df["attack_type"] != "Normal"]["source_country"].value_counts().head(6)
-        fig4 = go.Figure(go.Bar(
-            x=country_counts.index, y=country_counts.values,
-            marker=dict(
-                color=country_counts.values,
-                colorscale=[[0, "#FF8C00"], [1, "#FF4444"]]
+        if not country_counts.empty:
+            fig4 = go.Figure(go.Bar(
+                x=country_counts.index, y=country_counts.values,
+                marker=dict(
+                    color=country_counts.values,
+                    colorscale=[[0, "#FF8C00"], [1, "#FF4444"]]
+                )
+            ))
+            fig4.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#FAFAFA",
+                xaxis=dict(showgrid=False, tickangle=-45),
+                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
+                margin=dict(l=20, r=20, t=20, b=60), height=280
             )
-        ))
-        fig4.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#FAFAFA",
-            xaxis=dict(showgrid=False, tickangle=-45),
-            yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
-            margin=dict(l=20, r=20, t=20, b=60), height=280
-        )
-        st.plotly_chart(fig4, use_container_width=True)
+            st.plotly_chart(fig4, use_container_width=True)
+        else:
+            st.info("No external threats detected.")
 
 st.markdown("---")
 
@@ -664,3 +672,9 @@ st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5; padding: 1rem;"><p style="margin: 0;">AI-Driven Autonomous SOC | Zero Trust Security Platform</p></div>', unsafe_allow_html=True)
 from ui.chat_interface import inject_floating_cortex_link
 inject_floating_cortex_link()
+
+# Auto-Refresh Logic (Placed at end to allow full rendering first)
+if auto_refresh:
+    time.sleep(5)
+    st.cache_data.clear()
+    st.rerun()
