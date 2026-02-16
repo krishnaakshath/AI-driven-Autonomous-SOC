@@ -251,5 +251,16 @@ st.markdown("<br>", unsafe_allow_html=True)
 csv = df.to_csv(index=False)
 st.download_button(" Export User Analytics (CSV)", csv, "user_behavior_analytics.csv", "text/csv")
 
+# Auto-Refresh Logic (Every 30 seconds)
+if 'last_uba_refresh' not in st.session_state:
+    st.session_state.last_uba_refresh = time.time()
+
+if time.time() - st.session_state.last_uba_refresh > 30:
+    st.cache_data.clear()
+    st.session_state.last_uba_refresh = time.time()
+    st.rerun()
+
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | User Behavior Analytics</p></div>', unsafe_allow_html=True)
+from ui.chat_interface import inject_floating_cortex_link
+inject_floating_cortex_link()
