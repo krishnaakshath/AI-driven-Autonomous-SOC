@@ -448,14 +448,11 @@ with c_head:
     except Exception as e:
         pass
             
-        # Adjust allowed if blocked changed significantly to keep total sane
-        # (Optional, but keeps math cleaner if total < blocked)
-        if blocked > total:
-            total = blocked + restricted + allowed
 
-except Exception as e:
-    # Keep simulation values
-    pass
+# Adjust allowed if blocked changed significantly to keep total sane
+# (Optional, but keeps math cleaner if total < blocked)
+if blocked > total:
+    total = blocked + restricted + allowed
 
 # Redraw Header Badge based on Connection, not file existence
 with c_live:
