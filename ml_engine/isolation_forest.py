@@ -42,27 +42,36 @@ class SOCIsolationForest:
     def __init__(self, contamination: float = 0.3, n_estimators: int = 200, random_state: int = 42):
         """
         Initialize the Isolation Forest model.
+        Attempts to load a previously saved model from disk first.
         
         Args:
             contamination: Expected proportion of anomalies (tuned for NSL-KDD)
             n_estimators: Number of trees in the forest
             random_state: Random seed for reproducibility
         """
-        self.model = IsolationForest(
-            contamination=contamination,
-            n_estimators=n_estimators,
-            max_features=0.8,   # Feature subsampling for better generalisation
-            max_samples=0.8,    # Sample subsampling for diversity
-            random_state=random_state,
-            n_jobs=-1  # Use all CPU cores
-        )
-        self.is_trained = False
         self.feature_names = ['bytes_in', 'bytes_out', 'packets', 'duration', 'port', 'protocol_num']
         self.training_stats = {}
-        self.scaler = StandardScaler()
         self.dataset_metrics = {}
         self._trained_on_dataset = False
         self._optimal_threshold = None
+        self._random_state = random_state
+        
+        # Try loading a persisted model first
+        loaded = self._try_load_from_disk()
+        if loaded:
+            return
+        
+        # No saved model — create fresh ones
+        self.model = IsolationForest(
+            contamination=contamination,
+            n_estimators=n_estimators,
+            max_features=0.8,
+            max_samples=0.8,
+            random_state=random_state,
+            n_jobs=-1
+        )
+        self.is_trained = False
+        self.scaler = StandardScaler()
         # Supervised classifier for ensemble scoring
         self.classifier = RandomForestClassifier(
             n_estimators=200,
@@ -71,6 +80,37 @@ class SOCIsolationForest:
             random_state=random_state,
             n_jobs=-1
         )
+    
+    def _try_load_from_disk(self) -> bool:
+        """Attempt to load a previously saved model from disk."""
+        try:
+            from services.model_persistence import load_model
+            result = load_model("isolation_forest")
+            if result is not None:
+                model_bundle, scaler_obj, metadata = result
+                self.model = model_bundle['if_model']
+                self.classifier = model_bundle['rf_model']
+                self.scaler = scaler_obj
+                self.is_trained = True
+                self._trained_on_dataset = True
+                self.training_stats = metadata.get('metadata', {}) if metadata else {}
+                print(f"[IF] Loaded persisted model (trained on {self.training_stats.get('n_samples', '?')} samples)")
+                return True
+        except Exception as e:
+            print(f"[IF] Could not load persisted model: {e}")
+        return False
+    
+    def _save_to_disk(self):
+        """Save the current trained model to disk."""
+        try:
+            from services.model_persistence import save_model
+            model_bundle = {
+                'if_model': self.model,
+                'rf_model': self.classifier
+            }
+            save_model("isolation_forest", model_bundle, self.scaler, self.training_stats)
+        except Exception as e:
+            print(f"[IF] Could not save model: {e}")
     
     def _extract_features(self, events: List[Dict]) -> np.ndarray:
         """
@@ -255,6 +295,9 @@ class SOCIsolationForest:
             'dataset_summary': summary
         }
         
+        # Persist to disk so model survives restarts
+        self._save_to_disk()
+        
         return self.training_stats
     
     def evaluate(self) -> Dict:
@@ -350,6 +393,82 @@ class SOCIsolationForest:
         }
         
         return self.dataset_metrics
+
+
+    def retrain_from_db(self) -> Dict:
+        """
+        Retrain the model on accumulated SIEM data from the database.
+        Combines NSL-KDD base training with real accumulated events.
+        The more data accumulated, the more accurate the model becomes.
+        
+        Returns:
+            Training statistics with new sample count
+        """
+        # First, ensure base NSL-KDD training
+        if not self._trained_on_dataset:
+            self.train_on_dataset()
+        
+        try:
+            from services.database import db
+            from services.model_persistence import get_last_training_sample_count
+            
+            # Check if we have enough new data to warrant retraining
+            current_count = db.get_event_count()
+            last_count = get_last_training_sample_count("isolation_forest")
+            
+            # Only retrain if we have at least 500 new events
+            if current_count - last_count < 500:
+                print(f"[IF-RETRAIN] Not enough new data ({current_count - last_count} new events). Skipping.")
+                return {"skipped": True, "reason": "insufficient_new_data", "current": current_count, "last": last_count}
+            
+            print(f"[IF-RETRAIN] Retraining on {current_count} accumulated events...")
+            
+            # Get all events from DB
+            all_events = db.get_all_events()
+            
+            if len(all_events) < 50:
+                return {"skipped": True, "reason": "too_few_events"}
+            
+            # Extract features from DB events (same schema as _extract_features)
+            db_features = self._extract_features(all_events)
+            db_features_scaled = self.scaler.transform(db_features)
+            
+            # Create labels: use severity as a proxy for anomaly
+            db_labels = []
+            for e in all_events:
+                sev = e.get('severity', 'LOW')
+                if sev in ('CRITICAL', 'HIGH'):
+                    db_labels.append(1)  # anomaly
+                else:
+                    db_labels.append(0)  # normal
+            db_labels = np.array(db_labels)
+            
+            # Retrain classifier on accumulated data
+            self.classifier.fit(db_features_scaled, db_labels)
+            
+            # Retrain IF on normal traffic from DB
+            normal_mask = db_labels == 0
+            if normal_mask.sum() > 20:
+                self.model.fit(db_features_scaled[normal_mask])
+            
+            self.is_trained = True
+            self.training_stats = {
+                'n_samples': int(current_count),
+                'n_normal': int(normal_mask.sum()),
+                'n_anomalous': int((~normal_mask).sum()),
+                'trained_at': datetime.now().isoformat(),
+                'source': 'database_retrain'
+            }
+            
+            # Save updated model
+            self._save_to_disk()
+            
+            print(f"[IF-RETRAIN] Complete. Trained on {current_count} events ({normal_mask.sum()} normal, {(~normal_mask).sum()} anomalous).")
+            return self.training_stats
+            
+        except Exception as e:
+            print(f"[IF-RETRAIN] Error: {e}")
+            return {"error": str(e)}
 
 
 def generate_sample_events(n_normal: int = 100, n_anomalous: int = 10) -> List[Dict]:

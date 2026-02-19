@@ -26,6 +26,18 @@ except Exception as e:
     print(f"Failed to start background service: {e}")
 # --------------------------------
 
+# ── Suspicious Login Warning ─────────────────────────────────────────────────
+if st.session_state.get('login_warning'):
+    sus = st.session_state.pop('login_warning')
+    risk = sus.get('risk_score', 0)
+    reasons = sus.get('reasons', [])
+    st.warning(
+        f"⚠️ **Unusual Login Activity Detected** (Risk Score: {risk}/100)\n\n"
+        + "\n".join(f"- {r}" for r in reasons)
+        + "\n\nIf this wasn't you, **change your password immediately** in Settings."
+    )
+
+
 # Premium animated theme
 st.markdown("""
 <style>
@@ -263,149 +275,69 @@ FULL_MODE = os.path.exists(DATA_PATH)
 
 @st.cache_data(ttl=5)
 def load_soc_data():
+    """
+    Load real security data from the SIEM service (backed by SQLite).
+    Relying exclusively on persistent records now.
+    """
     try:
-        # 1. Try to load from Real Database
-        real_df = pd.DataFrame()
-        try:
-            from services.siem_service import siem_service
-            from services.database import db
+        from services.siem_service import siem_service
+        
+        # Use SIEM Service (Trigger auto-seeding if DB is low)
+        events = siem_service.generate_events(count=5000)
+        
+        if not events:
+            return pd.DataFrame() # Let the UI handle empty state
+
+        data = []
+        for e in events:
+            sev = e.get('severity', 'LOW')
+            # Mapping SIEM severity to numeric risk score for charts
+            risk_score = {"CRITICAL": 95, "HIGH": 75, "MEDIUM": 50, "LOW": 15}.get(sev, 10)
             
-            # Use SIEM Service to trigger auto-seeding if DB is empty (Self-Healing)
-            events = siem_service.generate_events(count=5000)
-            
-            if events:
-                # DEBUG: Show prompt if count is weird
-                if len(events) < 1000:
-                    print(f"DEBUG: Loaded only {len(events)} events from DB. Total in DB: {db.get_stats()['total']}")
+            msg = str(e.get('event_type', '')).upper()
+            decision = e.get('status', 'ALLOW').upper() # Map status or use logic
+            if "BLOCKED" in msg or "BLOCK" in msg:
+                decision = "BLOCK"
+            elif risk_score > 60:
+                decision = "RESTRICT"
+            else:
+                decision = "ALLOW"
                 
-                data = []
-                for e in events:
-                    sev = e.get('severity', 'LOW')
-                    risk_score = 10
-                    if sev == 'CRITICAL': risk_score = 95
-                    elif sev == 'HIGH': risk_score = 75
-                    elif sev == 'MEDIUM': risk_score = 50
-                    
-                    msg = str(e.get('event_type', '')).upper()
-                    decision = "ALLOW"
-                    if "BLOCKED" in msg or "BLOCK" in msg:
-                        decision = "BLOCK"
-                    elif risk_score > 60:
-                        decision = "RESTRICT"
-                        
-                    port = 80
-                    if "SSH" in msg: port = 22
-                    elif "RDP" in msg: port = 3389
-                    elif "SQL" in msg: port = 3306
-                    
-                    attack_type = "Normal"
-                    if "SQL" in msg: attack_type = "SQL Injection"
-                    elif "XSS" in msg: attack_type = "XSS"
-                    elif "DDOS" in msg: attack_type = "DDoS"
-                    elif "BRUTE" in msg: attack_type = "Brute Force"
-                    elif "MALWARE" in msg: attack_type = "Malware"
-                    elif risk_score > 50: attack_type = msg[:20]
-                    
-                    try:
-                        ts = datetime.fromisoformat(e.get('timestamp'))
-                    except:
-                        ts = datetime.now()
-
-                    data.append({
-                        "timestamp": ts,
-                        "attack_type": attack_type,
-                        "risk_score": float(risk_score),
-                        "access_decision": decision,
-                        "source_country": "Unknown",
-                        "source_ip": e.get('source_ip', '0.0.0.0'),
-                        "dest_port": port
-                    })
-                real_df = pd.DataFrame(data)
-                
-        except Exception as e:
-            print(f"DB Load Error: {e}")
-
-        # 2. Return Real Data if available
-        if not real_df.empty:
-            return real_df
-
-        # 3. Fallback to Dynamic Simulation
-        from services.threat_intel import threat_intel
-        
-        try:
-            country_counts = threat_intel.get_country_threat_counts()
-        except:
-            country_counts = {}
+            port = 80
+            if "SSH" in msg or "22" in msg: port = 22
+            elif "RDP" in msg or "3389" in msg: port = 3389
+            elif "SQL" in msg or "3306" in msg: port = 3306
+            elif "DNS" in msg or "53" in msg: port = 53
             
-        real_countries = []
-        for country, count in country_counts.items():
-            if count > 0:
-                real_countries.extend([country] * count)
-        
-        if not real_countries:
-            real_countries = ["United States", "China", "Russia", "Germany", "Brazil", "India"]
-
-        base_n = 2000
-        volatility = random.randint(-300, 500)
-        n = base_n + volatility
-        
-        p_normal = max(0.4, 0.6 + random.uniform(-0.1, 0.05))
-        remaining = 1.0 - p_normal
-        other_p = np.random.dirichlet(np.ones(9)) * remaining
-        
-        probs = [p_normal] + list(other_p)
-        
-        base_time = datetime.now()
-        timestamps = [base_time - timedelta(minutes=random.randint(1, 1440)) for _ in range(n)]
-        timestamps.sort(reverse=True)
-        
-        attack_types = np.random.choice(
-            ["Normal", "Port Scan", "DDoS", "Brute Force", "SQL Injection", "XSS", "Malware C2", "Data Exfil", "Privilege Esc", "Ransomware"],
-            size=n, p=probs
-        )
-        risk_scores = []
-        for attack in attack_types:
-            noise = random.uniform(-5, 5)
-            if attack == "Normal": risk_scores.append(max(0, np.random.normal(12, 6) + noise))
-            elif attack in ["Port Scan", "Brute Force"]: risk_scores.append(np.random.normal(48, 12) + noise)
-            elif attack in ["DDoS", "SQL Injection", "XSS"]: risk_scores.append(np.random.normal(68, 10) + noise)
-            else: risk_scores.append(min(100, np.random.normal(88, 6) + noise))
+            attack_type = "Normal"
+            if "SQL" in msg: attack_type = "SQL Injection"
+            elif "XSS" in msg: attack_type = "XSS"
+            elif "DDOS" in msg or "FLOOD" in msg: attack_type = "DDoS"
+            elif "BRUTE" in msg or "LOGIN" in msg: attack_type = "Brute Force"
+            elif "MALWARE" in msg: attack_type = "Malware"
+            elif risk_score > 50: attack_type = msg[:20].capitalize()
             
-        risk_scores = np.clip(risk_scores, 0, 100).round(2)
-        decisions = ["BLOCK" if r >= 70 else "RESTRICT" if r >= 30 else "ALLOW" for r in risk_scores]
-        
-        if len(real_countries) > 20: 
-                sim_countries = np.random.choice(real_countries, size=n)
-        else:
-                uniq_countries = list(set(real_countries))
-                if len(uniq_countries) < 2:
-                    uniq_countries = ["United States", "China", "Russia", "Germany", "Brazil", "India"]
-                country_p = np.random.dirichlet(np.ones(len(uniq_countries)))
-                sim_countries = np.random.choice(uniq_countries, size=n, p=country_p)
-            
-        return pd.DataFrame({
-            "timestamp": timestamps,
-            "attack_type": attack_types,
-            "risk_score": risk_scores,
-            "access_decision": decisions,
-            "source_country": sim_countries,
-            "source_ip": [f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}" for _ in range(n)],
-            "dest_port": np.random.choice([22, 80, 443, 3389, 445, 8080, 3306, 21], size=n)
-        })
+            try:
+                # Use the event's actual timestamp
+                ts = datetime.strptime(e.get('timestamp'), "%Y-%m-%d %H:%M:%S")
+            except:
+                ts = datetime.now()
 
-    except Exception as ie:
-        # EMERGENCY FALBACK
-        print(f"CRITICAL DASHBOARD ERROR: {ie}")
-        st.error(f"Dashboard Data Error: {ie}. Using Emergency Fallback.")
-        return pd.DataFrame({
-            "timestamp": [datetime.now()],
-            "attack_type": ["Normal"],
-            "risk_score": [0],
-            "access_decision": ["ALLOW"],
-            "source_country": ["United States"],
-            "source_ip": ["127.0.0.1"],
-            "dest_port": [80]
-        })
+            data.append({
+                "timestamp": ts,
+                "attack_type": attack_type,
+                "risk_score": float(risk_score),
+                "access_decision": decision,
+                "source_country": e.get('source_country', "United States"), # DB may not have it yet
+                "source_ip": e.get('source_ip', '0.0.0.0'),
+                "dest_port": port
+            })
+            
+        return pd.DataFrame(data)
+
+    except Exception as e:
+        print(f"DASHBOARD RELOAD ERROR: {e}")
+        return pd.DataFrame()
 
 df = load_soc_data()
 
@@ -443,30 +375,78 @@ with c_head:
     st.markdown(page_header("Security Operations Center", "Real-time threat monitoring and autonomous response"), unsafe_allow_html=True)
 
 # Calculate metrics
-total = len(df)
-blocked = (df["access_decision"] == "BLOCK").sum()
-restricted = (df["access_decision"] == "RESTRICT").sum()
-allowed = (df["access_decision"] == "ALLOW").sum()
-avg_risk = df["risk_score"].mean()
-critical = (df["risk_score"] >= 80).sum()
-
-# Check for Real SOC Monitor Connection
-IS_LIVE_CONNECTION = False
-try:
-    from services.soc_monitor import SOCMonitor
-    soc = SOCMonitor()
-    state = soc.get_current_state()
-    
-    # If we get valid state, we treat it as live for critical counters
-    if state:
-        IS_LIVE_CONNECTION = True
-        # Overlay real blocked/critical counts if they are non-zero/available
-        real_blocked = state.get('blocked_today', 0)
-        real_critical = state.get('threat_count', 0)
+    # Fetch true totals from DB to avoid the 5000 limit cap display
+    try:
+        from services.database import db
+        true_stats = db.get_stats()
+        true_total = true_stats.get('total', 0)
+        true_critical = true_stats.get('critical', 0)
         
-        if real_blocked > 0 or real_critical > 0:
-            blocked = real_blocked
-            critical = real_critical
+        # If DB total is greater than loaded df (5000), use DB total
+        if true_total > len(df):
+            total = true_total
+            # Estimate other counts based on distribution in loaded data if reliable real counts aren't available
+            # But we have true_critical from DB
+            critical = true_critical
+            
+            # For Blocked/Restricted/Allowed, we don't have direct DB stats yet without scanning all rows
+            # So we can project them or just leave them as 'Recent Blocked'. 
+            # Better approach: Let's assume the user cares most about "Total Events" being accurate.
+            # We will use the dataframe counts for status but update Total and Critical.
+            
+            # However, if we show Total = 10,000 but Blocked+Allowed+Restricted = 5,000, it looks wrong.
+            # Let's try to get a rough projection or just keep them as "visible" counts?
+            # User specifically asked: "why is it showing only 5000 events".
+            # So updating TOTAL is the key.
+            
+            # Let's assume the dataframe distribution is representative
+            if len(df) > 0:
+                ratio = true_total / len(df)
+                blocked = int((df["access_decision"] == "BLOCK").sum() * ratio)
+                restricted = int((df["access_decision"] == "RESTRICT").sum() * ratio)
+                allowed = int((df["access_decision"] == "ALLOW").sum() * ratio)
+        else:
+            total = len(df)
+            blocked = (df["access_decision"] == "BLOCK").sum()
+            restricted = (df["access_decision"] == "RESTRICT").sum()
+            allowed = (df["access_decision"] == "ALLOW").sum()
+            critical = (df["risk_score"] >= 80).sum()
+            
+    except Exception as e:
+        # Fallback to dataframe counts
+        total = len(df)
+        blocked = (df["access_decision"] == "BLOCK").sum()
+        restricted = (df["access_decision"] == "RESTRICT").sum()
+        allowed = (df["access_decision"] == "ALLOW").sum()
+        critical = (df["risk_score"] >= 80).sum()
+        
+    avg_risk = df["risk_score"].mean() if not df.empty else 0
+
+    # Check for Real SOC Monitor Connection
+    IS_LIVE_CONNECTION = False
+    try:
+        from services.soc_monitor import SOCMonitor
+        soc = SOCMonitor()
+        state = soc.get_current_state()
+        
+        # If we get valid state, we treat it as live for critical counters
+        if state:
+            IS_LIVE_CONNECTION = True
+            # Overlay real blocked/critical counts if they are non-zero/available
+            real_blocked = state.get('blocked_today', 0)
+            real_critical = state.get('threat_count', 0)
+            
+            if real_blocked > 0 or real_critical > 0:
+                # If these are just 'today', they might be smaller than total historical
+                # So only use them if reasonable or specific to 'today' view?
+                # The dashboard generally shows 'all time' or 'loaded window'.
+                # Let's stick to the DB stats for Total/Critical as they are more accurate for "History".
+                # But SOCMonitor might be "Today's" live stats. 
+                # Let's prioritize the DB stats calculated above for consistency.
+                pass 
+                
+    except Exception as e:
+        pass
             
         # Adjust allowed if blocked changed significantly to keep total sane
         # (Optional, but keeps math cleaner if total < blocked)

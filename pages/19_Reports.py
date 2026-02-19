@@ -49,7 +49,7 @@ with c4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-tab1, tab2 = st.tabs(["Generate Report", "Report History"])
+tab1, tab2, tab3 = st.tabs(["Generate Report", "Report History", "Weekly Reports"])
 
 with tab1:
     st.markdown(section_title("Report Configuration"), unsafe_allow_html=True)
@@ -168,7 +168,98 @@ with tab2:
             </div>
         """, unsafe_allow_html=True)
 
+with tab3:
+    st.markdown(section_title("Automated Weekly Reports"), unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="background: rgba(0,243,255,0.05); border-left: 3px solid #00f3ff; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 1rem;">
+        <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">
+            Weekly reports are <strong style="color: #0aff0a;">auto-generated</strong> every 7 days by the background service.
+            They contain a comprehensive summary of all SIEM events, threat detections, and ML anomalies for the period.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Manual generate button
+    if st.button("Generate Weekly Report Now", type="primary"):
+        try:
+            from services.weekly_reporter import generate_weekly_report
+            with st.spinner("Generating weekly report..."):
+                result = generate_weekly_report()
+            if result:
+                st.success(f"Weekly report **{result['id']}** generated successfully!")
+                st.rerun()
+            else:
+                st.error("Report generation failed.")
+        except Exception as e:
+            st.error(f"Error: {e}")
+    
+    # Show existing weekly reports
+    try:
+        from services.weekly_reporter import get_weekly_reports, get_report_file
+        weekly = get_weekly_reports()
+        
+        if not weekly:
+            st.info("No weekly reports yet. Click 'Generate Weekly Report Now' or wait for the automatic weekly generation.")
+        
+        for i, rpt in enumerate(weekly):
+            rid = rpt.get('id', 'Unknown')
+            gen_at = rpt.get('generated_at', 'N/A')[:16].replace('T', ' ')
+            period_s = rpt.get('period_start', '')[:10]
+            period_e = rpt.get('period_end', '')[:10]
+            stats = rpt.get('stats', {})
+            
+            st.markdown(f"""
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,243,255,0.1); border-radius: 10px; padding: 1rem; margin: 0.5rem 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="color: #00f3ff; font-family: 'Orbitron', monospace; font-size: 0.85rem;">{rid}</span>
+                        <span style="color: #666; margin-left: 1rem; font-size: 0.8rem;">{gen_at}</span>
+                    </div>
+                    <span style="color: #8B95A5; font-size: 0.8rem;">{period_s} → {period_e}</span>
+                </div>
+                <div style="display: flex; gap: 2rem; margin-top: 0.5rem; font-size: 0.8rem;">
+                    <span style="color: #0aff0a;">Events: {stats.get('total_events', 0):,}</span>
+                    <span style="color: #ff003c;">Critical: {stats.get('critical_alerts', 0):,}</span>
+                    <span style="color: #bc13fe;">Threats: {stats.get('threats_detected', 0):,}</span>
+                    <span style="color: #ff6b00;">Anomalies: {stats.get('anomalies', 0):,}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Download buttons
+            dl_col1, dl_col2 = st.columns(2)
+            with dl_col1:
+                txt_file = rpt.get('txt_file')
+                if txt_file:
+                    txt_data = get_report_file(txt_file)
+                    if txt_data:
+                        st.download_button(
+                            f"Download Text",
+                            data=txt_data,
+                            file_name=txt_file,
+                            mime="text/plain",
+                            key=f"dl_txt_{i}",
+                            use_container_width=True
+                        )
+            with dl_col2:
+                pdf_file = rpt.get('pdf_file')
+                if pdf_file:
+                    pdf_data = get_report_file(pdf_file)
+                    if pdf_data:
+                        st.download_button(
+                            f"Download PDF",
+                            data=pdf_data,
+                            file_name=pdf_file,
+                            mime="application/pdf",
+                            key=f"dl_pdf_{i}",
+                            use_container_width=True
+                        )
+    except ImportError:
+        st.warning("Weekly reporter module not available.")
+
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Reports</p></div>', unsafe_allow_html=True)
 from ui.chat_interface import inject_floating_cortex_link
 inject_floating_cortex_link()
+

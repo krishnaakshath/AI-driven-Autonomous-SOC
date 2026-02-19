@@ -1,23 +1,32 @@
-.soc_config.json
-.formatted_soc_config.json
+
+# Data Directories
+data/models/
+data/user_data/
+data/weekly_reports/
+data/sessions.json
+data/parsed_logs/
+
+# Python Artifacts
 __pycache__/
 *.pyc
-.DS_Store
-.env
-soc-env/
-.venv/
-.threat_intel_cache.json
-isolation_forest_model.pkl
-scaler.pkl
-*.pcapng.gz
-live_capture.csv
-soc_monitor.log
-**/__pycache__/
+*.pkl
 
 # Database
 soc_data.db
 *.db
 
-# Helper Scripts
+# Environment & Config
+.soc_config.json
+.formatted_soc_config.json
+.env
+soc-env/
+.venv/
+.DS_Store
+.threat_intel_cache.json
+soc_monitor.log
+
+# Temporary/Test Files
 test_day1.py
 manual_attack_tool.py
+*.pcapng.gz
+live_capture.csv

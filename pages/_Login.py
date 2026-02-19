@@ -199,15 +199,25 @@ if st.session_state.login_step == 'credentials':
                     login_user(email, remember=remember_me)
                     st.session_state.session_start = __import__('time').time()
                     
+                    # Track login footprint + check for suspicious activity
                     try:
-                        from services.user_data import log_activity
-                        log_activity(email, "login", {"method": "password"})
+                        from services.user_data import log_login_attempt, check_suspicious_login
+                        log_login_attempt(email, success=True, ip_address="127.0.0.1")
+                        sus = check_suspicious_login(email, current_ip="127.0.0.1")
+                        if sus.get('is_suspicious'):
+                            st.session_state['login_warning'] = sus
                     except:
                         pass
                     
                     st.success(" ACCESS GRANTED")
                     st.switch_page("pages/01_Dashboard.py")
             else:
+                # Track failed login attempt
+                try:
+                    from services.user_data import log_login_attempt
+                    log_login_attempt(email, success=False, ip_address="127.0.0.1")
+                except:
+                    pass
                 st.error(" " + message)
         else:
             st.warning(" Enter credentials")
@@ -308,14 +318,19 @@ elif st.session_state.login_step == '2fa_verify':
                 if success:
                     # Verified 2FA login
                     remember = st.session_state.get('remember_me', False)
-                    login_user(st.session_state.pending_email, remember=remember)
+                    pending = st.session_state.pending_email
+                    login_user(pending, remember=remember)
                     
                     st.session_state.session_start = __import__('time').time()
                     st.session_state.login_step = 'credentials'
                     
+                    # Track login footprint + check for suspicious activity
                     try:
-                        from services.user_data import log_activity
-                        log_activity(st.session_state.pending_email, "login", {"method": "2fa"})
+                        from services.user_data import log_login_attempt, check_suspicious_login
+                        log_login_attempt(pending, success=True, ip_address="127.0.0.1")
+                        sus = check_suspicious_login(pending, current_ip="127.0.0.1")
+                        if sus.get('is_suspicious'):
+                            st.session_state['login_warning'] = sus
                     except:
                         pass
                     

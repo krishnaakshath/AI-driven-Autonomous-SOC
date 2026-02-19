@@ -286,3 +286,152 @@ def get_all_user_settings(user_email: str) -> Dict:
     user_dir = _get_user_dir(user_email)
     settings_file = os.path.join(user_dir, 'settings.json')
     return _load_json(settings_file)
+
+
+# ==================== LOGIN FOOTPRINT TRACKING ====================
+
+def log_login_attempt(user_email: str, success: bool, ip_address: str = "127.0.0.1",
+                      user_agent: str = "unknown") -> Dict:
+    """
+    Record a login attempt in the user's digital footprint.
+    
+    Args:
+        user_email: User's email
+        success: Whether login succeeded
+        ip_address: Client IP address
+        user_agent: Browser/client user agent string
+    
+    Returns:
+        Login record dict
+    """
+    user_dir = _get_user_dir(user_email)
+    login_file = os.path.join(user_dir, 'login_history.json')
+    
+    data = _load_json(login_file)
+    if 'logins' not in data:
+        data['logins'] = []
+    
+    record = {
+        'timestamp': datetime.now().isoformat(),
+        'success': success,
+        'ip_address': ip_address,
+        'user_agent': user_agent,
+        'hour': datetime.now().hour,
+    }
+    
+    data['logins'].insert(0, record)
+    
+    # Keep last 1000 login records (never delete — they persist indefinitely)
+    data['logins'] = data['logins'][:1000]
+    
+    _save_json(login_file, data)
+    
+    # Also log to general activity
+    log_activity(user_email, "login_attempt", {
+        "success": success,
+        "ip": ip_address,
+    })
+    
+    return record
+
+
+def get_login_history(user_email: str, limit: int = 200) -> List[Dict]:
+    """Get user's complete login history (digital footprint)."""
+    user_dir = _get_user_dir(user_email)
+    login_file = os.path.join(user_dir, 'login_history.json')
+    data = _load_json(login_file)
+    return data.get('logins', [])[:limit]
+
+
+def check_suspicious_login(user_email: str, current_ip: str = "127.0.0.1") -> Dict:
+    """
+    Analyze current login against historical patterns to detect suspicious behavior.
+    
+    Checks for:
+    - New/unseen IP address
+    - Login at unusual hour (e.g., 1-5 AM if user normally logs in 9-18)
+    - Rapid failed login attempts (brute-force indicator)
+    - Multiple IPs in short time window
+    
+    Returns:
+        Dict with 'is_suspicious', 'risk_score' (0-100), 'reasons' list, 'details'
+    """
+    history = get_login_history(user_email, limit=500)
+    
+    if not history:
+        # First login — not suspicious, just new
+        return {
+            'is_suspicious': False,
+            'risk_score': 0,
+            'reasons': [],
+            'details': {'note': 'First login recorded'}
+        }
+    
+    risk_score = 0
+    reasons = []
+    details = {}
+    
+    # 1. Check for new/unseen IP
+    known_ips = set(h.get('ip_address', '') for h in history if h.get('success'))
+    if current_ip not in known_ips and current_ip != "127.0.0.1":
+        risk_score += 35
+        reasons.append(f"New IP address: {current_ip}")
+        details['new_ip'] = True
+        details['known_ips_count'] = len(known_ips)
+    
+    # 2. Check for unusual login hour
+    current_hour = datetime.now().hour
+    successful_hours = [h.get('hour', 12) for h in history if h.get('success')]
+    if successful_hours:
+        avg_hour = sum(successful_hours) / len(successful_hours)
+        # If login is more than 6 hours off from average pattern
+        hour_diff = abs(current_hour - avg_hour)
+        if hour_diff > 12:
+            hour_diff = 24 - hour_diff
+        if hour_diff > 6:
+            risk_score += 20
+            reasons.append(f"Unusual login hour ({current_hour}:00, typically ~{int(avg_hour)}:00)")
+            details['unusual_time'] = True
+    
+    # 3. Check for rapid failed attempts (last 30 minutes)
+    recent_fails = 0
+    now = datetime.now()
+    for h in history[:20]:
+        try:
+            ts = datetime.fromisoformat(h['timestamp'])
+            if (now - ts).total_seconds() < 1800 and not h.get('success'):
+                recent_fails += 1
+        except:
+            pass
+    
+    if recent_fails >= 3:
+        risk_score += 30
+        reasons.append(f"{recent_fails} failed attempts in last 30 minutes")
+        details['rapid_fails'] = recent_fails
+    elif recent_fails >= 1:
+        risk_score += 10
+        details['recent_fails'] = recent_fails
+    
+    # 4. Check for multiple IPs in last hour
+    recent_ips = set()
+    for h in history[:50]:
+        try:
+            ts = datetime.fromisoformat(h['timestamp'])
+            if (now - ts).total_seconds() < 3600:
+                recent_ips.add(h.get('ip_address', ''))
+        except:
+            pass
+    
+    if len(recent_ips) > 3:
+        risk_score += 15
+        reasons.append(f"Login from {len(recent_ips)} different IPs in last hour")
+        details['multiple_ips'] = list(recent_ips)
+    
+    risk_score = min(risk_score, 100)
+    
+    return {
+        'is_suspicious': risk_score >= 30,
+        'risk_score': risk_score,
+        'reasons': reasons,
+        'details': details,
+    }

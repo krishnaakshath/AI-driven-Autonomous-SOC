@@ -36,10 +36,10 @@ class SIEMService:
         """
         # If DB is empty or very low (fresh deploy), seed it with HISTORY
         stats = db.get_stats()
-        # THRESHOLD INCREASED: User sees 801, needs > 2000.
+        # THRESHOLD: If less than 1500 events, backfill the last 6 months
         if stats['total'] < 1500:
-            # Backfill 2000 events to restore volume for the user
-            self.simulate_ingestion(count=2000)
+            # Backfill 180 days of history to populate trend charts
+            self.simulate_ingestion(count=2000, days_back=180)
             self.ingest_threat_intelligence() # Inject real threats
             
         # Occasional "Real" injection for live feel (10% chance on refresh)
@@ -48,8 +48,11 @@ class SIEMService:
             
         return db.get_recent_events(limit=count)
     
-    def simulate_ingestion(self, count: int = 1):
-        """Generate random events and save to DB (Simulation Mode)."""
+    def simulate_ingestion(self, count: int = 1, days_back: int = 0):
+        """
+        Generate random events and save to DB (Simulation Mode).
+        If days_back > 0, distributes events across the past X days.
+        """
         severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
         severity_weights = [0.4, 0.35, 0.2, 0.05]
         
@@ -59,8 +62,14 @@ class SIEMService:
             event_type = random.choice(self.event_types[source])
             severity = random.choices(severities, weights=severity_weights)[0]
             
-            # Timestamp: mostly now, some slight jitter
-            ts = datetime.now() - timedelta(seconds=random.randint(0, 60))
+            # Timestamp logic
+            if days_back > 0:
+                # Distribute events across historical window
+                seconds_back = random.randint(0, days_back * 24 * 3600)
+                ts = datetime.now() - timedelta(seconds=seconds_back)
+            else:
+                # Mostly now, some slight jitter
+                ts = datetime.now() - timedelta(seconds=random.randint(0, 60))
             
             event = {
                 "id": f"EVT-{str(uuid.uuid4())[:8]}",

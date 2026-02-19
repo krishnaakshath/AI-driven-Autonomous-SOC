@@ -11,8 +11,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
     st.set_page_config(page_title="User Behavior Analytics | SOC", page_icon="", layout="wide")
-except st.errors.StreamlitAPIException:
+except st.errors.StreamlitAPIError:
     pass  # Already set by dashboard.py
+
+# ── Admin-only gate ──────────────────────────────────────────────────────────
+from services.auth_service import is_authenticated, is_admin
+if not is_authenticated():
+    st.error("**Authentication Required** — Please log in.")
+    if st.button("Go to Login"):
+        st.switch_page("pages/_Login.py")
+    st.stop()
+if not is_admin():
+    st.error("**Admin Access Only** — UBA is restricted to administrators.")
+    st.info(f"Logged in as: {st.session_state.get('user_email', 'Unknown')}")
+    st.stop()
+
 
 # Auto-refresh
 import time

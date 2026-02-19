@@ -164,8 +164,16 @@ class DatabaseService:
             conn.close()
             return {"total": total, "critical": critical, "high": high}
 
-    def clear_all(self):
-        """Clear all data (for testing/reset)."""
+    def clear_all(self, confirm: bool = False):
+        """
+        Clear all data. Requires confirm=True to prevent accidental data loss.
+        All accumulated monitoring data is valuable for ML training — protect it!
+        """
+        if not confirm:
+            print("[DATABASE] WARNING: clear_all() called without confirm=True. Data NOT deleted.")
+            print("[DATABASE] Pass confirm=True if you really want to wipe all recorded data.")
+            return
+        
         with _db_lock:
             conn = self._get_conn()
             c = conn.cursor()
@@ -173,9 +181,10 @@ class DatabaseService:
             c.execute("DELETE FROM alerts")
             conn.commit()
             conn.close()
+            print("[DATABASE] All data cleared.")
 
     def get_monthly_counts(self):
-        """Get event counts grouped by month for trend analysis."""
+        """Get event counts grouped by month for trend analysis (Last 12 months)."""
         with _db_lock:
             conn = self._get_conn()
             c = conn.cursor()
@@ -183,9 +192,9 @@ class DatabaseService:
             c.execute("""
                 SELECT strftime('%Y-%m', timestamp) as month, COUNT(*) as count 
                 FROM events 
+                WHERE timestamp >= date('now', '-12 months')
                 GROUP BY month 
-                ORDER BY month ASC 
-                LIMIT 12
+                ORDER BY month ASC
             """)
             rows = c.fetchall()
             conn.close()
@@ -232,6 +241,41 @@ class DatabaseService:
                 "false_positives": false_positives,
                 "total_alerts": total_alerts
             }
+
+    def get_all_events(self) -> list:
+        """
+        Retrieve ALL events from the database for ML training.
+        Returns list of dicts with full event data.
+        """
+        with _db_lock:
+            conn = self._get_conn()
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute("SELECT * FROM events ORDER BY timestamp ASC")
+            rows = c.fetchall()
+            conn.close()
+            
+            results = []
+            for row in rows:
+                d = dict(row)
+                try:
+                    if d.get('raw_log'):
+                        full_data = json.loads(d['raw_log'])
+                        d.update(full_data)
+                except:
+                    pass
+                results.append(d)
+            return results
+
+    def get_event_count(self) -> int:
+        """Fast event count for quick size checks."""
+        with _db_lock:
+            conn = self._get_conn()
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM events")
+            count = c.fetchone()[0]
+            conn.close()
+            return count
 
 # Singleton instance
 db = DatabaseService()
