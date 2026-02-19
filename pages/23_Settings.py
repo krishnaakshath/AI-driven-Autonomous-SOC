@@ -62,9 +62,9 @@ config = load_config()
 
 # Logout function
 def logout():
-    for key in ['authenticated', 'user_email', 'user_name', 'login_step', 'pending_email', 'otp_store', 'cortex_messages']:
-        if key in st.session_state:
-            del st.session_state[key]
+    # Use centralized logout to clean up persistence
+    from services.auth_service import logout as auth_logout
+    auth_logout()
     st.rerun()
 
 # Create tabs based on admin status
