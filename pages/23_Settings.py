@@ -65,7 +65,7 @@ def logout():
     for key in ['authenticated', 'user_email', 'user_name', 'login_step', 'pending_email', 'otp_store', 'cortex_messages']:
         if key in st.session_state:
             del st.session_state[key]
-    st.switch_page("pages/_Login.py")
+    st.rerun()
 
 # Create tabs based on admin status
 if IS_ADMIN:
