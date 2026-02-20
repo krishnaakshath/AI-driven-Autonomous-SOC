@@ -555,21 +555,19 @@ with chart1:
                 df_timeline = df_timeline.rename(columns={'index': 'date'})
             
             fig = go.Figure()
-            fig.add_trace(go.Bar(
+            fig.add_trace(go.Scatter(
                 x=df_timeline["date"], y=df_timeline["count"], 
-                marker=dict(
-                    color=df_timeline["count"],
-                    colorscale=[[0, "rgba(0, 212, 255, 0.2)"], [1, "rgba(0, 212, 255, 1)"]],
-                    line=dict(width=0)
-                )
+                mode="lines+markers", fill="tozeroy",
+                line=dict(color="#00D4FF", width=3, shape='spline'),
+                marker=dict(size=6, color="#00D4FF", line=dict(width=1, color="#FFFFFF")),
+                fillcolor="rgba(0, 212, 255, 0.15)"
             ))
             fig.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                 font_color="#FAFAFA",
-                xaxis=dict(showgrid=False, showline=False, type='date'),
+                xaxis=dict(showgrid=False, showline=False),
                 yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)", showline=False),
-                margin=dict(l=20, r=20, t=20, b=20), height=300,
-                bargap=0.2
+                margin=dict(l=20, r=20, t=20, b=20), height=300
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
