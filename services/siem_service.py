@@ -36,10 +36,10 @@ class SIEMService:
         """
         # If DB is empty or very low (fresh deploy), seed it with HISTORY
         stats = db.get_stats()
-        # THRESHOLD: If less than 1500 events, backfill the last 6 months
-        if stats['total'] < 1500:
-            # Backfill 180 days of history to populate trend charts
-            self.simulate_ingestion(count=2000, days_back=180)
+        # THRESHOLD: If DB is low (like on a fresh Streamlit Cloud deploy), backfill heavily
+        if stats['total'] < 8000:
+            # Backfill 180 days of history to completely fill the trend charts
+            self.simulate_ingestion(count=9000, days_back=180)
             self.ingest_threat_intelligence() # Inject real threats
             
         # Occasional "Real" injection for live feel (10% chance on refresh)
