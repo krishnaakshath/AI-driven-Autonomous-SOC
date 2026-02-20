@@ -536,31 +536,46 @@ st.markdown("<br>", unsafe_allow_html=True)
 chart1, chart2 = st.columns(2)
 
 with chart1:
-    st.markdown(section_title("Threat Activity Timeline"), unsafe_allow_html=True)
-    if not df.empty and hasattr(df["timestamp"].iloc[0], "hour"):
-        try:
-            df["hour"] = df["timestamp"].apply(lambda x: x.replace(minute=0, second=0, microsecond=0))
-            hourly = df.groupby("hour").size().reset_index(name="count")
+    st.markdown(section_title("Threat Activity Timeline (Last 6 Months)"), unsafe_allow_html=True)
+    try:
+        from services.database import db
+        daily_counts = db.get_daily_counts(days=180)
+        
+        if daily_counts:
+            # Create a dataframe for easy handling
+            df_timeline = pd.DataFrame(daily_counts)
+            df_timeline['date'] = pd.to_datetime(df_timeline['date'])
+            
+            # Re-index to ensure we have a continuous line even for zero-event days
+            min_date = df_timeline['date'].min()
+            max_date = df_timeline['date'].max()
+            if str(min_date) != 'NaT':
+                all_dates = pd.date_range(start=min_date, end=max_date, freq='D')
+                df_timeline = df_timeline.set_index('date').reindex(all_dates, fill_value=0).reset_index()
+                df_timeline = df_timeline.rename(columns={'index': 'date'})
+            
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=hourly["hour"], y=hourly["count"], 
-                mode="lines+markers", fill="tozeroy",
-                line=dict(color="#00D4FF", width=3, shape='spline'),
-                marker=dict(size=8, color="#00D4FF", line=dict(width=2, color="#FFFFFF")),
-                fillcolor="rgba(0, 212, 255, 0.15)"
+            fig.add_trace(go.Bar(
+                x=df_timeline["date"], y=df_timeline["count"], 
+                marker=dict(
+                    color=df_timeline["count"],
+                    colorscale=[[0, "rgba(0, 212, 255, 0.2)"], [1, "rgba(0, 212, 255, 1)"]],
+                    line=dict(width=0)
+                )
             ))
             fig.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                 font_color="#FAFAFA",
-                xaxis=dict(showgrid=False, showline=False),
+                xaxis=dict(showgrid=False, showline=False, type='date'),
                 yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)", showline=False),
-                margin=dict(l=20, r=20, t=20, b=20), height=300
+                margin=dict(l=20, r=20, t=20, b=20), height=300,
+                bargap=0.2
             )
             st.plotly_chart(fig, use_container_width=True)
-        except Exception as e:
-            st.error(f"Chart Error: {e}")
-    else:
-        st.info("Timeline data loading...")
+        else:
+            st.info("No historical timeline data available.")
+    except Exception as e:
+        st.error(f"Chart Error: {e}")
 
 with chart2:
     st.markdown(section_title("Decision Distribution"), unsafe_allow_html=True)
