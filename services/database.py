@@ -200,6 +200,22 @@ class DatabaseService:
             conn.close()
             return [{"month": row[0], "count": row[1]} for row in rows]
 
+    def get_daily_counts(self, days=30):
+        """Get event counts grouped by day for the timeline graph."""
+        with _db_lock:
+            conn = self._get_conn()
+            c = conn.cursor()
+            c.execute(f"""
+                SELECT date(timestamp) as day, COUNT(*) as count 
+                FROM events 
+                WHERE timestamp >= date('now', '-{int(days)} days')
+                GROUP BY day 
+                ORDER BY day ASC
+            """)
+            rows = c.fetchall()
+            conn.close()
+            return [{"date": row[0], "count": row[1]} for row in rows]
+
     def get_threat_categories(self):
         """Get counts of high-severity event types for category chart."""
         with _db_lock:
