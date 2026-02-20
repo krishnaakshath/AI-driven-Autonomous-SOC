@@ -1,8 +1,16 @@
 import streamlit as st
 import os
 import sys
+import importlib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Force reload database module to prevent Streamlit caching old versions
+try:
+    import services.database
+    importlib.reload(services.database)
+except Exception:
+    pass
 
 st.set_page_config(page_title="SOC Platform", page_icon="S", layout="wide")
 
@@ -15,6 +23,10 @@ def start_active_services():
     try:
         from services.log_ingestor import log_ingestor
         from services.background_monitor import background_monitor
+        from services.siem_service import get_siem_events
+        
+        # Ensure DB is seeded with historical data immediately on startup
+        get_siem_events(count=1)
         
         # Start Log Ingestor (Reads logs -> DB)
         log_ingestor.start_background_thread()
