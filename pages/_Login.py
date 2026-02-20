@@ -26,11 +26,11 @@ from services.auth_service import auth_service, is_authenticated, check_persiste
 
 # Auto-login check (persistent session)
 if check_persistent_session():
-    st.switch_page("pages/01_Dashboard.py")
+    st.rerun()
 
 # Check if already logged in
 if is_authenticated():
-    st.switch_page("pages/01_Dashboard.py")
+    st.rerun()
 
 # Apply cyberpunk theme
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
@@ -210,7 +210,7 @@ if st.session_state.login_step == 'credentials':
                         pass
                     
                     st.success(" ACCESS GRANTED")
-                    st.switch_page("pages/01_Dashboard.py")
+                    st.rerun()
             else:
                 # Track failed login attempt
                 try:
@@ -336,7 +336,7 @@ elif st.session_state.login_step == '2fa_verify':
                     
                     st.session_state.pending_email = None
                     st.success(" ACCESS GRANTED")
-                    st.switch_page("pages/01_Dashboard.py")
+                    st.rerun()
                 else:
                     st.error(" " + message)
             else:
