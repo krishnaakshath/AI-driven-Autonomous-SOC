@@ -555,19 +555,40 @@ with chart1:
                 df_timeline = df_timeline.rename(columns={'index': 'date'})
             
             fig = go.Figure()
+            
+            # Neon Glow Effect Layer
+            fig.add_trace(go.Scatter(
+                x=df_timeline["date"], y=df_timeline["count"], 
+                mode="lines",
+                line=dict(color="rgba(0, 212, 255, 0.3)", width=8, shape='spline'),
+                hoverinfo='skip',
+                showlegend=False
+            ))
+            
+            # Main Line Layer with Elaborate Checkpoints
             fig.add_trace(go.Scatter(
                 x=df_timeline["date"], y=df_timeline["count"], 
                 mode="lines+markers", fill="tozeroy",
-                line=dict(color="#00D4FF", width=3, shape='spline'),
-                marker=dict(size=6, color="#00D4FF", line=dict(width=1, color="#FFFFFF")),
-                fillcolor="rgba(0, 212, 255, 0.15)"
+                name="Threat Events",
+                line=dict(color="#00D4FF", width=4, shape='spline'),
+                marker=dict(
+                    size=10, 
+                    color="#000000", 
+                    line=dict(width=2, color="#00D4FF"),
+                    symbol="circle"
+                ),
+                fillcolor="rgba(0, 212, 255, 0.2)",
+                hovertemplate="<b>Date</b>: %{x}<br><b>Total Events</b>: %{y:,}<extra></extra>",
+                showlegend=False
             ))
+            
             fig.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                 font_color="#FAFAFA",
-                xaxis=dict(showgrid=False, showline=False),
-                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)", showline=False),
-                margin=dict(l=20, r=20, t=20, b=20), height=300
+                xaxis=dict(showgrid=False, showline=True, linecolor="rgba(255,255,255,0.2)"),
+                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.1)", showline=False),
+                margin=dict(l=20, r=20, t=20, b=20), height=380,
+                hovermode="x unified"
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
