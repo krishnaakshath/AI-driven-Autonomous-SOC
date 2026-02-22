@@ -137,4 +137,20 @@ else:
         ],
     }, position="sidebar")
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# SIDEBAR LOGOUT BUTTON
+# ═══════════════════════════════════════════════════════════════════════════════
+if logged_in:
+    with st.sidebar:
+        st.markdown("---")
+        if st.button("🔒 Logout", use_container_width=True):
+            try:
+                from services.auth_service import logout
+                logout()
+            except Exception:
+                # Manual fallback: clear session state
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+            st.rerun()
+
 pg.run()

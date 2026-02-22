@@ -57,8 +57,8 @@ st.markdown("""
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
         background: 
-            radial-gradient(ellipse at 20% 80%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+            radial-gradient(ellipse at 20% 80%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
         pointer-events: none;
         animation: bgPulse 15s ease-in-out infinite;
     }
@@ -89,9 +89,9 @@ st.markdown("""
     }
     
     .premium-header h1 {
-        font-size: 2.8rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #FFFFFF 0%, #00D4FF 50%, #8B5CF6 100%);
+        font-size: 2.4rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #FFFFFF 0%, #E0F7FF 50%, #B0C4DE 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
@@ -130,9 +130,9 @@ st.markdown("""
     }
     
     .metric-card:hover {
-        transform: translateY(-8px) scale(1.02);
-        border-color: rgba(0, 212, 255, 0.5);
-        box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
+        transform: translateY(-4px);
+        border-color: rgba(0, 212, 255, 0.3);
+        box-shadow: 0 8px 20px rgba(0, 212, 255, 0.1);
     }
     
     .metric-icon {
@@ -147,10 +147,10 @@ st.markdown("""
     }
     
     .metric-value {
-        font-size: 3rem;
-        font-weight: 800;
+        font-size: 2.6rem;
+        font-weight: 700;
         margin: 0.3rem 0;
-        text-shadow: 0 0 30px currentColor;
+        text-shadow: none;
     }
     
     .metric-label {

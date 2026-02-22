@@ -239,7 +239,7 @@ CYBERPUNK_CSS = """
         font-size: 3rem;
         font-weight: 700;
         /* Cleaner text shadow, less bloom */
-        text-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        text-shadow: none;
         margin: 0.5rem 0;
     }
     
@@ -263,7 +263,7 @@ CYBERPUNK_CSS = """
     ═══════════════════════════════════════════════════════════════════════════ */
     .page-header h1 {
         /* Subtle glow only */
-        text-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        text-shadow: none;
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
@@ -298,7 +298,7 @@ CYBERPUNK_CSS = """
         box-shadow: 
             0 0 20px var(--neon-cyan),
             inset 0 0 20px rgba(0, 243, 255, 0.1);
-        text-shadow: 0 0 10px var(--neon-cyan);
+        text-shadow: none;
     }
     
     .stButton > button:hover::before {
@@ -436,7 +436,7 @@ CYBERPUNK_CSS = """
         color: var(--neon-cyan) !important;
         background: rgba(0, 243, 255, 0.1) !important;
         border-bottom: 2px solid var(--neon-cyan) !important;
-        text-shadow: 0 0 10px var(--neon-cyan);
+        text-shadow: none;
         box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
     }
     
@@ -690,10 +690,7 @@ def page_header(title, subtitle=""):
                 color: #fff; 
                 font-size: 2.2rem;
                 margin: 0;
-                text-shadow: 
-                    0 0 10px rgba(0, 243, 255, 0.8),
-                    0 0 20px rgba(0, 243, 255, 0.5),
-                    0 0 40px rgba(0, 243, 255, 0.3);
+                text-shadow: none;
             ">{title}</h1>
         </div>
         <p style="
@@ -742,7 +739,7 @@ def section_title(text):
             font-size: 1rem;
             text-transform: uppercase; 
             letter-spacing: 4px;
-            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            text-shadow: none;
         ">{text}</h3>
         <span style="
             flex: 1; 
