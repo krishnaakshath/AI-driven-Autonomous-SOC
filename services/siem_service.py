@@ -31,13 +31,21 @@ class SIEMService:
 
     def generate_events(self, count: int = 100) -> List[Dict]:
         """
-        Pull real events from the database. 
-        Previously this generated simulated events, but it now relies 100% on real data.
+        Produce events. 
+        Combines background simulated data for visual density with real OSINT feeds.
         """
-        # We no longer backfill with simulated events.
-        # If the DB is empty, it stays empty until real events (from OSINT feeds or user actions) occur.
-        
-        # Check if we should pull fresh OSINT threat intelligence to keep real data flowing
+        # If DB is empty or very low, seed it with HISTORY so the dashboard doesn't look empty
+        stats = db.get_stats()
+        if stats.get('total', 0) < 18000:
+            # Backfill to reach around 18000 events for rich visualization
+            self.simulate_ingestion(count=9000, days_back=180)
+            self.ingest_threat_intelligence() # Inject real threats
+            
+        # Add random simulated background noise (90% chance)
+        if random.random() < 0.9:
+            self.simulate_ingestion(count=random.randint(1, 10))
+            
+        # Check if we should pull fresh OSINT threat intelligence to keep real data flowing (10% chance)
         if random.random() < 0.1:
             try:
                 self.ingest_live_threats(limit=5)
@@ -45,6 +53,48 @@ class SIEMService:
                 pass
                 
         return db.get_recent_events(limit=count)
+        
+    def simulate_ingestion(self, count: int = 1, days_back: int = 0):
+        """
+        Generate random simulated events and save to DB.
+        If days_back > 0, distributes events across the past X days.
+        """
+        severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+        severity_weights = [0.4, 0.35, 0.2, 0.05]
+        
+        new_events = []
+        for i in range(count):
+            source = random.choice(self.sources)
+            event_type = random.choice(self.event_types[source])
+            severity = random.choices(severities, weights=severity_weights)[0]
+            
+            # Timestamp logic
+            if days_back > 0:
+                seconds_back = random.randint(0, days_back * 24 * 3600)
+                ts = datetime.now() - timedelta(seconds=seconds_back)
+            else:
+                ts = datetime.now() - timedelta(seconds=random.randint(0, 60))
+            
+            event = {
+                "id": f"EVT-SIM-{str(uuid.uuid4())[:8]}",
+                "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
+                "source": source,
+                "event_type": event_type,
+                "severity": severity,
+                "source_ip": f"{random.randint(10,192)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
+                "dest_ip": f"{random.randint(10,192)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
+                "user": random.choice(["jsmith", "alee", "mwilson", "admin", "service-account", "kpatel", "rjones", "-"]),
+                "hostname": random.choice(["WS-001", "SRV-DB-01", "LAPTOP-IT42", "DC-PROD-01", "WS-FINANCE-05"]),
+                "status": random.choice(["Open", "Investigating", "Resolved", "False Positive"])
+            }
+            
+            new_events.append(event)
+            
+        # Insert!
+        for ev in new_events:
+            db.insert_event(ev)
+            
+        return new_events
 
     def ingest_threat_intelligence(self):
         """
