@@ -479,16 +479,6 @@ with c_live:
     with col_auto:
         auto_refresh = st.checkbox("Auto-Refresh", value=True)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# AUTONOMOUS DEFENSE SIMULATION (IRON MAN UI)
-# ═══════════════════════════════════════════════════════════════════════════════
-try:
-    from ui.defense_module import render_autonomous_defense_log
-    st.markdown("<br>", unsafe_allow_html=True)
-    render_autonomous_defense_log(avg_risk)
-except Exception as e:
-    st.error(f"Defense Module Error: {e}")
-
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Animated Metric Cards
