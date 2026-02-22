@@ -517,8 +517,10 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import inch
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, ListFlowable, ListItem
         from reportlab.lib import colors
+        
+        data = _get_report_data(date_range)
         
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
@@ -528,6 +530,8 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
         # Custom styles
         title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=24, alignment=1, textColor=colors.HexColor('#00D4FF'))
         heading_style = ParagraphStyle('Heading', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor('#00D4FF'), spaceAfter=10)
+        subheading_style = ParagraphStyle('SubHeading', parent=styles['Heading3'], fontSize=12, textColor=colors.HexColor('#00D4FF'), spaceBefore=10)
+        normal_style = styles['Normal']
         
         # Title Page
         story.append(Spacer(1, 2*inch))
@@ -535,42 +539,44 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
         story.append(Spacer(1, 0.3*inch))
         story.append(Paragraph("Comprehensive Security Report", styles['Heading2']))
         story.append(Spacer(1, 1*inch))
-        story.append(Paragraph(f"<b>Report Type:</b> {report_type}", styles['Normal']))
-        story.append(Paragraph(f"<b>Date Range:</b> {date_range}", styles['Normal']))
-        story.append(Paragraph(f"<b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
-        story.append(Paragraph(f"<b>Report ID:</b> SOC-{datetime.now().strftime('%Y%m%d%H%M%S')}", styles['Normal']))
-        story.append(Paragraph("<b>Classification:</b> CONFIDENTIAL", styles['Normal']))
+        story.append(Paragraph(f"<b>Report Type:</b> {report_type}", normal_style))
+        story.append(Paragraph(f"<b>Date Range:</b> {date_range}", normal_style))
+        story.append(Paragraph(f"<b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style))
+        story.append(Paragraph(f"<b>Report ID:</b> SOC-{datetime.now().strftime('%Y%m%d%H%M%S')}", normal_style))
+        story.append(Paragraph("<b>Classification:</b> CONFIDENTIAL", normal_style))
         story.append(PageBreak())
         
-        # Executive Summary
+        # 1. Executive Summary
         if executive_summary:
             story.append(Paragraph("1. Executive Summary", heading_style))
             story.append(Paragraph(
                 "This report provides a comprehensive analysis of the security posture for the AI-Driven "
                 "Autonomous SOC platform during the specified reporting period. The SOC has maintained "
-                "continuous monitoring and automated response capabilities throughout this period.",
-                styles['Normal']
+                "continuous monitoring and automated response capabilities utilizing hybrid machine learning models.",
+                normal_style
             ))
             story.append(Spacer(1, 0.2*inch))
-            story.append(Paragraph("<b>Key Findings:</b>", styles['Normal']))
+            story.append(Paragraph("<b>Key Findings:</b>", normal_style))
             findings = [
-                f"Total security events analyzed: {data['total_events']}",
+                f"Total security events analyzed: {data['total_events']:,}",
                 f"Critical threats identified and mitigated: {data['critical_threats']}",
                 f"Malicious attempts automatically blocked: {data['blocked_count']}",
                 f"Top Attack Vector: {data['top_attacks'][0][0] if data['top_attacks'] else 'None'}",
-                f"Zero successful breaches during reporting period",
                 f"Overall security posture score: {data['security_score']}/100"
             ]
+            
+            bullet_list = []
             for f in findings:
-                story.append(Paragraph(f"• {f}", styles['Normal']))
+                bullet_list.append(ListItem(Paragraph(f, normal_style)))
+            story.append(ListFlowable(bullet_list, bulletType='bullet', start='circle'))
             story.append(Spacer(1, 0.3*inch))
         
-        # Key Metrics
+        # 2. Key Metrics
         story.append(Paragraph("2. Key Metrics Overview", heading_style))
         metrics_data = [
             ['Metric', 'Current', 'Target', 'Status'],
-            ['Total Events', str(data['total_events']), '-', 'Info'],
-            ['Critical Threats', str(data['critical_threats']), '0', 'Active'],
+            ['Total Events', f"{data['total_events']:,}", '-', 'Info'],
+            ['Critical Threats', str(data['critical_threats']), '0', 'Active' if data['critical_threats'] > 0 else 'Stable'],
             ['Blocked Attacks', str(data['blocked_count']), '-', 'Protected'],
             ['Security Score', f"{data['security_score']}/100", '90+', 'Good' if data['security_score'] > 80 else 'Review'],
         ]
@@ -587,18 +593,18 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
         story.append(metrics_table)
         story.append(Spacer(1, 0.3*inch))
         
-        # Threat Analysis
+        # 3. Threat Analysis
         story.append(Paragraph("3. Threat Analysis", heading_style))
         threat_data = [['Attack Type', 'Count', 'Severity']]
         
-        for attack, count in data['top_attacks']:
-             # Simple heuristic for severity mapping
-             sev = "HIGH"
-             if "SQL" in attack or "C2" in attack: sev = "CRITICAL"
-             elif "Port" in attack: sev = "MEDIUM"
-             threat_data.append([str(attack), str(count), sev])
-        
-        if len(threat_data) > 1:
+        if data['top_attacks']:
+            for attack, count in data['top_attacks']:
+                 # Simple heuristic for severity mapping
+                 sev = "HIGH"
+                 if "SQL" in attack or "C2" in attack: sev = "CRITICAL"
+                 elif "Probe" in attack or "Port" in attack: sev = "MEDIUM"
+                 threat_data.append([str(attack), str(count), sev])
+            
             threat_table = Table(threat_data, colWidths=[2.5*inch, 1*inch, 1.5*inch])
             threat_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FF4444')),
@@ -610,56 +616,75 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
             ]))
             story.append(threat_table)
         else:
-            story.append(Paragraph("No significant threats detected.", styles['Normal']))
+            story.append(Paragraph("No significant threats detected in this period.", normal_style))
         story.append(Spacer(1, 0.3*inch))
         
-        # Geographic Distribution
-        story.append(Paragraph("4. Geographic Distribution", heading_style))
-        geo_data = [
-            ['Country', 'Attacks', 'Percentage'],
-            ['China', '156', '37.8%'],
-            ['Russia', '89', '21.5%'],
-            ['United States', '67', '16.2%'],
-            ['Iran', '34', '8.2%'],
-            ['North Korea', '23', '5.6%'],
-        ]
+        # 4. Technical Methodology (Thesis Request)
+        story.append(Paragraph("4. Technical Methodology & Architecture", heading_style))
+        story.append(Paragraph(
+            "The security analysis in this report is generated by a multi-layered autonomous system:",
+            normal_style
+        ))
+        story.append(Spacer(1, 0.1*inch))
         
-        geo_table = Table(geo_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
-        geo_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8B5CF6')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#444')),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f0ff')),
-        ]))
-        story.append(geo_table)
+        methodology_points = [
+            ListItem(Paragraph("<b>Data Ingestion:</b> Real-time log processing and normalization of network traffic events.", normal_style)),
+            ListItem(Paragraph("<b>Anomaly Detection (Unsupervised):</b> Uses an <i>Isolation Forest</i> algorithm to identify zero-day attacks and deviations from established baselines.", normal_style)),
+            ListItem(Paragraph("<b>Threat Classification (Supervised):</b> A Hybrid Gradient Boosting model classifies detected anomalies into specific attack categories (DoS, Probe, U2R, R2L) with >99% accuracy.", normal_style)),
+            ListItem(Paragraph("<b>Automated Response:</b> High-confidence threats trigger immediate containment actions (IP blocking, Session termination).", normal_style))
+        ]
+        story.append(ListFlowable(methodology_points, bulletType='bullet', start='square'))
+        story.append(Spacer(1, 0.3*inch))
+
+        # 5. Top Source Objects (Dynamic Geographics)
+        story.append(Paragraph("5. Top Source Objects", heading_style))
+        if data['top_ips']:
+            geo_data = [['Source IP', 'Event Count', 'Status']]
+            for ip, count in data['top_ips']:
+                status = "Flagged" if count > 10 else "Monitoring"
+                geo_data.append([str(ip), str(count), status])
+            
+            geo_table = Table(geo_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
+            geo_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8B5CF6')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#444')),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f0ff')),
+            ]))
+            story.append(geo_table)
+        else:
+            story.append(Paragraph("No specific source IPs identified above threshold.", normal_style))
         story.append(Spacer(1, 0.3*inch))
         
-        # Recommendations
-        story.append(Paragraph("5. Recommendations", heading_style))
-        recommendations = [
-            ("<b>HIGH PRIORITY:</b>", ""),
-            ("1. Update firewall rules", "Block top 50 malicious IP ranges"),
-            ("2. Implement rate limiting", "Prevent brute force on auth endpoints"),
-            ("<b>MEDIUM PRIORITY:</b>", ""),
-            ("3. Enhance database logging", "Enable audit logging for all queries"),
-            ("4. Review admin permissions", "Remove unnecessary access"),
-            ("<b>LOW PRIORITY:</b>", ""),
-            ("5. Security training", "Schedule phishing awareness training"),
-        ]
-        for title, desc in recommendations:
-            if desc:
-                story.append(Paragraph(f"{title} - {desc}", styles['Normal']))
-            else:
-                story.append(Spacer(1, 0.1*inch))
-                story.append(Paragraph(title, styles['Normal']))
+        # 6. Recommendations (Dynamic)
+        story.append(Paragraph("6. Recommendations", heading_style))
+        
+        recs = []
+        if data['critical_threats'] > 0:
+            recs.append(("HIGH PRIORITY", f"Investigate {data['critical_threats']} critical incidents immediately."))
+            recs.append(("High Priority", "Review firewall logs for the flagged Source IPs."))
+        
+        if data['blocked_count'] > 50:
+             recs.append(("Medium Priority", "Consider tightening rate-limiting rules due to high volume of blocked attempts."))
+        
+        if data['security_score'] < 80:
+             recs.append(("High Priority", "Overall security score is low. Conduct a full system audit."))
+        
+        recs.append(("Low Priority", "Schedule periodic review of user access logs."))
+        recs.append(("Low Priority", "Update threat intelligence feeds."))
+
+        for priority, text in recs:
+            p_color = colors.red if "HIGH" in priority.upper() else colors.black
+            story.append(Paragraph(f"<b>[{priority}]</b> {text}", ParagraphStyle('Rec', parent=normal_style, textColor=p_color)))
+            story.append(Spacer(1, 0.05*inch))
         
         # Footer
         story.append(Spacer(1, 0.5*inch))
-        story.append(Paragraph("─" * 50, styles['Normal']))
-        story.append(Paragraph("AI-Driven Autonomous SOC - Zero Trust Security Platform", styles['Normal']))
-        story.append(Paragraph(f"Report ID: SOC-{datetime.now().strftime('%Y%m%d%H%M%S')}", styles['Normal']))
+        story.append(Paragraph("─" * 50, normal_style))
+        story.append(Paragraph("AI-Driven Autonomous SOC - Zero Trust Security Platform", normal_style))
+        story.append(Paragraph(f"Report ID: SOC-{datetime.now().strftime('%Y%m%d%H%M%S')}", normal_style))
         
         doc.build(story)
         buffer.seek(0)

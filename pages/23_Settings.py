@@ -462,7 +462,48 @@ if IS_ADMIN:
             config["otx_api_key"] = otx_key
             config["abuseipdb_api_key"] = abuse_key
             save_config(config)
-            st.success("API keys saved successfully! Services updated.")
+            st.success("API keys saved!")
+            
+            # ── AUTO-VALIDATE ALL KEYS ──
+            import requests
+            validation_results = []
+            
+            # VirusTotal
+            if vt_key:
+                try:
+                    r = requests.get("https://www.virustotal.com/api/v3/ip_addresses/8.8.8.8",
+                                     headers={"x-apikey": vt_key}, timeout=8)
+                    validation_results.append(("VirusTotal", r.status_code == 200))
+                except Exception:
+                    validation_results.append(("VirusTotal", False))
+            
+            # OTX
+            if otx_key:
+                try:
+                    r = requests.get("https://otx.alienvault.com/api/v1/user/me",
+                                     headers={"X-OTX-API-KEY": otx_key}, timeout=8)
+                    validation_results.append(("AlienVault OTX", r.status_code == 200))
+                except Exception:
+                    validation_results.append(("AlienVault OTX", False))
+            
+            # AbuseIPDB
+            if abuse_key:
+                try:
+                    r = requests.get("https://api.abuseipdb.com/api/v2/check",
+                                     headers={"Key": abuse_key, "Accept": "application/json"},
+                                     params={"ipAddress": "8.8.8.8"}, timeout=8)
+                    validation_results.append(("AbuseIPDB", r.status_code == 200))
+                except Exception:
+                    validation_results.append(("AbuseIPDB", False))
+            
+            # Display results
+            if validation_results:
+                st.markdown("**API Validation Results:**")
+                for name, valid in validation_results:
+                    if valid:
+                        st.markdown(f"✅ **{name}** — Connected")
+                    else:
+                        st.markdown(f"❌ **{name}** — Invalid key or network error")
 
     with tab4:
         st.markdown(section_title("Social Login"), unsafe_allow_html=True)
@@ -493,88 +534,16 @@ if IS_ADMIN:
             save_config(config)
             st.success("OAuth settings saved! Google Login will activate if Client ID is present.")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SETTINGS & CONFIGURATION
-# ══════════════════════════════════════════════════════════════════════════════
-st.markdown(page_header("Settings & Configuration", "Manage system parameters and user preferences"))
-
-# ── Role-Based Access Control ────────────────────────────────────────────────
-is_admin_user = is_admin()
-
-# Tabs based on role
-tabs = ["👤 User Preferences"]
-if is_admin_user:
-    tabs.append("🛠️ System Configuration")
-tabs.append("ℹ️ About")
-
-current_tab = st.radio("Category", tabs, horizontal=True, label_visibility="collapsed")
-st.markdown("---")
-
-# ──────────────────────────────────────────────────────────────────────────────
-# TAB: USER PREFERENCES (Available to ALL)
-# ──────────────────────────────────────────────────────────────────────────────
-if "User Preferences" in current_tab:
-    st.markdown("#### 🤖 CORTEX Personality")
-    st.info("Customize how the AI Security Assistant interacts with you.")
-    
-    # Load current preferences
-    # Load current preferences
-    current_prefs = get_user_preferences()
-    
-    with st.form("user_prefs_form"):
-        c1, c2 = st.columns(2)
-        with c1:
-            humor = st.slider("Humor Level", 1, 5, current_prefs.get('humor_level', 3), help="1=Robot, 5=Comedian")
-            formality = st.selectbox("Formality", ["professional", "casual", "friendly"], index=["professional", "casual", "friendly"].index(current_prefs.get('formality', 'professional')))
-        with c2:
-            verbosity = st.select_slider("Response Length", ["concise", "balanced", "detailed"], value=current_prefs.get('verbosity', 'balanced'))
-            emoji = st.selectbox("Emoji Usage", ["none", "minimal", "expressive"], index=["none", "minimal", "expressive"].index(current_prefs.get('emoji_usage', 'minimal')))
-            
-        st.markdown("#### 🔔 Notification Preferences")
-        enable_email_alerts = st.checkbox("Receive Email Alerts", value=current_prefs.get('email_alerts', True))
+        # tab3 and tab4 are above this new block, so we just continue inside `if IS_ADMIN:`
+    with tab5:
+        st.markdown(section_title("Notifications & System Email"), unsafe_allow_html=True)
+        st.markdown("""
+            <div class="glass-card" style="margin-bottom: 1.5rem;">
+                <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">SMTP & Twilio Settings</h4>
+                <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">Configure external delivery for OTPs and Critical Alerts.</p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        if st.form_submit_button("Save Preferences", type="primary"):
-            new_prefs = {
-                "humor_level": humor,
-                "formality": formality,
-                "verbosity": verbosity,
-                "emoji_usage": emoji,
-                "email_alerts": enable_email_alerts
-            }
-            if auth_service.update_preferences(st.session_state.user_email, new_prefs):
-                # Update running AI instance immediately
-                try:
-                    from services.ai_assistant import ai_assistant
-                    ai_assistant.update_personality(new_prefs)
-                except:
-                    pass
-                st.success("Preferences saved successfully!")
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.error("Failed to save preferences.")
-
-# ──────────────────────────────────────────────────────────────────────────────
-# TAB: SYSTEM CONFIGURATION (Admin Only)
-# ──────────────────────────────────────────────────────────────────────────────
-if "System Configuration" in current_tab and is_admin_user:
-    st.markdown("#### 🔑 Global API Keys & Integrations")
-    st.warning("⚠️ These settings affect the entire platform. Only modify if you know what you are doing.")
-    
-    # Load config
-    config = load_config()
-
-    with st.form("system_config_form"):
-        c1, c2 = st.columns(2)
-        with c1:
-            vt_key = st.text_input("VirusTotal API Key", value=config.get('virustotal_api_key', ''), type="password")
-            otx_key = st.text_input("AlienVault OTX Key", value=config.get('otx_api_key', ''), type="password")
-        with c2:
-            groq_key = st.text_input("Groq API Key (Llama 3)", value=config.get('groq_api_key', ''), type="password")
-            abuse_key = st.text_input("AbuseIPDB API Key", value=config.get('abuseipdb_api_key', ''), type="password")
-            
-        st.markdown("##### 📧 System Email (SMTP) Settings")
-        st.caption("Used for sending OTPs and Critical Alerts to all users.")
         c3, c4 = st.columns(2)
         with c3:
             gmail_user = st.text_input("Gmail User (Sender)", value=config.get('gmail_email', ''), placeholder="system@soc.com")
@@ -584,64 +553,55 @@ if "System Configuration" in current_tab and is_admin_user:
             twilio_token = st.text_input("Twilio Auth Token", value=config.get('twilio_auth_token', ''), type="password")
             twilio_phone = st.text_input("Twilio Phone Number", value=config.get('twilio_phone_number', ''))
 
-        st.markdown("---")
-        st.markdown("##### 🚨 Alert Thresholds")
-        
-        c5, c6 = st.columns(2)
-        with c5:
-            st.markdown("Trigger alerts when risk > X")
-            alert_threshold = st.slider("Alert Threshold", 0, 100, config.get("alert_threshold", 70), label_visibility="collapsed")
-        with c6:
-            st.markdown("Auto-block IP when risk > X")
-            block_threshold = st.slider("Block Threshold", 0, 100, config.get("block_threshold", 90), label_visibility="collapsed")
-            
-        auto_block = st.checkbox("Enable Auto-Block", value=config.get("auto_block", True))
-        auto_notify = st.checkbox("Enable Auto-Notify", value=config.get("auto_notify", True))
-
-        if st.form_submit_button("Save System Configuration", type="primary"):
-            # Update config dict
-            config['groq_api_key'] = groq_key
-            config['virustotal_api_key'] = vt_key
-            config['otx_api_key'] = otx_key
-            config['abuseipdb_api_key'] = abuse_key
-            
-            # OTP / Email Settings
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Save Notification Settings", type="primary"):
             config['gmail_email'] = gmail_user
             config['gmail_password'] = gmail_pass
             config['twilio_account_sid'] = twilio_sid
             config['twilio_auth_token'] = twilio_token
             config['twilio_phone_number'] = twilio_phone
-            
-            # Thresholds
+            save_config(config)
+            st.success("Notification settings saved!")
+            time.sleep(1)
+            st.rerun()
+
+    with tab6:
+        st.markdown(section_title("Alert Thresholds"), unsafe_allow_html=True)
+        st.markdown("""
+            <div class="glass-card" style="margin-bottom: 1.5rem;">
+                <h4 style="color: #FF4444; margin: 0 0 0.5rem 0;">Response Automation</h4>
+                <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">Configure when the SOC should automatically block IPs or trigger alerts.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        c5, c6 = st.columns(2)
+        with c5:
+            st.markdown("**Trigger alerts when risk > X**")
+            alert_threshold = st.slider("Alert Threshold", 0, 100, config.get("alert_threshold", 70), label_visibility="collapsed")
+            auto_notify = st.checkbox("Enable Auto-Notify", value=config.get("auto_notify", True))
+        with c6:
+            st.markdown("**Auto-block IP when risk > X**")
+            block_threshold = st.slider("Block Threshold", 0, 100, config.get("block_threshold", 90), label_visibility="collapsed")
+            auto_block = st.checkbox("Enable Auto-Block", value=config.get("auto_block", True))
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Save Thresholds", type="primary"):
             config['alert_threshold'] = alert_threshold
             config['block_threshold'] = block_threshold
             config['auto_block'] = auto_block
             config['auto_notify'] = auto_notify
-
             save_config(config)
             
-            # Reload services immediately
             try:
-                from services.threat_intel import threat_intel
-                threat_intel.reload_config()
-                
-                from services.ai_assistant import ai_assistant
-                ai_assistant.reload_config()
-                
                 from alerting.alert_service import alert_service
                 alert_service.reload_config()
-                
-                st.success("System configuration saved and services reloaded!")
+                st.success("Thresholds saved and Alert Service reloaded!")
             except Exception as e:
                 st.warning(f"Settings saved, but service reload failed: {e}")
-                
             time.sleep(1)
             st.rerun()
 
-# ──────────────────────────────────────────────────────────────────────────────
-# TAB: ABOUT (Available to ALL)
-# ──────────────────────────────────────────────────────────────────────────────
-if "About" in current_tab:
+with tab7:
     st.markdown(section_title("About This Platform"), unsafe_allow_html=True)
     
     st.markdown("""
@@ -655,7 +615,7 @@ if "About" in current_tab:
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
                 <div>
                     <p style="color: #8B95A5; margin: 0; font-size: 0.85rem;">Version</p>
-                    <p style="color: #FAFAFA; margin: 0.2rem 0 0 0; font-weight: 600;">2.0.0</p>
+                    <p style="color: #FAFAFA; margin: 0.2rem 0 0 0; font-weight: 600;">2.1.0</p>
                 </div>
                 <div>
                     <p style="color: #8B95A5; margin: 0; font-size: 0.85rem;">Framework</p>
@@ -663,7 +623,7 @@ if "About" in current_tab:
                 </div>
                 <div>
                     <p style="color: #8B95A5; margin: 0; font-size: 0.85rem;">ML Engine</p>
-                    <p style="color: #FAFAFA; margin: 0.2rem 0 0 0; font-weight: 600;">Isolation Forest</p>
+                    <p style="color: #FAFAFA; margin: 0.2rem 0 0 0; font-weight: 600;">Isolation Forest + Gradient Boosting</p>
                 </div>
                 <div>
                     <p style="color: #8B95A5; margin: 0; font-size: 0.85rem;">Last Update</p>

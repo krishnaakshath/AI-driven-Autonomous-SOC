@@ -256,6 +256,48 @@ st.markdown("""
         background: linear-gradient(180deg, rgba(10, 14, 23, 0.98) 0%, rgba(15, 20, 30, 0.98) 100%);
         border-right: 1px solid rgba(255, 255, 255, 0.05);
     }
+    
+    /* ── MOBILE RESPONSIVE ── */
+    @media (max-width: 768px) {
+        .premium-header h1 {
+            font-size: 1.6rem !important;
+        }
+        .metric-value {
+            font-size: 1.8rem !important;
+        }
+        .metric-card {
+            padding: 1rem !important;
+            border-radius: 12px !important;
+        }
+        .section-title {
+            font-size: 1.1rem !important;
+        }
+        .metric-label {
+            font-size: 0.7rem !important;
+            letter-spacing: 1px !important;
+        }
+        .chart-container {
+            padding: 0.8rem !important;
+            border-radius: 12px !important;
+        }
+        .live-badge {
+            padding: 0.3rem 0.8rem !important;
+            font-size: 0.75rem !important;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .premium-header {
+            padding: 1rem 1.2rem !important;
+            border-radius: 12px !important;
+        }
+        .premium-header h1 {
+            font-size: 1.3rem !important;
+        }
+        .metric-value {
+            font-size: 1.4rem !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 

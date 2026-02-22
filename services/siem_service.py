@@ -129,6 +129,23 @@ class SIEMService:
                     "details": f"Threat Intel Match: {desc}"
                 }
                 
+                # ── REAL-TIME ML SCORING ──
+                try:
+                    from ml_engine.isolation_forest import isolation_forest
+                    ml_result = isolation_forest.predict([event])
+                    if ml_result:
+                        event["ml_anomaly_score"] = ml_result[0].get("anomaly_score", 0)
+                except Exception:
+                    pass
+                
+                try:
+                    from ml_engine.fuzzy_clustering import fuzzy_clustering
+                    ml_class = fuzzy_clustering.predict([event])
+                    if ml_class:
+                        event["ml_classification"] = ml_class[0].get("predicted_label", "Unknown")
+                except Exception:
+                    pass
+                
                 db.insert_event(event)
                 
                 # Also block in firewall shim

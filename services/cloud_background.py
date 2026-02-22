@@ -8,26 +8,36 @@ from datetime import datetime
 # Global flag to control the thread
 _STOP_FLAG = False
 
-# Retraining interval: every 360 cycles (~6 hours at 60s/cycle)
-_RETRAIN_INTERVAL = 360
+# Retraining interval: every 120 cycles (~2 hours at 60s/cycle)
+_RETRAIN_INTERVAL = 120
 
 # Weekly report check: every 60 cycles (~1 hour) — checks if 7 days have passed
 _WEEKLY_REPORT_CHECK_INTERVAL = 60
 
 def _run_ml_retrain():
-    """Retrain ML models on accumulated database data."""
+    """Retrain ML models on accumulated live database data."""
     try:
         from ml_engine.isolation_forest import isolation_forest
         from ml_engine.fuzzy_clustering import fuzzy_clustering
+        from services.database import db
         
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] Starting ML retrain cycle...")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] Starting ML retrain on live DB data...")
         
-        if_result = isolation_forest.retrain_from_db()
-        fcm_result = fuzzy_clustering.retrain_from_db()
+        # Pull latest 5000 events from the live database for training
+        live_events = db.get_recent_events(limit=5000)
         
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] ML retrain complete. "
-              f"IF: {if_result.get('n_samples', if_result.get('reason', '?'))}, "
-              f"FCM: {fcm_result.get('n_samples', fcm_result.get('reason', '?'))}")
+        if live_events and len(live_events) > 100:
+            # Retrain Isolation Forest on live accumulated data
+            if_result = isolation_forest.retrain_from_db()
+            
+            # Retrain Fuzzy Clustering on live accumulated data
+            fcm_result = fuzzy_clustering.retrain_from_db()
+            
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] ML retrain complete on {len(live_events)} live events. "
+                  f"IF: {if_result.get('n_samples', if_result.get('reason', '?'))}, "
+                  f"FCM: {fcm_result.get('n_samples', fcm_result.get('reason', '?'))}")
+        else:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] Not enough live data for retrain ({len(live_events) if live_events else 0} events)")
     except Exception as e:
         print(f"[CLOUD-BG] ML retrain error: {e}")
 

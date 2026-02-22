@@ -1,2 +1,256 @@
 2026-02-13 21:18:36|SYSTEM|INFO|Log Ingestor Initialized
 2026-02-13 21:18:37 | TestSource | HIGH | TEST-LOG-1770997717
+2026-02-20 14:31:27 | SOC_WATCHER | INFO | Monitor Loop Active
+2026-02-20 14:31:27 | SOC_WATCHER | INFO | Background Monitor Thread Started
+2026-02-20 14:31:52 | SOC_WATCHER | INFO | DNS Query detected from 214.253.180.67
+2026-02-20 14:32:09 | SOC_WATCHER | INFO | Web Request detected from 19.253.28.170
+2026-02-20 14:32:58 | SOC_WATCHER | INFO | DNS Query detected from 60.170.81.72
+2026-02-20 14:33:16 | SOC_WATCHER | INFO | Port Scan detected from 95.198.142.86
+2026-02-20 14:33:30 | SOC_WATCHER | INFO | Failed Login detected from 37.230.17.47
+2026-02-20 14:33:44 | SOC_WATCHER | INFO | Port Scan detected from 81.33.36.24
+2026-02-20 14:33:44 | SOC_WATCHER | CRITICAL | Unauthorized Access from 135.143.83.87
+2026-02-20 14:34:05 | SOC_WATCHER | INFO | Port Scan detected from 123.10.237.1
+2026-02-20 14:34:23 | SOC_WATCHER | INFO | Web Request detected from 59.246.79.227
+2026-02-20 14:34:39 | SOC_WATCHER | INFO | Port Scan detected from 58.67.222.180
+2026-02-20 14:35:12 | SOC_WATCHER | INFO | Port Scan detected from 54.186.225.161
+2026-02-20 14:35:26 | SOC_WATCHER | INFO | Port Scan detected from 133.141.60.151
+2026-02-20 14:35:40 | SOC_WATCHER | INFO | DNS Query detected from 126.41.153.144
+2026-02-20 14:36:15 | SOC_WATCHER | INFO | Failed Login detected from 107.227.1.100
+2026-02-20 14:36:29 | SOC_WATCHER | INFO | DNS Query detected from 43.123.122.228
+2026-02-20 14:36:44 | SOC_WATCHER | INFO | Port Scan detected from 136.58.230.46
+2026-02-20 14:37:16 | SOC_WATCHER | INFO | DNS Query detected from 91.189.223.181
+2026-02-20 14:37:32 | SOC_WATCHER | INFO | Web Request detected from 54.225.92.249
+2026-02-20 14:37:47 | SOC_WATCHER | INFO | Failed Login detected from 125.74.93.62
+2026-02-20 14:38:03 | SOC_WATCHER | INFO | Web Request detected from 182.210.243.191
+2026-02-20 14:38:50 | SOC_WATCHER | INFO | Web Request detected from 219.206.194.205
+2026-02-20 14:39:24 | SOC_WATCHER | INFO | DNS Query detected from 23.45.187.61
+2026-02-20 14:39:37 | SOC_WATCHER | INFO | Web Request detected from 26.58.143.128
+2026-02-20 14:39:55 | SOC_WATCHER | INFO | Failed Login detected from 131.74.215.18
+2026-02-20 14:39:55 | SOC_WATCHER | CRITICAL | Malware C2 from 134.188.173.29
+2026-02-20 14:40:15 | SOC_WATCHER | INFO | Web Request detected from 163.101.84.238
+2026-02-20 14:40:31 | SOC_WATCHER | INFO | Web Request detected from 92.18.236.216
+2026-02-20 14:40:59 | SOC_WATCHER | INFO | Web Request detected from 116.122.166.124
+2026-02-20 14:41:17 | SOC_WATCHER | INFO | Web Request detected from 127.173.79.26
+2026-02-20 14:41:32 | SOC_WATCHER | INFO | DNS Query detected from 215.9.169.71
+2026-02-20 14:41:49 | SOC_WATCHER | INFO | Web Request detected from 29.147.58.115
+2026-02-20 14:42:18 | SOC_WATCHER | INFO | Port Scan detected from 11.143.22.121
+2026-02-20 14:42:33 | SOC_WATCHER | INFO | DNS Query detected from 85.172.250.240
+2026-02-20 14:42:47 | SOC_WATCHER | INFO | Port Scan detected from 73.5.146.229
+2026-02-20 14:43:03 | SOC_WATCHER | INFO | Web Request detected from 115.199.51.228
+2026-02-20 14:43:39 | SOC_WATCHER | INFO | Web Request detected from 94.246.143.136
+2026-02-20 14:43:39 | SOC_WATCHER | CRITICAL | Unauthorized Access from 81.110.168.44
+2026-02-20 14:44:02 | SOC_WATCHER | INFO | Web Request detected from 67.232.70.28
+2026-02-20 14:44:17 | SOC_WATCHER | INFO | Web Request detected from 44.253.163.97
+2026-02-20 14:44:34 | SOC_WATCHER | INFO | Failed Login detected from 14.21.137.168
+2026-02-20 14:44:34 | SOC_WATCHER | CRITICAL | Unauthorized Access from 185.48.10.116
+2026-02-20 14:44:56 | SOC_WATCHER | INFO | Failed Login detected from 69.247.68.73
+2026-02-20 14:45:13 | SOC_WATCHER | INFO | Failed Login detected from 94.246.165.183
+2026-02-20 14:46:00 | SOC_WATCHER | CRITICAL | Unauthorized Access from 194.155.82.54
+2026-02-20 14:46:53 | SOC_WATCHER | INFO | DNS Query detected from 115.230.213.109
+2026-02-20 14:46:53 | SOC_WATCHER | CRITICAL | Unauthorized Access from 112.133.204.60
+2026-02-20 14:47:12 | SOC_WATCHER | INFO | Web Request detected from 161.131.231.105
+2026-02-20 14:47:45 | SOC_WATCHER | INFO | Web Request detected from 42.181.231.228
+2026-02-20 14:47:59 | SOC_WATCHER | INFO | Port Scan detected from 59.5.93.113
+2026-02-20 14:48:18 | SOC_WATCHER | INFO | Failed Login detected from 125.57.247.206
+2026-02-20 14:48:32 | SOC_WATCHER | INFO | Web Request detected from 194.155.18.7
+2026-02-20 14:48:32 | SOC_WATCHER | CRITICAL | Malware C2 from 130.205.119.186
+2026-02-20 14:48:49 | SOC_WATCHER | INFO | DNS Query detected from 125.255.117.125
+2026-02-20 14:49:03 | SOC_WATCHER | INFO | Failed Login detected from 133.69.183.221
+2026-02-20 14:49:19 | SOC_WATCHER | INFO | Failed Login detected from 112.80.140.198
+2026-02-20 14:49:38 | SOC_WATCHER | INFO | Port Scan detected from 18.232.124.99
+2026-02-20 14:50:08 | SOC_WATCHER | INFO | Port Scan detected from 193.190.184.241
+2026-02-20 14:50:26 | SOC_WATCHER | INFO | DNS Query detected from 100.39.30.217
+2026-02-20 14:50:41 | SOC_WATCHER | INFO | Web Request detected from 190.147.189.138
+2026-02-20 14:50:59 | SOC_WATCHER | INFO | Web Request detected from 22.1.180.119
+2026-02-20 14:51:15 | SOC_WATCHER | CRITICAL | Ransomware Attempt from 127.250.182.253
+2026-02-20 14:51:38 | SOC_WATCHER | INFO | DNS Query detected from 134.157.65.227
+2026-02-20 14:52:11 | SOC_WATCHER | INFO | Failed Login detected from 114.189.203.195
+2026-02-20 14:52:43 | SOC_WATCHER | INFO | Failed Login detected from 51.131.228.147
+2026-02-20 14:53:00 | SOC_WATCHER | INFO | Failed Login detected from 203.8.52.230
+2026-02-20 14:53:31 | SOC_WATCHER | INFO | Port Scan detected from 210.169.79.140
+2026-02-20 14:53:49 | SOC_WATCHER | INFO | DNS Query detected from 206.93.82.154
+2026-02-20 14:54:53 | SOC_WATCHER | INFO | Failed Login detected from 117.42.27.182
+2026-02-20 14:55:11 | SOC_WATCHER | INFO | Port Scan detected from 9.54.191.14
+2026-02-20 14:55:28 | SOC_WATCHER | INFO | Port Scan detected from 28.124.137.41
+2026-02-20 14:56:00 | SOC_WATCHER | INFO | DNS Query detected from 123.244.2.158
+2026-02-20 14:56:32 | SOC_WATCHER | INFO | Web Request detected from 96.81.180.247
+2026-02-20 14:56:50 | SOC_WATCHER | INFO | DNS Query detected from 126.157.206.126
+2026-02-20 14:57:12 | SOC_WATCHER | INFO | Failed Login detected from 222.134.57.44
+2026-02-20 14:57:12 | SOC_WATCHER | CRITICAL | Unauthorized Access from 18.30.177.89
+2026-02-20 14:57:50 | SOC_WATCHER | INFO | Web Request detected from 1.188.184.130
+2026-02-20 14:58:20 | SOC_WATCHER | INFO | Web Request detected from 56.164.37.29
+2026-02-20 14:58:36 | SOC_WATCHER | INFO | Port Scan detected from 143.92.7.185
+2026-02-20 14:58:53 | SOC_WATCHER | INFO | DNS Query detected from 56.139.4.34
+2026-02-20 14:59:08 | SOC_WATCHER | INFO | Failed Login detected from 56.174.99.56
+2026-02-20 15:12:28 | SOC_WATCHER | INFO | Monitor Loop Active
+2026-02-20 15:12:28 | SOC_WATCHER | INFO | Background Monitor Thread Started
+2026-02-20 15:12:40 | SOC_WATCHER | INFO | DNS Query detected from 153.122.221.33
+2026-02-20 15:12:40 | SOC_WATCHER | CRITICAL | Malware C2 from 19.85.249.128
+2026-02-20 15:12:59 | SOC_WATCHER | INFO | Port Scan detected from 54.116.125.182
+2026-02-20 15:13:36 | SOC_WATCHER | INFO | Failed Login detected from 3.223.255.7
+2026-02-20 15:13:50 | SOC_WATCHER | INFO | Port Scan detected from 65.112.160.205
+2026-02-20 15:14:07 | SOC_WATCHER | INFO | Web Request detected from 113.197.209.43
+2026-02-20 15:14:42 | SOC_WATCHER | INFO | Port Scan detected from 94.84.161.89
+2026-02-20 15:15:13 | SOC_WATCHER | INFO | Failed Login detected from 197.93.46.138
+2026-02-20 15:15:28 | SOC_WATCHER | INFO | Web Request detected from 197.140.23.25
+2026-02-20 15:15:45 | SOC_WATCHER | INFO | Port Scan detected from 173.171.176.218
+2026-02-20 15:15:59 | SOC_WATCHER | INFO | DNS Query detected from 19.122.32.173
+2026-02-20 15:15:59 | SOC_WATCHER | CRITICAL | Ransomware Attempt from 121.123.39.37
+2026-02-20 15:16:53 | SOC_WATCHER | INFO | Web Request detected from 105.198.113.34
+2026-02-20 15:17:08 | SOC_WATCHER | INFO | Web Request detected from 119.179.145.151
+2026-02-20 15:17:08 | SOC_WATCHER | CRITICAL | Ransomware Attempt from 164.100.120.23
+2026-02-20 15:17:44 | SOC_WATCHER | INFO | Port Scan detected from 125.50.34.92
+2026-02-20 15:18:34 | SOC_WATCHER | INFO | DNS Query detected from 213.220.102.213
+2026-02-20 15:18:50 | SOC_WATCHER | INFO | Port Scan detected from 118.216.37.140
+2026-02-20 15:19:24 | SOC_WATCHER | INFO | Web Request detected from 34.207.129.181
+2026-02-20 15:19:38 | SOC_WATCHER | INFO | Failed Login detected from 99.109.51.236
+2026-02-20 15:19:53 | SOC_WATCHER | INFO | Failed Login detected from 73.0.100.80
+2026-02-20 15:19:53 | SOC_WATCHER | CRITICAL | Brute Force from 73.231.244.133
+2026-02-20 15:20:12 | SOC_WATCHER | INFO | Failed Login detected from 36.14.115.27
+2026-02-20 15:21:00 | SOC_WATCHER | INFO | Port Scan detected from 222.159.89.122
+2026-02-20 15:21:16 | SOC_WATCHER | INFO | Port Scan detected from 69.137.77.109
+2026-02-20 15:21:31 | SOC_WATCHER | INFO | Port Scan detected from 110.94.212.150
+2026-02-20 15:22:23 | SOC_WATCHER | INFO | Web Request detected from 56.93.137.89
+2026-02-20 15:22:38 | SOC_WATCHER | INFO | Web Request detected from 217.240.234.38
+2026-02-20 15:22:38 | SOC_WATCHER | CRITICAL | Brute Force from 188.135.88.136
+2026-02-20 15:22:55 | SOC_WATCHER | INFO | Web Request detected from 28.32.115.226
+2026-02-20 15:23:14 | SOC_WATCHER | CRITICAL | SQL Injection from 105.44.50.239
+2026-02-20 15:23:32 | SOC_WATCHER | INFO | DNS Query detected from 21.131.15.186
+2026-02-20 15:23:49 | SOC_WATCHER | INFO | Web Request detected from 110.228.121.72
+2026-02-20 15:24:24 | SOC_WATCHER | INFO | DNS Query detected from 148.182.79.150
+2026-02-20 15:24:39 | SOC_WATCHER | INFO | Web Request detected from 100.129.124.246
+2026-02-20 15:24:56 | SOC_WATCHER | INFO | Port Scan detected from 54.83.216.163
+2026-02-20 15:25:09 | SOC_WATCHER | INFO | DNS Query detected from 67.189.87.3
+2026-02-20 15:25:28 | SOC_WATCHER | INFO | Failed Login detected from 151.133.136.22
+2026-02-20 15:25:43 | SOC_WATCHER | INFO | Failed Login detected from 124.212.136.227
+2026-02-20 15:25:57 | SOC_WATCHER | INFO | Web Request detected from 96.107.73.125
+2026-02-20 15:26:15 | SOC_WATCHER | INFO | Port Scan detected from 178.84.139.96
+2026-02-20 15:26:32 | SOC_WATCHER | INFO | Failed Login detected from 143.69.200.69
+2026-02-20 15:26:32 | SOC_WATCHER | CRITICAL | Ransomware Attempt from 133.27.203.141
+2026-02-20 15:27:09 | SOC_WATCHER | INFO | Web Request detected from 25.224.69.245
+2026-02-20 15:27:57 | SOC_WATCHER | INFO | Port Scan detected from 180.145.61.252
+2026-02-20 15:28:29 | SOC_WATCHER | INFO | Failed Login detected from 124.221.231.23
+2026-02-20 15:28:29 | SOC_WATCHER | CRITICAL | Brute Force from 96.53.185.14
+2026-02-20 15:29:41 | SOC_WATCHER | INFO | Port Scan detected from 89.105.111.42
+2026-02-20 15:30:09 | SOC_WATCHER | INFO | DNS Query detected from 211.16.207.238
+2026-02-20 15:30:25 | SOC_WATCHER | INFO | Failed Login detected from 129.154.164.137
+2026-02-20 15:30:25 | SOC_WATCHER | CRITICAL | Unauthorized Access from 57.201.239.156
+2026-02-20 15:30:46 | SOC_WATCHER | INFO | Web Request detected from 105.137.67.69
+2026-02-20 15:31:21 | SOC_WATCHER | INFO | Web Request detected from 127.210.172.100
+2026-02-20 15:31:52 | SOC_WATCHER | INFO | Port Scan detected from 53.128.208.5
+2026-02-20 15:32:40 | SOC_WATCHER | INFO | Port Scan detected from 105.122.80.202
+2026-02-20 15:32:56 | SOC_WATCHER | INFO | DNS Query detected from 118.29.160.137
+2026-02-20 15:33:12 | SOC_WATCHER | INFO | DNS Query detected from 222.13.51.97
+2026-02-20 15:33:26 | SOC_WATCHER | INFO | Port Scan detected from 8.167.65.75
+2026-02-20 15:33:40 | SOC_WATCHER | INFO | Failed Login detected from 34.237.43.184
+2026-02-20 15:33:58 | SOC_WATCHER | CRITICAL | Ransomware Attempt from 99.200.73.59
+2026-02-20 15:34:20 | SOC_WATCHER | INFO | Port Scan detected from 94.25.243.182
+2026-02-20 15:34:35 | SOC_WATCHER | CRITICAL | SQL Injection from 125.17.221.108
+2026-02-20 15:34:53 | SOC_WATCHER | INFO | Web Request detected from 49.82.20.173
+2026-02-20 15:35:09 | SOC_WATCHER | INFO | Web Request detected from 62.125.155.225
+2026-02-20 15:35:24 | SOC_WATCHER | INFO | Web Request detected from 54.45.182.146
+2026-02-20 15:35:42 | SOC_WATCHER | INFO | Web Request detected from 100.197.92.139
+2026-02-20 15:36:16 | SOC_WATCHER | INFO | Port Scan detected from 46.189.98.101
+2026-02-20 15:36:48 | SOC_WATCHER | INFO | Failed Login detected from 172.100.152.11
+2026-02-20 15:37:06 | SOC_WATCHER | INFO | Port Scan detected from 13.178.53.254
+2026-02-20 15:37:37 | SOC_WATCHER | INFO | Web Request detected from 131.102.253.106
+2026-02-20 15:37:38 | SOC_WATCHER | CRITICAL | SQL Injection from 119.159.249.25
+2026-02-20 15:38:03 | SOC_WATCHER | INFO | DNS Query detected from 112.76.133.235
+2026-02-20 15:38:19 | SOC_WATCHER | INFO | DNS Query detected from 207.119.147.14
+2026-02-20 15:38:33 | SOC_WATCHER | INFO | Web Request detected from 28.164.45.251
+2026-02-20 15:38:48 | SOC_WATCHER | INFO | Failed Login detected from 67.107.65.65
+2026-02-20 15:39:05 | SOC_WATCHER | INFO | DNS Query detected from 136.234.240.97
+2026-02-20 15:39:24 | SOC_WATCHER | INFO | Web Request detected from 143.251.19.81
+2026-02-20 15:39:42 | SOC_WATCHER | INFO | DNS Query detected from 104.212.55.92
+2026-02-20 15:40:11 | SOC_WATCHER | INFO | Port Scan detected from 19.209.216.219
+2026-02-20 15:40:30 | SOC_WATCHER | INFO | Web Request detected from 52.83.184.63
+2026-02-20 15:40:46 | SOC_WATCHER | INFO | DNS Query detected from 123.112.209.12
+2026-02-20 15:41:00 | SOC_WATCHER | INFO | DNS Query detected from 133.21.94.231
+2026-02-20 15:41:14 | SOC_WATCHER | INFO | Failed Login detected from 115.116.166.211
+2026-02-20 15:41:14 | SOC_WATCHER | CRITICAL | Malware C2 from 123.104.153.242
+2026-02-20 15:41:49 | SOC_WATCHER | INFO | Port Scan detected from 74.27.204.94
+2026-02-20 15:42:08 | SOC_WATCHER | INFO | Port Scan detected from 204.77.117.216
+2026-02-20 15:42:25 | SOC_WATCHER | INFO | DNS Query detected from 132.34.12.110
+2026-02-20 15:42:43 | SOC_WATCHER | INFO | Web Request detected from 196.210.252.74
+2026-02-20 15:43:01 | SOC_WATCHER | INFO | Port Scan detected from 27.33.10.191
+2026-02-20 15:43:16 | SOC_WATCHER | INFO | Failed Login detected from 137.108.219.43
+2026-02-20 15:43:34 | SOC_WATCHER | INFO | Web Request detected from 7.128.34.135
+2026-02-20 15:44:06 | SOC_WATCHER | INFO | Failed Login detected from 19.192.110.103
+2026-02-20 15:44:20 | SOC_WATCHER | INFO | DNS Query detected from 104.210.205.224
+2026-02-20 15:44:37 | SOC_WATCHER | INFO | Port Scan detected from 13.150.97.90
+2026-02-20 15:44:53 | SOC_WATCHER | INFO | Port Scan detected from 161.125.77.167
+2026-02-20 15:45:11 | SOC_WATCHER | INFO | Web Request detected from 127.20.203.161
+2026-02-20 15:45:27 | SOC_WATCHER | INFO | Port Scan detected from 121.85.15.13
+2026-02-20 15:45:41 | SOC_WATCHER | INFO | Failed Login detected from 101.52.232.228
+2026-02-20 15:45:55 | SOC_WATCHER | INFO | Web Request detected from 181.6.116.125
+2026-02-20 15:46:12 | SOC_WATCHER | INFO | Web Request detected from 26.98.228.84
+2026-02-20 15:46:31 | SOC_WATCHER | INFO | Port Scan detected from 218.146.11.57
+2026-02-20 15:46:46 | SOC_WATCHER | INFO | Failed Login detected from 116.174.42.244
+2026-02-20 15:47:04 | SOC_WATCHER | CRITICAL | Unauthorized Access from 131.68.4.58
+2026-02-20 15:47:23 | SOC_WATCHER | INFO | Web Request detected from 146.50.228.227
+2026-02-20 15:47:38 | SOC_WATCHER | INFO | Port Scan detected from 44.32.194.14
+2026-02-20 15:47:55 | SOC_WATCHER | INFO | Failed Login detected from 131.176.89.225
+2026-02-20 15:48:09 | SOC_WATCHER | INFO | Failed Login detected from 99.87.106.105
+2026-02-20 15:48:25 | SOC_WATCHER | INFO | Port Scan detected from 59.27.33.246
+2026-02-20 15:48:44 | SOC_WATCHER | INFO | Failed Login detected from 24.149.110.52
+2026-02-20 15:49:02 | SOC_WATCHER | INFO | Port Scan detected from 18.23.175.109
+2026-02-20 15:49:19 | SOC_WATCHER | INFO | DNS Query detected from 210.113.37.250
+2026-02-20 15:49:39 | SOC_WATCHER | INFO | Port Scan detected from 221.105.89.71
+2026-02-20 15:49:39 | SOC_WATCHER | CRITICAL | Ransomware Attempt from 174.120.26.251
+2026-02-20 15:49:59 | SOC_WATCHER | INFO | DNS Query detected from 114.20.35.157
+2026-02-20 18:00:23 | SOC_WATCHER | INFO | DNS Query detected from 106.251.16.182
+2026-02-20 18:00:44 | SOC_WATCHER | INFO | DNS Query detected from 18.51.210.84
+2026-02-20 18:01:19 | SOC_WATCHER | INFO | Failed Login detected from 222.203.105.8
+2026-02-20 18:01:19 | SOC_WATCHER | CRITICAL | Brute Force from 86.253.189.95
+2026-02-20 18:01:38 | SOC_WATCHER | INFO | Port Scan detected from 128.103.143.34
+2026-02-20 18:02:31 | SOC_WATCHER | INFO | Port Scan detected from 88.148.176.133
+2026-02-20 18:03:06 | SOC_WATCHER | INFO | DNS Query detected from 188.230.197.147
+2026-02-20 18:03:06 | SOC_WATCHER | CRITICAL | Unauthorized Access from 6.74.224.220
+2026-02-20 18:03:23 | SOC_WATCHER | INFO | Port Scan detected from 83.231.213.218
+2026-02-20 18:03:41 | SOC_WATCHER | INFO | DNS Query detected from 89.123.175.79
+2026-02-20 18:04:10 | SOC_WATCHER | INFO | Web Request detected from 121.5.28.24
+2026-02-20 18:04:24 | SOC_WATCHER | INFO | Web Request detected from 132.43.191.189
+2026-02-20 18:04:52 | SOC_WATCHER | INFO | DNS Query detected from 99.251.58.108
+2026-02-20 18:05:09 | SOC_WATCHER | INFO | Port Scan detected from 39.49.108.96
+2026-02-20 18:05:23 | SOC_WATCHER | INFO | Port Scan detected from 42.231.76.49
+2026-02-20 18:05:56 | SOC_WATCHER | INFO | Port Scan detected from 13.59.89.249
+2026-02-20 18:06:11 | SOC_WATCHER | INFO | Port Scan detected from 111.28.209.35
+2026-02-20 18:06:27 | SOC_WATCHER | INFO | Failed Login detected from 88.167.214.16
+2026-02-20 18:06:42 | SOC_WATCHER | INFO | Web Request detected from 121.34.75.104
+2026-02-20 18:06:42 | SOC_WATCHER | CRITICAL | SQL Injection from 114.145.200.141
+2026-02-20 18:07:35 | SOC_WATCHER | INFO | Port Scan detected from 36.68.27.228
+2026-02-20 18:07:48 | SOC_WATCHER | INFO | Port Scan detected from 90.19.246.50
+2026-02-20 18:07:48 | SOC_WATCHER | CRITICAL | Brute Force from 192.129.90.204
+2026-02-20 18:08:42 | SOC_WATCHER | INFO | Web Request detected from 13.8.73.211
+2026-02-20 18:08:56 | SOC_WATCHER | INFO | DNS Query detected from 2.244.211.104
+2026-02-20 18:09:14 | SOC_WATCHER | INFO | Failed Login detected from 21.212.86.204
+2026-02-20 18:09:30 | SOC_WATCHER | INFO | DNS Query detected from 82.207.10.165
+2026-02-20 18:10:06 | SOC_WATCHER | CRITICAL | Unauthorized Access from 214.52.20.176
+2026-02-20 18:10:30 | SOC_WATCHER | INFO | Failed Login detected from 62.203.111.155
+2026-02-20 18:10:48 | SOC_WATCHER | INFO | Port Scan detected from 50.192.211.35
+2026-02-20 18:11:02 | SOC_WATCHER | INFO | Web Request detected from 126.157.152.185
+2026-02-20 18:11:32 | SOC_WATCHER | INFO | DNS Query detected from 57.60.37.73
+2026-02-20 18:11:46 | SOC_WATCHER | INFO | Port Scan detected from 47.234.192.82
+2026-02-20 18:12:02 | SOC_WATCHER | INFO | Port Scan detected from 216.255.17.121
+2026-02-20 18:12:17 | SOC_WATCHER | INFO | DNS Query detected from 204.44.134.14
+2026-02-20 18:12:31 | SOC_WATCHER | INFO | Failed Login detected from 84.151.80.91
+2026-02-20 18:12:50 | SOC_WATCHER | INFO | Web Request detected from 21.73.92.224
+2026-02-20 18:13:07 | SOC_WATCHER | INFO | Port Scan detected from 23.99.167.45
+2026-02-20 18:14:14 | SOC_WATCHER | INFO | Port Scan detected from 75.187.12.169
+2026-02-20 18:15:01 | SOC_WATCHER | INFO | Failed Login detected from 54.32.61.176
+2026-02-20 18:15:15 | SOC_WATCHER | INFO | Web Request detected from 143.95.238.79
+2026-02-20 18:15:50 | SOC_WATCHER | INFO | DNS Query detected from 121.2.187.97
+2026-02-20 18:17:11 | SOC_WATCHER | INFO | Port Scan detected from 132.134.150.238
+2026-02-20 18:17:25 | SOC_WATCHER | INFO | Port Scan detected from 120.61.238.42
+2026-02-20 18:17:57 | SOC_WATCHER | INFO | Failed Login detected from 127.10.236.239
+2026-02-20 18:18:14 | SOC_WATCHER | INFO | Web Request detected from 81.204.159.137
+2026-02-20 18:18:31 | SOC_WATCHER | INFO | Web Request detected from 206.25.65.111
+2026-02-20 18:18:44 | SOC_WATCHER | INFO | Port Scan detected from 1.204.183.46
+2026-02-20 18:19:14 | SOC_WATCHER | INFO | Failed Login detected from 123.108.223.65
+2026-02-20 18:19:14 | SOC_WATCHER | CRITICAL | SQL Injection from 77.210.8.155
+2026-02-20 18:19:46 | SOC_WATCHER | INFO | Web Request detected from 190.36.28.75
+2026-02-20 18:20:04 | SOC_WATCHER | INFO | Web Request detected from 68.80.194.141
+2026-02-20 18:20:20 | SOC_WATCHER | INFO | Failed Login detected from 4.51.96.166
+2026-02-20 18:20:36 | SOC_WATCHER | INFO | DNS Query detected from 123.81.67.190
+2026-02-20 18:21:06 | SOC_WATCHER | INFO | Web Request detected from 34.147.93.178
+2026-02-20 18:21:20 | SOC_WATCHER | INFO | Port Scan detected from 209.251.219.29

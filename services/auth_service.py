@@ -296,6 +296,7 @@ class AuthService:
         
         Returns:
             Tuple of (success, message)
+            Also stores otp_fallback_code in self for UI display when email fails.
         """
         email = email.lower().strip()
         
@@ -317,18 +318,22 @@ class AuthService:
         method = user.get("two_factor_method", "email")
         
         if method == "email":
-            success = self._send_otp_email(email, otp, user["name"])
+            email_actually_sent = self._send_otp_email(email, otp, user["name"])
         elif method == "sms":
-            success = self._send_otp_sms(user.get("phone"), otp)
+            email_actually_sent = self._send_otp_sms(user.get("phone"), otp)
         elif method == "whatsapp":
-            success = self._send_otp_whatsapp(user.get("phone"), otp)
+            email_actually_sent = self._send_otp_whatsapp(user.get("phone"), otp)
         else:
-            success = self._send_otp_email(email, otp, user["name"])
+            email_actually_sent = self._send_otp_email(email, otp, user["name"])
         
-        if success:
+        if email_actually_sent == 'sent':
+            # Email was truly delivered via SMTP
+            self._last_otp_fallback = None
             return True, f"OTP sent via {method}. Check your {method}."
         else:
-            return False, f"Failed to send OTP via {method}. Please try again."
+            # Email failed to send — store OTP for UI fallback display
+            self._last_otp_fallback = otp
+            return True, f"OTP generated. (Email delivery unavailable — code shown on screen)."
     
     def verify_otp(self, email: str, otp: str) -> Tuple[bool, str]:
         """
@@ -409,14 +414,13 @@ class AuthService:
                         print(f"Error loading config from {config_file}: {e}")
             
             if not gmail_user or not gmail_password:
-                print(f"[ERROR] No Gmail credentials configured. Cannot send OTP to {email}.")
-                print(f"[FALLBACK] DEBUG MODE OTP for {email}: {otp}")
-                return True # Allow login in dev mode even if email fails
+                print(f"[WARNING] No Gmail credentials configured. OTP for {email}: {otp}")
+                return 'fallback'  # Signal that email was NOT sent
             
             
             # Create email
             msg = MIMEMultipart('alternative')
-            msg['Subject'] = f" Your SOC Login Code: {otp}"
+            msg['Subject'] = f"Your SOC Login Code: {otp}"
             msg['From'] = gmail_user
             msg['To'] = email
             
@@ -424,7 +428,7 @@ class AuthService:
             <html>
             <body style="font-family: Arial, sans-serif; background: #0a0a1a; color: #fff; padding: 20px;">
                 <div style="max-width: 400px; margin: 0 auto; background: #1a1a2e; border: 1px solid #00f3ff; border-radius: 10px; padding: 30px;">
-                    <h1 style="color: #00f3ff; text-align: center; margin: 0;"> SOC Login</h1>
+                    <h1 style="color: #00f3ff; text-align: center; margin: 0;">SOC Login</h1>
                     <p style="color: #888; text-align: center;">Hello {name},</p>
                     <div style="background: #0a0a1a; border: 2px solid #00f3ff; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
                         <div style="font-size: 32px; font-weight: bold; color: #00f3ff; letter-spacing: 8px;">{otp}</div>
@@ -445,12 +449,12 @@ class AuthService:
                 server.login(gmail_user, gmail_password)
                 server.sendmail(gmail_user, email, msg.as_string())
             
-            return True
+            return 'sent'  # Email was actually delivered
             
         except Exception as e:
             print(f"Email error: {e}")
-            print(f"[FALLBACK] DEBUG MODE OTP for {email}: {otp}")
-            return True # Allow login in dev mode even if email fails
+            print(f"[FALLBACK] OTP for {email}: {otp}")
+            return 'fallback'  # Signal that email was NOT sent
     
     def _send_otp_sms(self, phone: str, otp: str) -> bool:
         """Send OTP via SMS using Twilio."""

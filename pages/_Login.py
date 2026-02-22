@@ -268,6 +268,10 @@ elif st.session_state.login_step == '2fa_select':
             auth_service.update_2fa_method(st.session_state.pending_email, "email")
             success, message = auth_service.generate_otp(st.session_state.pending_email)
             if success:
+                # Check if email was actually sent or if we need UI fallback
+                fallback_code = getattr(auth_service, '_last_otp_fallback', None)
+                if fallback_code:
+                    st.session_state._otp_fallback_code = fallback_code
                 st.session_state.login_step = '2fa_verify'
                 st.session_state.otp_method = 'email'
                 st.rerun()
@@ -292,12 +296,17 @@ elif st.session_state.login_step == '2fa_select':
 elif st.session_state.login_step == '2fa_verify':
     st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px;'>ENTER CODE</h3>", unsafe_allow_html=True)
     
-    st.markdown("""
-    <div style="background: rgba(0,243,255,0.1); border-left: 3px solid #00f3ff; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
-        <p style="color: #00f3ff; margin: 0; font-family: 'Rajdhani', sans-serif;"> 6-digit code sent. Check your inbox.</p>
-        <p style="color: #666; margin: 5px 0 0 0; font-size: 0.85rem;">Code expires in 5 minutes.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Show OTP fallback if email delivery failed
+    fallback_code = st.session_state.get('_otp_fallback_code')
+    if fallback_code:
+        st.info(f"📋 **Email not configured. Your verification code is: `{fallback_code}`**")
+    else:
+        st.markdown("""
+        <div style="background: rgba(0,243,255,0.1); border-left: 3px solid #00f3ff; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
+            <p style="color: #00f3ff; margin: 0; font-family: 'Rajdhani', sans-serif;">6-digit code sent. Check your inbox.</p>
+            <p style="color: #666; margin: 5px 0 0 0; font-size: 0.85rem;">Code expires in 5 minutes.</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     otp = st.text_input("Verification Code", placeholder="000000", max_chars=6, key="otp_input")
     
@@ -346,7 +355,13 @@ elif st.session_state.login_step == '2fa_verify':
         if st.button("RESEND", use_container_width=True):
             success, message = auth_service.generate_otp(st.session_state.pending_email)
             if success:
-                st.success(" Code sent!")
+                fallback_code = getattr(auth_service, '_last_otp_fallback', None)
+                if fallback_code:
+                    st.session_state._otp_fallback_code = fallback_code
+                    st.info(f"📋 **New code: `{fallback_code}`**")
+                else:
+                    st.session_state._otp_fallback_code = None
+                    st.success("Code sent!")
             else:
                 st.error(message)
     
