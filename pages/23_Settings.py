@@ -464,6 +464,26 @@ if IS_ADMIN:
             save_config(config)
             st.success("API keys saved!")
             
+            # Log real config change event
+            try:
+                from services.database import db
+                import uuid
+                from datetime import datetime
+                db.insert_event({
+                    "id": f"EVT-CFG-{str(uuid.uuid4())[:8]}",
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "source": "Web Server", # Emulates the web frontend
+                    "event_type": "Configuration Change",
+                    "severity": "MEDIUM",
+                    "source_ip": "127.0.0.1",
+                    "dest_ip": "127.0.0.1",
+                    "user": user_email if 'user_email' in locals() and user_email else "admin",
+                    "status": "Resolved",
+                    "details": "API Keys Updated"
+                })
+            except Exception:
+                pass
+            
             # ── AUTO-VALIDATE ALL KEYS ──
             import requests
             validation_results = []

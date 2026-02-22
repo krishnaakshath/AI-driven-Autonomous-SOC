@@ -187,6 +187,22 @@ class AuthService:
         }
         
         self._save_users_data(current_users)
+        
+        # Log to DB
+        from services.database import db
+        import uuid
+        db.insert_event({
+            "id": f"EVT-AUTH-{str(uuid.uuid4())[:8]}",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "source": "Active Directory",
+            "event_type": "User Registration",
+            "severity": "LOW",
+            "source_ip": "127.0.0.1",
+            "dest_ip": "127.0.0.1",
+            "user": email,
+            "status": "Resolved"
+        })
+        
         return True, "Registration successful! Please login."
     
     def login(self, email: str, password: str) -> Tuple[bool, str, bool]:
@@ -200,27 +216,49 @@ class AuthService:
         
         current_users = self._load_users()
         
+        from services.database import db
+        import uuid
+        
+        def log_auth_event(event_type: str, severity: str, user: str):
+            db.insert_event({
+                "id": f"EVT-AUTH-{str(uuid.uuid4())[:8]}",
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "Active Directory",
+                "event_type": event_type,
+                "severity": severity,
+                "source_ip": "127.0.0.1",
+                "dest_ip": "127.0.0.1",
+                "user": user,
+                "status": "Resolved" if severity == "LOW" else "Open"
+            })
+            
         if email not in current_users:
+            log_auth_event("Login Failure - Unknown User", "MEDIUM", email)
             return False, "Invalid email or password", False
         
         user = current_users[email]
         
         if not self._verify_password(password, user["password_hash"], user["password_salt"]):
+            log_auth_event("Login Failure - Bad Password", "HIGH", email)
             return False, "Invalid email or password", False
         
         # ADMIN/OWNER BYPASS: Admins skip 2FA entirely
         if email in [e.lower() for e in ADMIN_EMAILS]:
             current_users[email]["last_login"] = datetime.now().isoformat()
             self._save_users_data(current_users)
+            log_auth_event("Login Success (Admin Bypass)", "LOW", email)
             return True, "Admin login successful!", False
         
         # Check if 2FA is enabled for regular users
         if user.get("two_factor_enabled", True):
+            log_auth_event("Login Success - Pending 2FA", "LOW", email)
             return True, "Password verified. 2FA required.", True
         
         # Update last login
         current_users[email]["last_login"] = datetime.now().isoformat()
         self._save_users_data(current_users)
+        
+        log_auth_event("Login Success", "LOW", email)
         
         return True, "Login successful!", False
     

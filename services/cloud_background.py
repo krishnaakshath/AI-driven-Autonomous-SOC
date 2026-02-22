@@ -71,23 +71,23 @@ def _run_continuous_ingestion():
     cycle_count = 0
     while not _STOP_FLAG:
         try:
-            # Run ingestion
-            count = siem_service.ingest_live_threats(limit=10)
+            # Run ingestion (pulls real OSINT and blocks them)
+            count = siem_service.ingest_live_threats(limit=5)
             if count > 0:
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] Ingested {count} events.")
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] Ingested {count} real threat indicators.")
             
             cycle_count += 1
             
-            # Periodic ML retraining (every ~6 hours)
-            if cycle_count % _RETRAIN_INTERVAL == 0:
+            # Periodic ML retraining (~2 hours = 24 cycles of 5 min)
+            if cycle_count % 24 == 0:
                 _run_ml_retrain()
             
-            # Periodic weekly report check (every ~1 hour)
-            if cycle_count % _WEEKLY_REPORT_CHECK_INTERVAL == 0:
+            # Periodic weekly report check (~1 hour = 12 cycles of 5 min)
+            if cycle_count % 12 == 0:
                 _run_weekly_report()
             
-            # Sleep for 60 seconds
-            time.sleep(60)
+            # Sleep for 5 minutes (300 seconds) to respect API rate limits
+            time.sleep(300)
             
         except Exception as e:
             print(f"[CLOUD-BG] Error in thread: {e}")

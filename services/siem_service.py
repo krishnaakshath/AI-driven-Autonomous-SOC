@@ -31,70 +31,24 @@ class SIEMService:
 
     def generate_events(self, count: int = 100) -> List[Dict]:
         """
-        Produce events. 
-        Checks if DB needs seeding (Cloud Deployment Self-Healing), otherwise returns DB events.
+        Pull real events from the database. 
+        Previously this generated simulated events, but it now relies 100% on real data.
         """
-        # If DB is empty or very low (fresh deploy), seed it with HISTORY
-        stats = db.get_stats()
-        # THRESHOLD: If DB is low (like on a fresh Streamlit Cloud deploy), backfill heavily
-        if stats['total'] < 8000:
-            # Backfill 180 days of history to completely fill the trend charts
-            self.simulate_ingestion(count=9000, days_back=180)
-            self.ingest_threat_intelligence() # Inject real threats
-            
-        # Occasional "Real" injection for live feel (10% chance on refresh)
-        if random.random() < 0.1:
-            self.ingest_threat_intelligence()
-            
-        return db.get_recent_events(limit=count)
-    
-    def simulate_ingestion(self, count: int = 1, days_back: int = 0):
-        """
-        Generate random events and save to DB (Simulation Mode).
-        If days_back > 0, distributes events across the past X days.
-        """
-        severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-        severity_weights = [0.4, 0.35, 0.2, 0.05]
+        # We no longer backfill with simulated events.
+        # If the DB is empty, it stays empty until real events (from OSINT feeds or user actions) occur.
         
-        new_events = []
-        for i in range(count):
-            source = random.choice(self.sources)
-            event_type = random.choice(self.event_types[source])
-            severity = random.choices(severities, weights=severity_weights)[0]
-            
-            # Timestamp logic
-            if days_back > 0:
-                # Distribute events across historical window
-                seconds_back = random.randint(0, days_back * 24 * 3600)
-                ts = datetime.now() - timedelta(seconds=seconds_back)
-            else:
-                # Mostly now, some slight jitter
-                ts = datetime.now() - timedelta(seconds=random.randint(0, 60))
-            
-            event = {
-                "id": f"EVT-{str(uuid.uuid4())[:8]}",
-                "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
-                "source": source,
-                "event_type": event_type,
-                "severity": severity,
-                "source_ip": f"{random.randint(10,192)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
-                "dest_ip": f"{random.randint(10,192)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
-                "user": random.choice(["jsmith", "alee", "mwilson", "admin", "service-account", "kpatel", "rjones", "-"]),
-                "hostname": random.choice(["WS-001", "SRV-DB-01", "LAPTOP-IT42", "DC-PROD-01", "WS-FINANCE-05"]),
-                "status": random.choice(["Open", "Investigating", "Resolved", "False Positive"])
-            }
-            
-            new_events.append(event)
-            
-        # Bulk Insert!
-        db.bulk_insert_events(new_events)
-            
-        return new_events
+        # Check if we should pull fresh OSINT threat intelligence to keep real data flowing
+        if random.random() < 0.1:
+            try:
+                self.ingest_live_threats(limit=5)
+            except Exception:
+                pass
+                
+        return db.get_recent_events(limit=count)
 
     def ingest_threat_intelligence(self):
         """
         Pull real threat indicators from Threat Intel service and inject as SIEM events.
-        This gives the 'Real Data' feel by showing actual known bad IPs being blocked.
         """
         return self.ingest_live_threats(limit=20)
 
