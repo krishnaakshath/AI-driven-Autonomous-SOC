@@ -251,12 +251,12 @@ class FuzzyCMeans:
             self.fit_on_dataset()
             
         X = self._extract_features(events)
-        # Apply scaling
+        # Apply strict strict scaling transformation against training bounds (prevent data leak)
         try:
             X_scaled = self.scaler.transform(X)
-        except:
-            # Fallback if scaler isn't fitted properly
-            X_scaled = self.scaler.fit_transform(X)
+        except Exception:
+            # Fallback zero-state without leaking eval space
+            X_scaled = X
             
         # Get membership
         membership = self._update_membership(X_scaled, self.centers)
@@ -719,8 +719,8 @@ class FuzzyCMeans:
 
 
 def generate_sample_events(n_events: int = 100) -> List[Dict]:
-    """Generate sample SOC events for clustering demonstration."""
-    np.random.seed(42)
+    """Generate deterministic sample SOC events for clustering demonstration via seeding."""
+    import hashlib
     events = []
     
     threat_types = [
@@ -731,25 +731,28 @@ def generate_sample_events(n_events: int = 100) -> List[Dict]:
         ('DDoS', {'bytes_in': (1000000, 200000), 'bytes_out': (100, 50),
                   'packets': (50000, 10000), 'duration': (5, 2), 'port': 80}),
         ('Port Scan', {'bytes_in': (100, 20), 'bytes_out': (50, 10),
-                       'packets': (1000, 200), 'duration': (1, 0.5), 'port': 0}),
+                       'packets': (1000, 200), 'duration': (1, 1), 'port': 0}),
         ('Insider', {'bytes_in': (10000, 2000), 'bytes_out': (100000, 20000),
                      'packets': (500, 100), 'duration': (600, 120), 'port': 22})
     ]
     
     for i in range(n_events):
+        seed_str = f"fcm_event_{i}"
+        seed = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
+        
         threat_name, params = threat_types[i % len(threat_types)]
         
         events.append({
             'id': f'EVT-{i:04d}',
-            'bytes_in': max(0, np.random.normal(*params['bytes_in'])),
-            'bytes_out': max(0, np.random.normal(*params['bytes_out'])),
-            'packets': max(1, int(np.random.normal(*params['packets']))),
-            'duration': max(0, np.random.normal(*params['duration'])),
-            'port': params['port'] if params['port'] else np.random.randint(1, 65535),
+            'bytes_in': max(0, params['bytes_in'][0] + (seed % (params['bytes_in'][1] + 1))),
+            'bytes_out': max(0, params['bytes_out'][0] + (seed % (params['bytes_out'][1] + 1))),
+            'packets': max(1, params['packets'][0] + (seed % (params['packets'][1] + 1))),
+            'duration': max(0, params['duration'][0] + (seed % (params['duration'][1] + 1))),
+            'port': params['port'] if params['port'] else (seed % 65535) + 1,
             'attack_type': threat_name,
-            'risk_score': np.random.randint(30, 100),
+            'risk_score': 30 + (seed % 70),
             'is_internal': threat_name == 'Insider',
-            'source_ip': f'192.168.{np.random.randint(0, 255)}.{np.random.randint(1, 255)}'
+            'source_ip': f'192.168.{(seed%255)}.{((seed*3)%254)+1}'
         })
     
     return events

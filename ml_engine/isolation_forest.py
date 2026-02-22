@@ -183,18 +183,30 @@ class SOCIsolationForest:
         
         X = self._extract_features(events)
         
+        # Apply exact scaling transformation to normalize live data against training boundaries
+        try:
+            X = self.scaler.transform(X)
+        except Exception:
+            pass
+            
         # Get anomaly scores (-1 for anomalies, 1 for normal)
         predictions = self.model.predict(X)
         
         # Get decision function scores (lower = more anomalous)
         scores = self.model.decision_function(X)
         
-        # Normalize scores to 0-100 (100 = most anomalous)
-        min_score, max_score = scores.min(), scores.max()
-        if max_score > min_score:
-            normalized_scores = 100 * (1 - (scores - min_score) / (max_score - min_score))
-        else:
-            normalized_scores = np.zeros_like(scores)
+        # Normalize scores to absolute 0-100 deterministic domains 
+        # (Prevents 100 batch normal events scaling the single most unusual normal event to 100/100 Anomaly)
+        bounded_scores = []
+        for s in scores:
+            if s < 0:
+                # Anomaly: scale from 0 to -0.3 into 50 to 100
+                n = 50 + 50 * (min(-s, 0.3) / 0.3)
+            else:
+                # Normal: scale from 0 to 0.2 into 50 to 0
+                n = 50 - 50 * (min(s, 0.2) / 0.2)
+            bounded_scores.append(n)
+        normalized_scores = np.array(bounded_scores)
         
         results = []
         for i, event in enumerate(events):
@@ -482,58 +494,61 @@ def generate_sample_events(n_normal: int = 100, n_anomalous: int = 10) -> List[D
     Returns:
         List of event dictionaries
     """
-    np.random.seed(42)
+    import hashlib
     events = []
     
-    # Normal events
-    for i in range(n_normal):
-        events.append({
-            'id': f'EVT-{i:04d}',
-            'bytes_in': np.random.normal(5000, 1000),
-            'bytes_out': np.random.normal(2000, 500),
-            'packets': np.random.randint(10, 100),
-            'duration': np.random.normal(30, 10),
-            'port': np.random.choice([80, 443, 22, 53]),
-            'protocol': np.random.choice(['TCP', 'UDP', 'HTTP', 'HTTPS']),
-            'source_ip': f'192.168.1.{np.random.randint(1, 255)}',
-            'type': 'normal'
-        })
-    
-    # Anomalous events (data exfiltration, DDoS, etc.)
-    for i in range(n_anomalous):
-        anomaly_type = np.random.choice(['exfiltration', 'ddos', 'c2'])
+    # Deterministic generation
+    for i in range(n_normal + n_anomalous):
+        seed_str = f"if_event_{i}"
+        seed = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
         
-        if anomaly_type == 'exfiltration':
+        is_anomaly = i >= n_normal
+        if not is_anomaly:
             event = {
-                'bytes_out': np.random.normal(500000, 100000),  # Very high outbound
-                'bytes_in': np.random.normal(1000, 200),
-                'packets': np.random.randint(1000, 5000),
-                'duration': np.random.normal(300, 50),  # Long duration
-                'port': np.random.choice([443, 8080, 8443]),
+                'id': f'EVT-{i:04d}',
+                'bytes_in': 5000 + (seed % 1000),
+                'bytes_out': 2000 + (seed % 500),
+                'packets': 10 + (seed % 90),
+                'duration': 30 + (seed % 10),
+                'port': [80, 443, 22, 53][seed % 4],
+                'protocol': ['TCP', 'UDP', 'HTTP', 'HTTPS'][seed % 4],
+                'source_ip': f'192.168.1.{(seed % 254) + 1}',
+                'type': 'normal'
             }
-        elif anomaly_type == 'ddos':
-            event = {
-                'bytes_in': np.random.normal(1000000, 200000),  # Very high inbound
-                'bytes_out': np.random.normal(500, 100),
-                'packets': np.random.randint(10000, 50000),  # Very high packet count
-                'duration': np.random.normal(5, 2),  # Short bursts
-                'port': 80,
-            }
-        else:  # C2 communication
-            event = {
-                'bytes_in': np.random.normal(100, 20),
-                'bytes_out': np.random.normal(100, 20),
-                'packets': np.random.randint(5, 20),
-                'duration': np.random.normal(3600, 600),  # Very long (beaconing)
-                'port': np.random.choice([4444, 5555, 8888]),  # Unusual ports
-            }
-        
-        event.update({
-            'id': f'ANM-{i:04d}',
-            'protocol': 'TCP',
-            'source_ip': f'10.{np.random.randint(0, 255)}.{np.random.randint(0, 255)}.{np.random.randint(1, 255)}',
-            'type': anomaly_type
-        })
+        else:
+            anomaly_type = ['exfiltration', 'ddos', 'c2'][seed % 3]
+            if anomaly_type == 'exfiltration':
+                event = {
+                    'bytes_out': 500000 + (seed % 100000),
+                    'bytes_in': 1000 + (seed % 200),
+                    'packets': 1000 + (seed % 4000),
+                    'duration': 300 + (seed % 50),
+                    'port': [443, 8080, 8443][seed % 3],
+                }
+            elif anomaly_type == 'ddos':
+                event = {
+                    'bytes_in': 1000000 + (seed % 200000),
+                    'bytes_out': 500 + (seed % 100),
+                    'packets': 10000 + (seed % 40000),
+                    'duration': 5 + (seed % 2),
+                    'port': 80,
+                }
+            else:
+                event = {
+                    'bytes_in': 100 + (seed % 20),
+                    'bytes_out': 100 + (seed % 20),
+                    'packets': 5 + (seed % 15),
+                    'duration': 3600 + (seed % 600),
+                    'port': [4444, 5555, 8888][seed % 3],
+                }
+            
+            event.update({
+                'id': f'ANM-{i:04d}',
+                'protocol': 'TCP',
+                'source_ip': f'10.{(seed%255)}.{((seed*2)%255)}.{((seed*3)%254)+1}',
+                'type': anomaly_type
+            })
+            
         events.append(event)
     
     return events
