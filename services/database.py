@@ -12,6 +12,7 @@ import os
 import threading
 import requests
 from datetime import datetime
+from typing import Dict, List, Optional
 
 # Load .env file if present (supports python-dotenv or manual parsing)
 try:

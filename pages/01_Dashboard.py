@@ -389,7 +389,7 @@ except:
     ALERTS_AVAILABLE = False
 
 # Check for critical events and send alerts
-if ALERTS_AVAILABLE:
+if ALERTS_AVAILABLE and not df.empty and "risk_score" in df.columns:
     critical_events = df[df["risk_score"] >= 80]
     if len(critical_events) > 0 and 'last_alert_check' not in st.session_state:
         st.session_state.last_alert_check = True
