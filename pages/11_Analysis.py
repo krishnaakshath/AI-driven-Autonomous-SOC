@@ -76,47 +76,52 @@ def _siem_to_ml_events(siem_events):
         sev = severity_map.get(evt.get("severity", "LOW"), 1)
         event_type = evt.get("event_type", "").lower()
         
+        import hashlib
+        # Use event ID to seed the random state so the features stay static per event ID
+        event_hash = int(hashlib.md5(evt.get("id", f"SIEM-{i}").encode()).hexdigest(), 16)
+        loc_state = np.random.RandomState(event_hash % (2**32))
+        
         if "exfil" in event_type or "data" in event_type:
-            bytes_out = np.random.normal(500000, 100000) * sev
-            bytes_in = np.random.normal(1000, 200)
-            packets = np.random.randint(1000, 5000)
-            duration = np.random.normal(300, 50)
+            bytes_out = loc_state.normal(500000, 100000) * sev
+            bytes_in = loc_state.normal(1000, 200)
+            packets = loc_state.randint(1000, 5000)
+            duration = loc_state.normal(300, 50)
             port = 443
             etype = "exfiltration"
         elif "ddos" in event_type or "flood" in event_type or "dos" in event_type:
-            bytes_in = np.random.normal(1000000, 200000) * sev
-            bytes_out = np.random.normal(500, 100)
-            packets = np.random.randint(10000, 50000)
-            duration = np.random.normal(5, 2)
+            bytes_in = loc_state.normal(1000000, 200000) * sev
+            bytes_out = loc_state.normal(500, 100)
+            packets = loc_state.randint(10000, 50000)
+            duration = loc_state.normal(5, 2)
             port = 80
             etype = "ddos"
         elif "brute" in event_type or "login" in event_type or "failed" in event_type:
-            bytes_in = np.random.normal(2000, 500) * sev
-            bytes_out = np.random.normal(1000, 200)
-            packets = np.random.randint(50, 300)
-            duration = np.random.normal(60, 20)
+            bytes_in = loc_state.normal(2000, 500) * sev
+            bytes_out = loc_state.normal(1000, 200)
+            packets = loc_state.randint(50, 300)
+            duration = loc_state.normal(60, 20)
             port = 22
             etype = "brute_force"
         elif "malware" in event_type or "trojan" in event_type or "c2" in event_type:
-            bytes_in = np.random.normal(100, 20)
-            bytes_out = np.random.normal(100, 20)
-            packets = np.random.randint(5, 20)
-            duration = np.random.normal(3600, 600)
-            port = np.random.choice([4444, 5555, 8888])
+            bytes_in = loc_state.normal(100, 20)
+            bytes_out = loc_state.normal(100, 20)
+            packets = loc_state.randint(5, 20)
+            duration = loc_state.normal(3600, 600)
+            port = loc_state.choice([4444, 5555, 8888])
             etype = "c2"
         elif "scan" in event_type or "probe" in event_type or "recon" in event_type:
-            bytes_in = np.random.normal(100, 20)
-            bytes_out = np.random.normal(50, 10)
-            packets = np.random.randint(100, 1000)
-            duration = np.random.normal(1, 0.5)
+            bytes_in = loc_state.normal(100, 20)
+            bytes_out = loc_state.normal(50, 10)
+            packets = loc_state.randint(100, 1000)
+            duration = loc_state.normal(1, 0.5)
             port = 0
             etype = "scan"
         else:
-            bytes_in = np.random.normal(5000, 1000) * (1 + sev * 0.3)
-            bytes_out = np.random.normal(2000, 500) * (1 + sev * 0.3)
-            packets = np.random.randint(10, 100 + sev * 50)
-            duration = np.random.normal(30, 10)
-            port = np.random.choice([80, 443, 22, 53])
+            bytes_in = loc_state.normal(5000, 1000) * (1 + sev * 0.3)
+            bytes_out = loc_state.normal(2000, 500) * (1 + sev * 0.3)
+            packets = loc_state.randint(10, 100 + sev * 50)
+            duration = loc_state.normal(30, 10)
+            port = loc_state.choice([80, 443, 22, 53])
             etype = "normal"
         
         ml_events.append({

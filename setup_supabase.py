@@ -1,12 +1,33 @@
 """
 Create Supabase tables for SOC database.
 Run this ONCE to set up the events and alerts tables.
-"""
-import requests
-import json
 
-SUPABASE_URL = "https://rijcxktkydnbyiyhhcgq.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpamN4a3RreWRuYnlpeWhoY2dxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTc3MDgxMiwiZXhwIjoyMDg3MzQ2ODEyfQ.j-M8sfqZ5balakw4xd4SbjcspzKuoxVHk1V6PkjE8Hg"
+Usage:
+  1. Set SUPABASE_URL and SUPABASE_KEY as environment variables, or
+  2. They will be read from .soc_config.json
+
+Then run: python setup_supabase.py
+"""
+import os
+import json
+import requests
+
+# Load credentials from environment or config file
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+
+if not SUPABASE_URL:
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".soc_config.json")
+    if os.path.exists(config_path):
+        with open(config_path) as f:
+            config = json.load(f)
+            SUPABASE_URL = config.get("SUPABASE_URL", "")
+            SUPABASE_KEY = config.get("SUPABASE_KEY", "")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("ERROR: SUPABASE_URL and SUPABASE_KEY must be set.")
+    print("Set them as environment variables or in .soc_config.json")
+    exit(1)
 
 # SQL to create tables
 SQL = """
@@ -44,39 +65,29 @@ headers = {
     "Prefer": "return=representation"
 }
 
-# Use the Supabase SQL endpoint (via rpc or direct pg)
-# PostgREST doesn't support DDL, so we use the /rest/v1/rpc endpoint
-# Alternatively, we can try the pg endpoint
-
-# Method 1: Try inserting a test record to see if tables exist
+# Test if tables exist
 print("Testing Supabase connection...")
 test_url = f"{SUPABASE_URL}/rest/v1/events"
 r = requests.get(test_url, headers=headers, params={"limit": "1"})
 print(f"Events table status: {r.status_code}")
 if r.status_code == 200:
-    print("Events table already exists!")
+    print("✅ Events table already exists!")
     print(f"Response: {r.json()}")
 elif r.status_code == 404:
-    print("Events table doesn't exist yet. Please create it via the Supabase SQL Editor.")
+    print("❌ Events table doesn't exist yet. Please create it via the Supabase SQL Editor.")
 else:
-    print(f"Unexpected response: {r.status_code} - {r.text}")
+    print(f"⚠️  Unexpected response: {r.status_code} - {r.text}")
 
 # Test alerts table
 test_url2 = f"{SUPABASE_URL}/rest/v1/alerts"
 r2 = requests.get(test_url2, headers=headers, params={"limit": "1"})
 print(f"Alerts table status: {r2.status_code}")
 if r2.status_code == 200:
-    print("Alerts table already exists!")
+    print("✅ Alerts table already exists!")
 elif r2.status_code == 404:
-    print("Alerts table doesn't exist yet.")
+    print("❌ Alerts table doesn't exist yet.")
 else:
-    print(f"Unexpected response: {r2.status_code} - {r2.text}")
+    print(f"⚠️  Unexpected response: {r2.status_code} - {r2.text}")
 
 print("\n--- COPY THE SQL BELOW INTO SUPABASE SQL EDITOR IF TABLES DON'T EXIST ---")
 print(SQL)
-"""
-import json
-
-SUPABASE_URL = "https://rijcxktkydnbyiyhhcgq.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpamN4a3RreWRuYnlpeWhoY2dxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTc3MDgxMiwiZXhwIjoyMDg3MzQ2ODEyfQ.j-M8sfqZ5balakw4xd4SbjcspzKuoxVHk1V6PkjE8Hg"
-"""

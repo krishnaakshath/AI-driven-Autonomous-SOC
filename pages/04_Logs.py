@@ -65,83 +65,13 @@ SEVERITY_COLORS = {
 
 # Generate realistic log entries
 def generate_log_entry():
-    source = random.choice(LOG_SOURCES)
-    severity = random.choices(SEVERITY_LEVELS, weights=[10, 40, 25, 15, 10])[0]
-    
-    messages = {
-        "Firewall": [
-            "Blocked connection from {ip} to port {port}",
-            "Allowed outbound connection to {domain}",
-            "Rate limit exceeded for {ip}",
-            "Geo-block triggered for {country}",
-        ],
-        "IDS/IPS": [
-            "Signature match: {malware} detected",
-            "Anomaly detected in traffic pattern",
-            "SQL injection attempt blocked from {ip}",
-            "Port scan detected from {ip}",
-        ],
-        "Authentication": [
-            "Failed login attempt for user {user}",
-            "Successful login from {ip}",
-            "MFA challenge sent to {user}",
-            "Password reset requested for {user}",
-            "Brute force detected on {user}",
-        ],
-        "Endpoint": [
-            "Malware quarantined on {hostname}",
-            "USB device blocked on {hostname}",
-            "Process injection detected",
-            "Suspicious PowerShell execution",
-        ],
-        "Network": [
-            "DNS query to suspicious domain {domain}",
-            "Large data transfer to {ip}",
-            "TLS certificate mismatch",
-            "ARP spoofing detected",
-        ],
-        "WAF": [
-            "XSS attempt blocked from {ip}",
-            "CSRF token validation failed",
-            "Bot traffic detected and challenged",
-            "API rate limit exceeded",
-        ],
-        "Application": [
-            "Exception in module {module}",
-            "Database query timeout",
-            "Session expired for {user}",
-            "File upload rejected: {reason}",
-        ],
-        "Cloud": [
-            "IAM policy change detected",
-            "S3 bucket made public",
-            "New EC2 instance launched in {region}",
-            "Unusual API call pattern",
-        ]
-    }
-    
-    msg_template = random.choice(messages.get(source, ["Generic log entry"]))
-    
-    # Fill in placeholders
-    msg = msg_template.format(
-        ip=f"{random.randint(1,255)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
-        port=random.choice([22, 23, 80, 443, 3389, 8080, 445]),
-        domain=random.choice(["suspicious.xyz", "malware-c2.com", "phishing-site.net", "cdn-analytics.io"]),
-        country=random.choice(["Russia", "China", "North Korea", "Iran"]),
-        malware=random.choice(["Emotet", "TrickBot", "Ryuk", "Cobalt Strike"]),
-        user=random.choice(["admin", "jsmith", "alee", "root", "service_account"]),
-        hostname=random.choice(["WS-001", "SRV-DB-01", "LAPTOP-IT42", "DC-PROD-01"]),
-        module=random.choice(["auth_handler", "payment_api", "user_service"]),
-        reason=random.choice(["executable", "size limit", "malicious content"]),
-        region=random.choice(["us-east-1", "eu-west-1", "ap-southeast-1"])
-    )
-    
+    # Deprecated: We now only use real SIEM DB events
     return {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
-        "source": source,
-        "severity": severity,
-        "message": msg,
-        "event_id": f"EVT-{random.randint(100000, 999999)}"
+        "source": "System",
+        "severity": "INFO",
+        "message": "Waiting for SIEM database ingestion...",
+        "event_id": f"EVT-WAIT"
     }
 
 # Filters
@@ -161,11 +91,16 @@ with col4:
     auto_refresh = st.toggle("Auto-Live", value=False, help="Automatically refreshes every 10 seconds")
 
 # Function to generate logs or fetch from SIEM
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=1)
 def fetch_logs(refresh_id=0):
     if HAS_SIEM:
         # Fetch real logs from DB
         real_logs = db.get_recent_events(limit=500)
+        
+        if not real_logs:
+            # Tell user to trigger ingestion
+            return [generate_log_entry()]
+            
         # Convert to format expected by UI
         formatted_logs = []
         for log in real_logs:
@@ -174,12 +109,12 @@ def fetch_logs(refresh_id=0):
                 "source": log.get("source") or "Unknown",
                 "severity": log.get("severity") or "INFO",
                 "message": f"{log.get('event_type', 'LOG')} - {log.get('details', '') or log.get('source_ip', 'Internal')}",
-                "event_id": log.get("id") or f"ID-{random.randint(100,999)}"
+                "event_id": log.get("id") or f"ID-unknown"
             })
         return formatted_logs
     else:
-        # Generate some synthetic ones if no SIEM
-        return [generate_log_entry() for _ in range(100)]
+        # No DB Connection
+        return [generate_log_entry()]
 
 st.session_state.log_entries = fetch_logs(st.session_state.log_refresh_counter)
 

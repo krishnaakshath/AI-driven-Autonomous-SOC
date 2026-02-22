@@ -310,10 +310,8 @@ from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
 
-# Authentication removed - public dashboard
 
-DATA_PATH = "data/parsed_logs/incident_responses.csv"
-FULL_MODE = os.path.exists(DATA_PATH)
+
 
 @st.cache_data(ttl=5)
 def load_soc_data():

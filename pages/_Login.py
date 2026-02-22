@@ -23,6 +23,17 @@ except st.errors.StreamlitAPIException:
 from ui.theme import CYBERPUNK_CSS, inject_particles
 
 from services.auth_service import auth_service, is_authenticated, check_persistent_session, login_user
+from auth.google_oauth import is_oauth_configured, get_google_auth_url, handle_oauth_callback, create_oauth_user
+
+# Handle Google OAuth Callback
+oauth_user = handle_oauth_callback()
+if oauth_user:
+    login_user(oauth_user['email'], remember=True)
+    # create_oauth_user already sets session internally, but login_user updates streamlit session state
+    st.session_state.session_start = __import__('time').time()
+    st.success(f" Welcome {oauth_user['name']}")
+    __import__('time').sleep(0.5)
+    st.rerun()
 
 # Auto-login check (persistent session)
 if check_persistent_session():
@@ -221,6 +232,14 @@ if st.session_state.login_step == 'credentials':
                 st.error(" " + message)
         else:
             st.warning(" Enter credentials")
+            
+    # Google OAuth Login
+    if is_oauth_configured():
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; margin: 10px 0;"><span style="color: #666; font-size: 0.8rem;">OR CONTINUE WITH</span></div>', unsafe_allow_html=True)
+        # Use link button for OAuth redirect
+        auth_url = get_google_auth_url()
+        st.markdown(f'<a href="{auth_url}" target="_self" style="display: block; text-align: center; padding: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; text-decoration: none; font-family: \'Orbitron\', sans-serif;"><img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" style="width: 18px; margin-right: 10px; vertical-align: middle;">GOOGLE</a>', unsafe_allow_html=True)
     
     # Create account section
     st.markdown("""

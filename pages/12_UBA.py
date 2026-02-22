@@ -62,47 +62,34 @@ def generate_user_data():
         try:
             data = get_user_behavior()
             if data:
-                # Map SIEM fields to expected format
-                return [{
-                    "user": u.get("user", "unknown"),
-                    "department": u.get("department", "Unknown"),
-                    "login_count": u.get("login_count", 0),
-                    "failed_logins": u.get("failed_logins", 0),
-                    "data_downloaded_mb": u.get("data_access", 0) * 10,  # Convert to MB
-                    "after_hours_logins": u.get("after_hours_activity", 0),
-                    "unique_ips": u.get("unique_ips", 1),
-                    "privilege_escalation": u.get("high_severity_alerts", 0),
-                    "risk_score": u.get("risk_score", 0),
-                    "is_anomalous": u.get("is_anomalous", False)
-                } for u in data]
+                # Map SIEM fields to expected format, generating deterministic departments
+                import hashlib
+                depts = ["IT", "Finance", "HR", "Sales", "Engineering"]
+                
+                formatted = []
+                for u in data:
+                    uname = u.get("user", "unknown")
+                    # Deterministic department based on hash of username
+                    dept_idx = int(hashlib.md5(uname.encode()).hexdigest(), 16) % len(depts)
+                    
+                    formatted.append({
+                        "user": uname,
+                        "department": u.get("department") or depts[dept_idx],
+                        "login_count": u.get("login_count", 0),
+                        "failed_logins": u.get("failed_logins", 0),
+                        "data_downloaded_mb": u.get("data_access", 0) * 10,  # Convert to MB
+                        "after_hours_logins": u.get("after_hours_activity", 0),
+                        "unique_ips": u.get("unique_ips", 1),
+                        "privilege_escalation": u.get("high_severity_alerts", 0),
+                        "risk_score": u.get("risk_score", 0),
+                        "is_anomalous": u.get("is_anomalous", False)
+                    })
+                return formatted
         except Exception as e:
             st.warning(f"SIEM connection issue: {e}")
     
-    # Fallback to random data
-    users = ["jsmith", "alee", "mwilson", "kpatel", "rjones", "admin", "service_account", "dchen", "lnguyen", "bkim"]
-    data = []
-    for user in users:
-        is_anomalous = random.random() > 0.7
-        login_count = random.randint(1, 10) if not is_anomalous else random.randint(15, 50)
-        failed_logins = random.randint(0, 2) if not is_anomalous else random.randint(5, 20)
-        data_downloaded_mb = random.randint(10, 200) if not is_anomalous else random.randint(500, 5000)
-        after_hours_logins = random.randint(0, 2) if not is_anomalous else random.randint(5, 15)
-        unique_ips = random.randint(1, 3) if not is_anomalous else random.randint(5, 15)
-        privilege_escalation = 0 if not is_anomalous else random.randint(1, 5)
-        
-        risk_score = min(100, (
-            (failed_logins * 5) + (data_downloaded_mb / 100) + (after_hours_logins * 8) +
-            (unique_ips * 3) + (privilege_escalation * 15)
-        ))
-        
-        data.append({
-            "user": user, "department": random.choice(["IT", "Finance", "HR", "Sales", "Engineering"]),
-            "login_count": login_count, "failed_logins": failed_logins, "data_downloaded_mb": data_downloaded_mb,
-            "after_hours_logins": after_hours_logins, "unique_ips": unique_ips, "privilege_escalation": privilege_escalation,
-            "risk_score": round(risk_score, 1), "is_anomalous": risk_score > 50
-        })
-    
-    return sorted(data, key=lambda x: x["risk_score"], reverse=True)
+    # Return empty if no DB connection
+    return []
 
 # Show data source
 if HAS_REAL_DATA:

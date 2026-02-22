@@ -609,6 +609,54 @@ CYBERPUNK_CSS = """
         border-color: var(--neon-cyan) !important;
     }
 
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MOBILE RESPONSIVENESS OVERRIDES (@media)
+    ═══════════════════════════════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+        /* Sidebar collapse override */
+        section[data-testid="stSidebar"] {
+            width: auto !important; /* Allow collapse */
+            min-width: unset !important;
+            max-width: 300px !important;
+        }
+        
+        section[data-testid="stSidebar"] > div:first-child {
+            width: auto !important;
+            max-width: 300px !important;
+        }
+        
+        /* Typography scaling */
+        .page-header h1, h1 {
+            font-size: 1.5rem !important;
+        }
+        
+        h2 { font-size: 1.2rem !important; }
+        h3 { font-size: 1rem !important; }
+        
+        .metric-value {
+            font-size: 2rem !important;
+        }
+        
+        /* Box scaling */
+        .glass-card, .metric-card {
+            padding: 1rem !important;
+            margin-bottom: 0.5rem !important;
+            width: 100% !important; /* Force stack */
+        }
+        
+        /* Login screen sizing */
+        .login-container {
+            width: 90% !important;
+            padding: 20px !important;
+        }
+        
+        /* Adjust tabs */
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.7rem !important;
+        }
+    }
+
 </style>
 """
 

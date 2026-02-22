@@ -13,6 +13,21 @@ import threading
 import requests
 from datetime import datetime
 
+# Load .env file if present (supports python-dotenv or manual parsing)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # Manual .env parsing fallback
+    _env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    if os.path.exists(_env_path):
+        with open(_env_path) as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _key, _val = _line.split("=", 1)
+                    os.environ.setdefault(_key.strip(), _val.strip())
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -85,13 +100,13 @@ class SupabaseClient:
         return self._connected
     
     def insert(self, table, data):
-        """Insert a row, ignoring duplicates."""
+        """Insert a row or list of rows, ignoring duplicates."""
         try:
             r = requests.post(
                 f"{self.url}/rest/v1/{table}",
                 headers={**self.headers, "Prefer": "return=minimal,resolution=ignore-duplicates"},
-                json=data,
-                timeout=5
+                json=data, # requests handles both dict and list of dicts properly
+                timeout=15 # Increased timeout for potential bulk inserts
             )
             return r.status_code in (200, 201, 204, 409)
         except Exception as e:
@@ -594,6 +609,55 @@ class DatabaseService:
                         pass
                     results.append(d)
                 return results
+
+    def insert_event(self, event: Dict) -> bool:
+        """Insert a single event."""
+        if self._use_supabase:
+            return self._supabase.insert("events", event)
+        return self._insert_sqlite("events", event)
+        
+    def bulk_insert_events(self, events: List[Dict]) -> bool:
+        """Insert multiple events optimally."""
+        if not events:
+            return True
+            
+        if self._use_supabase:
+            # Batch in chunks of 1000 to avoid request size limits
+            success = True
+            chunk_size = 1000
+            for i in range(0, len(events), chunk_size):
+                chunk = events[i:i + chunk_size]
+                if not self._supabase.insert("events", chunk):
+                    success = False
+                    print(f"[DB] Failed to insert chunk {i // chunk_size} to Supabase")
+            return success
+            
+        # SQLite Fallback: Execute many
+        try:
+            with sqlite3.connect(self._sqlite_path) as conn:
+                cursor = conn.cursor()
+                keys = "id, timestamp, source, event_type, severity, source_ip, dest_ip, user, hostname, status, details, raw_log, ml_anomaly_score, ml_classification"
+                placeholders = ",".join(["?"] * 14)
+                
+                rows = []
+                for e in events:
+                    rows.append((
+                        e.get("id"), e.get("timestamp"), e.get("source"),
+                        e.get("event_type"), e.get("severity"), e.get("source_ip"),
+                        e.get("dest_ip"), e.get("user"), e.get("hostname"),
+                        e.get("status"), e.get("details"), e.get("raw_log"),
+                        e.get("ml_anomaly_score"), e.get("ml_classification")
+                    ))
+                    
+                cursor.executemany(
+                    f"INSERT OR IGNORE INTO events ({keys}) VALUES ({placeholders})",
+                    rows
+                )
+                conn.commit()
+            return True
+        except Exception as e:
+            print(f"[DB] SQLite bulk insert error: {e}")
+            return False
 
     def get_event_count(self) -> int:
         """Fast event count."""

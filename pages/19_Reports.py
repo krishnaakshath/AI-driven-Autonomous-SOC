@@ -133,6 +133,12 @@ with tab1:
                 mime=mime_type,
                 use_container_width=True
             )
+            
+            # Auto-save to reports/ directory for history
+            os.makedirs("reports", exist_ok=True)
+            report_path = os.path.join("reports", f"SOC_Report_{datetime.now().strftime('%Y%m%d_%H%M')}.{file_ext}")
+            with open(report_path, "wb") as f:
+                f.write(report_data)
         except Exception as e:
             st.error(f"Error generating report: {e}")
 

@@ -84,8 +84,10 @@ class SIEMService:
                 "status": random.choice(["Open", "Investigating", "Resolved", "False Positive"])
             }
             
-            db.insert_event(event)
             new_events.append(event)
+            
+        # Bulk Insert!
+        db.bulk_insert_events(new_events)
             
         return new_events
 
