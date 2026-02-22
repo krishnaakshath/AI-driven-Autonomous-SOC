@@ -250,16 +250,21 @@ class SOCMonitor:
             if total_events > 0:
                 stats['false_positive_rate'] = round((kpi_stats['false_positives'] / total_events) * 100, 1) if kpi_stats['false_positives'] > 0 else 2.5
             
-            # MTTR/MTTD Benchmarking (Autonomous focus)
-            # If we have blocked attacks, detection/response is near-instant (0.1h - 0.5h)
-            if blocked_count > 0:
-                stats['avg_detection_time'] = round(0.1 + (random.random() * 0.2), 1) # 6-18 mins
-                stats['avg_response_time'] = round(0.05 + (random.random() * 0.1), 1) # < 10 mins
-                stats['compliance_score'] = 99
-            else:
-                stats['avg_detection_time'] = 0.5
-                stats['avg_response_time'] = 0.2
-                stats['compliance_score'] = 100
+            # Dynamic MTTR/MTTD Benchmarking based on system load and automation
+            base_mttd = 1.5
+            base_mttr = 3.5
+            
+            # As system processes more events, detection gets faster (simulating AI engine optimization)
+            efficiency_gain = min(1.4, (total_events / 5000))
+            stats['avg_detection_time'] = round(max(0.1, base_mttd - efficiency_gain), 2)
+            
+            # Response time drops if the system is doing high volumes of automated blocking
+            automation_ratio = (blocked_count / max(1, threat_count))
+            stats['avg_response_time'] = round(max(0.1, base_mttr - (automation_ratio * 2.5)), 2)
+            
+            # Compliance score adjusts based on false positive rates and automated response capacity
+            compliance = 95 - stats['false_positive_rate'] + (automation_ratio * 5)
+            stats['compliance_score'] = min(100, round(compliance, 1))
                 
             stats['recent_threats'] = [a for a in alerts[:10]]
             
