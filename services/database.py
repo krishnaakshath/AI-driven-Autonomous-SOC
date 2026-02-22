@@ -149,7 +149,7 @@ class SupabaseClient:
                 params=params,
                 timeout=5
             )
-            if r.status_code == 200:
+            if r.status_code in (200, 204, 206):
                 content_range = r.headers.get("content-range", "")
                 if "/" in content_range:
                     return int(content_range.split("/")[-1])
