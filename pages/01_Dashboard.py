@@ -442,25 +442,25 @@ with c_head:
             # Let's assume the dataframe distribution is representative
             if len(df) > 0:
                 ratio = true_total / len(df)
-                blocked = int((df["access_decision"] == "BLOCK").sum() * ratio)
-                restricted = int((df["access_decision"] == "RESTRICT").sum() * ratio)
-                allowed = int((df["access_decision"] == "ALLOW").sum() * ratio)
+                blocked = int((df["access_decision"] == "BLOCK").sum() * ratio) if "access_decision" in df else 0
+                restricted = int((df["access_decision"] == "RESTRICT").sum() * ratio) if "access_decision" in df else 0
+                allowed = int((df["access_decision"] == "ALLOW").sum() * ratio) if "access_decision" in df else 0
         else:
             total = len(df)
-            blocked = (df["access_decision"] == "BLOCK").sum()
-            restricted = (df["access_decision"] == "RESTRICT").sum()
-            allowed = (df["access_decision"] == "ALLOW").sum()
-            critical = (df["risk_score"] >= 80).sum()
+            blocked = (df["access_decision"] == "BLOCK").sum() if "access_decision" in df else 0
+            restricted = (df["access_decision"] == "RESTRICT").sum() if "access_decision" in df else 0
+            allowed = (df["access_decision"] == "ALLOW").sum() if "access_decision" in df else 0
+            critical = (df["risk_score"] >= 80).sum() if "risk_score" in df else 0
             
     except Exception as e:
-        # Fallback to dataframe counts
-        total = len(df)
-        blocked = (df["access_decision"] == "BLOCK").sum()
-        restricted = (df["access_decision"] == "RESTRICT").sum()
-        allowed = (df["access_decision"] == "ALLOW").sum()
-        critical = (df["risk_score"] >= 80).sum()
+        # Fallback to dataframe counts with safety checks
+        total = len(df) if isinstance(df, pd.DataFrame) else 0
+        blocked = (df["access_decision"] == "BLOCK").sum() if isinstance(df, pd.DataFrame) and "access_decision" in df.columns else 0
+        restricted = (df["access_decision"] == "RESTRICT").sum() if isinstance(df, pd.DataFrame) and "access_decision" in df.columns else 0
+        allowed = (df["access_decision"] == "ALLOW").sum() if isinstance(df, pd.DataFrame) and "access_decision" in df.columns else 0
+        critical = (df["risk_score"] >= 80).sum() if isinstance(df, pd.DataFrame) and "risk_score" in df.columns else 0
         
-    avg_risk = df["risk_score"].mean() if not df.empty else 0
+    avg_risk = df["risk_score"].mean() if (isinstance(df, pd.DataFrame) and not df.empty and "risk_score" in df.columns) else 0
 
     # Check for Real SOC Monitor Connection
     IS_LIVE_CONNECTION = False
@@ -628,7 +628,7 @@ with chart1:
 
 with chart2:
     st.markdown(section_title("Decision Distribution"), unsafe_allow_html=True)
-    if not df.empty:
+    if not df.empty and "access_decision" in df.columns:
         decision_counts = df["access_decision"].value_counts()
         fig2 = go.Figure(data=[go.Pie(
             labels=decision_counts.index, values=decision_counts.values, hole=0.6,
