@@ -164,13 +164,14 @@ class ThreatIntelAggregator:
     def _check_virustotal_ip(self, ip: str) -> Dict:
         """Check IP against VirusTotal (simulated)."""
         is_malicious = ip in self.KNOWN_MALICIOUS["ips"]
+        seed = int(hashlib.md5(ip.encode()).hexdigest()[:8], 16)
         
         return {
             "source": "VirusTotal",
             "available": True,
-            "malicious_count": random.randint(5, 15) if is_malicious else random.randint(0, 2),
+            "malicious_count": 5 + (seed % 10) if is_malicious else (seed % 2),
             "total_engines": 70,
-            "score": 85 if is_malicious else random.randint(0, 25),
+            "score": 85 if is_malicious else (seed % 25),
             "categories": ["malware", "botnet"] if is_malicious else [],
             "last_seen": datetime.now().isoformat()
         }
@@ -178,33 +179,36 @@ class ThreatIntelAggregator:
     def _check_abuseipdb(self, ip: str) -> Dict:
         """Check IP against AbuseIPDB (simulated)."""
         is_malicious = ip in self.KNOWN_MALICIOUS["ips"]
+        seed = int(hashlib.md5(ip.encode()).hexdigest()[:8], 16)
         
         return {
             "source": "AbuseIPDB",
             "available": True,
-            "confidence_score": random.randint(80, 100) if is_malicious else random.randint(0, 30),
-            "total_reports": random.randint(50, 500) if is_malicious else random.randint(0, 5),
-            "score": 90 if is_malicious else random.randint(0, 20),
-            "country": random.choice(["RU", "CN", "KP", "IR"]) if is_malicious else "US",
+            "confidence_score": 80 + (seed % 20) if is_malicious else (seed % 30),
+            "total_reports": 50 + (seed % 450) if is_malicious else (seed % 5),
+            "score": 90 if is_malicious else (seed % 20),
+            "country": ["RU", "CN", "KP", "IR"][seed % 4] if is_malicious else "US",
             "isp": "Malicious Hosting" if is_malicious else "Legitimate ISP"
         }
     
     def _check_alienvault_ip(self, ip: str) -> Dict:
         """Check IP against AlienVault OTX (simulated)."""
         is_malicious = ip in self.KNOWN_MALICIOUS["ips"]
+        seed = int(hashlib.md5(ip.encode()).hexdigest()[:8], 16)
         
         return {
             "source": "AlienVault OTX",
             "available": True,
-            "pulse_count": random.randint(10, 50) if is_malicious else random.randint(0, 3),
-            "score": 80 if is_malicious else random.randint(0, 20),
-            "reputation": -5 if is_malicious else random.randint(0, 2),
+            "pulse_count": 10 + (seed % 40) if is_malicious else (seed % 3),
+            "score": 80 if is_malicious else (seed % 20),
+            "reputation": -5 if is_malicious else (seed % 2),
             "tags": ["apt", "c2", "malware"] if is_malicious else []
         }
     
     def _check_shodan(self, ip: str) -> Dict:
         """Check IP against Shodan (simulated)."""
         is_malicious = ip in self.KNOWN_MALICIOUS["ips"]
+        seed = int(hashlib.md5(ip.encode()).hexdigest()[:8], 16)
         
         open_ports = [22, 80, 443] if not is_malicious else [22, 23, 80, 443, 3389, 4444, 5555]
         
@@ -212,8 +216,8 @@ class ThreatIntelAggregator:
             "source": "Shodan",
             "available": True,
             "open_ports": open_ports,
-            "vulnerabilities": random.randint(3, 10) if is_malicious else random.randint(0, 2),
-            "score": 70 if is_malicious else random.randint(0, 25),
+            "vulnerabilities": 3 + (seed % 7) if is_malicious else (seed % 2),
+            "score": 70 if is_malicious else (seed % 25),
             "services": ["ssh", "http", "https"] if not is_malicious else ["ssh", "telnet", "http", "rdp", "backdoor"],
             "os": "Linux" if not is_malicious else "Unknown"
         }
@@ -221,12 +225,13 @@ class ThreatIntelAggregator:
     def _check_virustotal_domain(self, domain: str) -> Dict:
         """Check domain against VirusTotal (simulated)."""
         is_malicious = any(m in domain for m in ["malware", "phishing", "evil", "ransomware", "botnet"])
+        seed = int(hashlib.md5(domain.encode()).hexdigest()[:8], 16)
         
         return {
             "source": "VirusTotal",
             "available": True,
-            "malicious_count": random.randint(10, 30) if is_malicious else random.randint(0, 2),
-            "score": 90 if is_malicious else random.randint(0, 15),
+            "malicious_count": 10 + (seed % 20) if is_malicious else (seed % 2),
+            "score": 90 if is_malicious else (seed % 15),
             "categories": ["phishing", "malware"] if is_malicious else ["business"],
             "registrar": "Malicious Registrar" if is_malicious else "GoDaddy"
         }
@@ -234,25 +239,27 @@ class ThreatIntelAggregator:
     def _check_alienvault_domain(self, domain: str) -> Dict:
         """Check domain against AlienVault OTX (simulated)."""
         is_malicious = any(m in domain for m in ["malware", "phishing", "evil", "ransomware", "botnet"])
+        seed = int(hashlib.md5(domain.encode()).hexdigest()[:8], 16)
         
         return {
             "source": "AlienVault OTX",
             "available": True,
-            "pulse_count": random.randint(5, 25) if is_malicious else 0,
-            "score": 85 if is_malicious else random.randint(0, 10),
+            "pulse_count": 5 + (seed % 20) if is_malicious else 0,
+            "score": 85 if is_malicious else (seed % 10),
             "tags": ["c2", "dga", "malware"] if is_malicious else []
         }
     
     def _check_virustotal_hash(self, file_hash: str) -> Dict:
         """Check file hash against VirusTotal (simulated)."""
         is_malicious = file_hash in self.KNOWN_MALICIOUS["hashes"]
+        seed = int(file_hash[:8], 16) if len(file_hash) > 8 else 0
         
         return {
             "source": "VirusTotal",
             "available": True,
-            "malicious_count": random.randint(40, 60) if is_malicious else random.randint(0, 2),
+            "malicious_count": 40 + (seed % 20) if is_malicious else (seed % 2),
             "total_engines": 70,
-            "score": 95 if is_malicious else random.randint(0, 10),
+            "score": 95 if is_malicious else (seed % 10),
             "file_type": "executable" if is_malicious else "document",
             "threat_name": "Trojan.Generic" if is_malicious else None
         }
@@ -260,12 +267,13 @@ class ThreatIntelAggregator:
     def _check_alienvault_hash(self, file_hash: str) -> Dict:
         """Check file hash against AlienVault OTX (simulated)."""
         is_malicious = file_hash in self.KNOWN_MALICIOUS["hashes"]
+        seed = int(file_hash[:8], 16) if len(file_hash) > 8 else 0
         
         return {
             "source": "AlienVault OTX",
             "available": True,
-            "pulse_count": random.randint(10, 30) if is_malicious else 0,
-            "score": 90 if is_malicious else random.randint(0, 5),
+            "pulse_count": 10 + (seed % 20) if is_malicious else 0,
+            "score": 90 if is_malicious else (seed % 5),
             "malware_families": ["emotet", "trickbot"] if is_malicious else []
         }
     

@@ -204,10 +204,11 @@ class SandboxService:
         behavior = self._simulate_behavior(ext, hashes["sha256"])
         
         # Build report
-        analysis_time = random.uniform(15, 45)  # Simulated analysis time
+        hash_seed = int(hashes["sha256"][:8], 16)
+        analysis_time = 15 + (hash_seed % 30)  # Deterministic analysis time
         
         report = {
-            "id": hashlib.md5(f"{filename}{datetime.now().isoformat()}".encode()).hexdigest()[:12],
+            "id": hashlib.md5(f"{filename}{hashes['sha256']}".encode()).hexdigest()[:12],
             "filename": filename,
             "file_size": len(file_content),
             "file_type": ext,
@@ -315,26 +316,28 @@ class SandboxService:
         
         # Network activity for non-clean verdicts
         network = []
+        seed = int(url_hash[:8], 16)
+        
         if verdict != "CLEAN":
             network = [
-                {"ip": f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}", 
-                 "port": random.choice([80, 443, 8080]), 
-                 "type": "HTTP" if random.random() > 0.5 else "HTTPS"}
+                {"ip": f"{(seed % 254) + 1}.{(seed * 2 % 254) + 1}.{(seed * 3 % 254) + 1}.{(seed * 4 % 254) + 1}", 
+                 "port": [80, 443, 8080][seed % 3], 
+                 "type": "HTTP" if (seed % 2) == 0 else "HTTPS"}
             ]
         
         report = {
-            "id": hashlib.md5(f"{url}{datetime.now().isoformat()}".encode()).hexdigest()[:12],
+            "id": hashlib.md5(f"{url}{url_hash}".encode()).hexdigest()[:12],
             "url": url,
             "submitted_at": datetime.now().isoformat(),
-            "analysis_time": round(time.time() - start_time + random.uniform(2, 5), 2),
+            "analysis_time": round(2 + (seed % 3), 2),
             "verdict": verdict,
             "severity": severity,
             "phishing_indicators": detected_indicators,
             "typosquatting": {"detected": is_typosquat, "brand": matched_brand, "detail": typo_detail} if is_typosquat else None,
             "network_activity": network,
-            "redirects": random.randint(1, 5) if verdict != "CLEAN" else 0,
+            "redirects": (seed % 5) + 1 if verdict != "CLEAN" else 0,
             "ssl_valid": url_lower.startswith("https"),
-            "domain_age_days": random.randint(1, 30) if is_typosquat else random.randint(30, 3000),
+            "domain_age_days": (seed % 30) + 1 if is_typosquat else (seed % 2900) + 30,
             "screenshot_url": f"/sandbox/screenshot/{url_hash[:8]}.png",
             "cached": False
         }
@@ -385,12 +388,13 @@ class SandboxService:
         return techniques
     
     def _generate_screenshot_urls(self, verdict: str) -> List[str]:
-        """Generate simulated screenshot URLs."""
+        """Generate static screenshot URLs based on verdict length."""
         if verdict == "CLEAN":
             return []
+        seed = sum(ord(c) for c in verdict)
         return [
             f"/sandbox/screenshot/exec_{i}.png" 
-            for i in range(random.randint(1, 3))
+            for i in range(1 + (seed % 3))
         ]
     
     def get_history(self, limit: int = 10) -> List[Dict]:
