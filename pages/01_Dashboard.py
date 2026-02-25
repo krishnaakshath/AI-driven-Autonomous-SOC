@@ -510,14 +510,13 @@ with c_live:
         </div>
     """, unsafe_allow_html=True)
     
-    col_refresh, col_auto = st.columns([1, 1])
+    col_auto, col_refresh = st.columns([1, 1])
+    with col_auto:
+        auto_refresh = st.toggle("Auto-Sync", value=True)
     with col_refresh:
-        if st.button("Refresh System"):
+        if st.button("↻ Refresh", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
-            
-    with col_auto:
-        auto_refresh = st.checkbox("Auto-Refresh", value=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 

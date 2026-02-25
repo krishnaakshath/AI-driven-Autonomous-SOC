@@ -44,7 +44,7 @@ with h_col1:
     st.markdown(page_header("Executive Dashboard", "High-level security KPIs for leadership and stakeholders"), unsafe_allow_html=True)
 with h_col2:
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🔄 Refresh System", use_container_width=True):
+    if st.button("↻ Refresh", use_container_width=True):
         st.cache_data.clear()
         st.session_state.last_exec_refresh = time.time()
         st.session_state.executive_refresh += 1

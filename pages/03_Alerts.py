@@ -19,26 +19,20 @@ from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, alert_card, s
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
 
-st.markdown(page_header("Security Alerts", "Real-time threat detection from SIEM events"), unsafe_allow_html=True)
+h_col1, h_col2 = st.columns([4, 1])
+with h_col1:
+    st.markdown(page_header("Security Alerts", "Real-time threat detection from SIEM events | Auto-sync active"), unsafe_allow_html=True)
 
 # Auto-refresh
 if 'last_alert_refresh' not in st.session_state:
     st.session_state.last_alert_refresh = time.time()
 
-col_refresh, col_time = st.columns([1, 3])
-with col_refresh:
-    if st.button("Refresh Alerts", type="primary"):
+with h_col2:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("↻ Refresh", use_container_width=True):
         st.cache_data.clear()
         st.session_state.last_alert_refresh = time.time()
         st.rerun()
-
-with col_time:
-    st.markdown('''
-        <div style="display: flex; align-items: center; gap: 0.5rem; height: 38px;">
-            <span style="color: #00C853;"></span>
-            <span style="color: #8B95A5;">Auto-refreshing every 30s | Connected to SIEM</span>
-        </div>
-    ''', unsafe_allow_html=True)
 
 # Auto-refresh logic
 if time.time() - st.session_state.last_alert_refresh > 30:
