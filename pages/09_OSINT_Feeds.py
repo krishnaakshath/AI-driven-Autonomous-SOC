@@ -22,8 +22,9 @@ import requests
 def fetch_urlhaus_recent():
     """Fetch recent malware URLs from abuse.ch URLhaus (free, no key)."""
     try:
+        headers = {"User-Agent": "SOC-Dashboard-Client/1.0"}
         r = requests.post("https://urlhaus-api.abuse.ch/v1/urls/recent/", 
-                          data={"limit": 25}, timeout=10)
+                          data={"limit": 25}, timeout=10, headers=headers)
         if r.status_code == 200:
             data = r.json()
             return data.get("urls", [])[:25]
@@ -35,8 +36,9 @@ def fetch_urlhaus_recent():
 def fetch_threatfox_recent():
     """Fetch recent IoCs from abuse.ch ThreatFox (free, no key)."""
     try:
+        headers = {"User-Agent": "SOC-Dashboard-Client/1.0"}
         r = requests.post("https://threatfox-api.abuse.ch/api/v1/",
-                          json={"query": "get_iocs", "days": 1}, timeout=10)
+                          json={"query": "get_iocs", "days": 1}, timeout=10, headers=headers)
         if r.status_code == 200:
             data = r.json()
             return data.get("data", [])[:25]
