@@ -131,7 +131,7 @@ st.markdown(f"""
     align-items: center;
     font-size: 0.85rem;
 ">
-    <span style="color: #00C853;">LIVE — Connected to Persistent Storage (SQLite)</span>
+    <span style="color: #00C853;">LIVE — Connected to Persistent Cloud Storage</span>
     <span style="color: #8B95A5;">Refresh #{st.session_state.siem_refresh_count} | Session: {int(session_duration)}s</span>
 </div>
 """, unsafe_allow_html=True)
@@ -410,4 +410,4 @@ with tab4:
             st.success(f"Log source '{source_name}' added successfully!")
 
 st.markdown("---")
-st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Persistent Data Layer (SQLite)</p></div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Persistent Data Layer (Cloud DB)</p></div>', unsafe_allow_html=True)

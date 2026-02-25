@@ -690,7 +690,7 @@ class DatabaseService:
             # Generate in chunks of 2000 to prevent local memory issues
             for i in range(0, needed, 2000):
                 batch_size = min(2000, needed - i)
-                events = siem_service.simulate_ingestion(count=batch_size, save_to_db=False)
+                events = siem_service.simulate_ingestion(count=batch_size)
                 
                 # Bulk insert handles the 200-row Supabase chunking internally
                 if self.bulk_insert_events(events):

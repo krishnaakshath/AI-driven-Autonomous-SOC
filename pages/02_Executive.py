@@ -283,4 +283,11 @@ with exp3:
     st.download_button("🌐 Download Raw Feed (JSON)", json_data, "executive_metrics.json", "application/json", use_container_width=True)
 
 st.markdown("---")
+
+# Auto-Refresh Logic
+auto_refresh = st.checkbox("Auto-Refresh Executive Metrics", value=True)
+if auto_refresh:
+    time.sleep(15)
+    st.rerun()
+
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Executive Dashboard | Platform Version 2.1.0</p></div>', unsafe_allow_html=True)
