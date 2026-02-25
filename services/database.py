@@ -617,6 +617,31 @@ class DatabaseService:
             return self._supabase.insert("events", event)
         return self._insert_sqlite("events", event)
         
+    def bulk_insert_alerts(self, alerts: List[Dict]) -> bool:
+        """Insert multiple alerts optimally."""
+        if not alerts:
+            return True
+            
+        if self._use_supabase:
+            success = True
+            chunk_size = 1000
+            for i in range(0, len(alerts), chunk_size):
+                chunk = alerts[i:i + chunk_size]
+                formatted_chunk = []
+                for a in chunk:
+                    formatted_chunk.append({
+                        "id": a.get("id"),
+                        "timestamp": a.get("timestamp"),
+                        "title": a.get("title"),
+                        "severity": a.get("severity"),
+                        "status": a.get("status"),
+                        "details": a  # JSONB
+                    })
+                if not self._supabase.insert("alerts", formatted_chunk):
+                    success = False
+            return success
+        return True
+        
     def bulk_insert_events(self, events: List[Dict]) -> bool:
         """Insert multiple events optimally."""
         if not events:

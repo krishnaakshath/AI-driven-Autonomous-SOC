@@ -34,12 +34,12 @@ class SIEMService:
         Produce events. 
         Combines background simulated data for visual density with real OSINT feeds.
         """
-        # If DB is empty or very low, seed it with HISTORY so the dashboard doesn't look empty
+        # Only backfill historically via background processes, not synchronously. 
+        # For live events, just generate a very small number if we want noise.
         stats = db.get_stats()
-        if stats.get('total', 0) < 18000:
-            # Backfill to reach around 18000 events for rich visualization
-            self.simulate_ingestion(count=9000, days_back=180)
-            self.ingest_threat_intelligence() # Inject real threats
+        if stats.get('total', 0) < 500:
+            # Only do a tiny seed if absolutely empty, to avoid 30-min HTTP hangs
+            self.simulate_ingestion(count=100, days_back=1)
             
         # Add random simulated background noise (90% chance)
         if random.random() < 0.9:
@@ -90,9 +90,8 @@ class SIEMService:
             
             new_events.append(event)
             
-        # Insert!
-        for ev in new_events:
-            db.insert_event(ev)
+        # Bulk Insert for efficiency!
+        db.bulk_insert_events(new_events)
             
         return new_events
 
