@@ -87,13 +87,10 @@ elif user_is_admin:
         ],
         "Investigation": [
             st.Page("pages/11_Analysis.py", title="Analysis"),
-            st.Page("pages/12_UBA.py", title="UBA"),
             st.Page("pages/13_Forensics.py", title="Forensics"),
-            st.Page("pages/14_Sandbox.py", title="Sandbox"),
         ],
         "Operations": [
             st.Page("pages/15_Scanners.py", title="Scanners"),
-            st.Page("pages/16_Security_Testing.py", title="Security Testing"),
             st.Page("pages/17_IP_Block.py", title="IP Block"),
             st.Page("pages/18_Rules.py", title="Rules"),
             st.Page("pages/19_Reports.py", title="Reports"),
@@ -128,7 +125,6 @@ else:
         ],
         "Tools": [
             st.Page("pages/15_Scanners.py", title="Scanners"),
-            st.Page("pages/16_Security_Testing.py", title="Security Testing"),
             st.Page("pages/19_Reports.py", title="Reports"),
         ],
         "AI & Config": [
