@@ -445,7 +445,7 @@ class DatabaseService:
             rows = self._supabase.select(
                 "events",
                 params={"timestamp": f"gte.{cutoff}", "select": "timestamp"},
-                limit=10000,
+                limit=100000,
                 order="timestamp.asc"
             )
             # Group by day in Python
