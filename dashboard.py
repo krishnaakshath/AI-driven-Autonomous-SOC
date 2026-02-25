@@ -91,8 +91,6 @@ elif user_is_admin:
         ],
         "Operations": [
             st.Page("pages/15_Scanners.py", title="Scanners"),
-            st.Page("pages/17_IP_Block.py", title="IP Block"),
-            st.Page("pages/18_Rules.py", title="Rules"),
             st.Page("pages/19_Reports.py", title="Reports"),
             st.Page("pages/20_Playbooks.py", title="Playbooks"),
         ],
