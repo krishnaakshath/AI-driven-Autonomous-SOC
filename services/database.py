@@ -673,6 +673,37 @@ class DatabaseService:
                 conn.close()
                 return count
 
+    def mass_seed_supabase(self, target_count: int = 180000):
+        """Massive simulation backfill up to `target_count` using chunked batches."""
+        print(f"[DB] Starting mass seed to reach {target_count} events...")
+        try:
+            from services.siem_service import siem_service
+            
+            current = self.get_event_count()
+            if current >= target_count:
+                print(f"[DB] Already at {current} events. No seed needed.")
+                return True
+                
+            needed = target_count - current
+            print(f"[DB] Currently at {current}. Generating {needed} new events in batches of 2000...")
+            
+            # Generate in chunks of 2000 to prevent local memory issues
+            for i in range(0, needed, 2000):
+                batch_size = min(2000, needed - i)
+                events = siem_service.simulate_ingestion(count=batch_size, save_to_db=False)
+                
+                # Bulk insert handles the 200-row Supabase chunking internally
+                if self.bulk_insert_events(events):
+                    print(f"[DB] Mass seed: Inserted {i + batch_size}/{needed} events")
+                else:
+                    print(f"[DB] Mass seed failed at {i + batch_size}/{needed}")
+                    return False
+            
+            print("[DB] Mass seed complete.")
+            return True
+        except Exception as e:
+            print(f"[DB] Mass seed error: {e}")
+            return False
 
 # Singleton instance
 db = DatabaseService()
