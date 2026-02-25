@@ -77,14 +77,26 @@ def get_executive_metrics(refresh_counter=0):
             soc = SOCMonitor()
             soc_data = soc.get_current_state()
             
+            # Fetch dynamic chart data from DB
+            trend_data = db.get_monthly_counts()
+            kpi_stats = db.get_kpi_stats()
+            
+            # Ensure compliance score is strictly between 0 and 100
+            compliance_val = soc_data.get('compliance_score', 98)
+            if not isinstance(compliance_val, (int, float)) or compliance_val < 0 or compliance_val > 100:
+                # Calculate based on threats vs total events
+                total = kpi_stats.get('total', 1000)
+                threats = kpi_stats.get('critical', 0)
+                compliance_val = max(0, min(100, 100 - (threats / max(total, 1) * 100)))
+
             # Update base metrics
             metrics.update({
                 "mttr": round(soc_data.get('avg_response_time', 4.5), 1),
                 "mttd": round(soc_data.get('avg_detection_time', 1.5), 1),
-                "compliance_score": soc_data.get('compliance_score', 98),
-                "blocked_attacks": soc_data.get('blocked_today', 0),
+                "compliance_score": round(compliance_val, 1),
+                "blocked_attacks": kpi_stats.get('blocked', soc_data.get('blocked_today', 0)),
                 "false_positive_rate": round(soc_data.get('false_positive_rate', 3.2), 1),
-                "cost_savings": soc_data.get('blocked_today', 0) * 250,
+                "cost_savings": kpi_stats.get('blocked', 0) * 250,
             })
             
             # Fetch dynamic chart data from DB
@@ -287,7 +299,7 @@ st.markdown("---")
 # Auto-Refresh Logic
 auto_refresh = st.checkbox("Auto-Refresh Executive Metrics", value=True)
 if auto_refresh:
-    time.sleep(15)
+    time.sleep(30)
     st.rerun()
 
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Executive Dashboard | Platform Version 2.1.0</p></div>', unsafe_allow_html=True)

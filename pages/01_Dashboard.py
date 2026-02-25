@@ -732,6 +732,6 @@ inject_floating_cortex_link()
 
 # Auto-Refresh Logic (Placed at end to allow full rendering first)
 if auto_refresh:
-    time.sleep(5)
+    time.sleep(30)
     st.cache_data.clear()
     st.rerun()
