@@ -82,7 +82,7 @@ elif user_is_admin:
             st.Page("pages/06_Threat_Intel.py", title="Threat Intel"),
             st.Page("pages/07_Geo_Predictions.py", title="Geo Predictions"),
             st.Page("pages/08_Kill_Chain.py", title="Kill Chain"),
-            st.Page("pages/09_Dark_Web.py", title="Dark Web"),
+            st.Page("pages/09_OSINT_Feeds.py", title="OSINT Feeds"),
             st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt"),
         ],
         "Investigation": [
