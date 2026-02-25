@@ -620,7 +620,49 @@ with chart1:
                 margin=dict(l=20, r=20, t=20, b=20), height=380,
                 hovermode="x unified"
             )
-            st.plotly_chart(fig, use_container_width=True)
+            # Enable point selection to view detailed daily data
+            selection = st.plotly_chart(fig, use_container_width=True, on_select="rerun", selection_mode="points")
+            
+            # Show detailed breakdown if user selects a date on the timeline
+            if selection and isinstance(selection, dict) and "selection" in selection:
+                points = selection["selection"].get("points", [])
+                if points:
+                    try:
+                        selected_date = points[0].get("x")
+                        target_date = pd.to_datetime(selected_date).strftime('%Y-%m-%d')
+                        st.markdown(f"**🔎 Threat Log for {target_date}**")
+                        
+                        with st.spinner("Checking historical archives..."):
+                            # Fetch exact events for that day
+                            if db._use_supabase:
+                                rows = db._supabase.select("events", params={"timestamp": f"like.{target_date}%"}, limit=500, order="timestamp.desc")
+                                if rows:
+                                    ddf = pd.DataFrame(rows)
+                                    st.dataframe(
+                                        ddf[['timestamp', 'event_type', 'source_ip', 'severity', 'status']], 
+                                        use_container_width=True, 
+                                        hide_index=True
+                                    )
+                                else:
+                                    st.info(f"No specific threat logs found for {target_date}.")
+                            else:
+                                # SQLite fallback
+                                conn = db._get_conn()
+                                c = conn.cursor()
+                                c.execute("SELECT timestamp, event_type, source_ip, severity, status FROM events WHERE timestamp LIKE ? ORDER BY timestamp DESC LIMIT 500", (f"{target_date}%",))
+                                rows = c.fetchall()
+                                conn.close()
+                                if rows:
+                                    ddf = pd.DataFrame(rows, columns=['timestamp', 'event_type', 'source_ip', 'severity', 'status'])
+                                    st.dataframe(
+                                        ddf, 
+                                        use_container_width=True, 
+                                        hide_index=True
+                                    )
+                                else:
+                                    st.info(f"No specific threat logs found for {target_date}.")
+                    except Exception as e:
+                        st.error(f"Error fetching logs for date: {e}")
         else:
             st.info("No historical timeline data available.")
     except Exception as e:
