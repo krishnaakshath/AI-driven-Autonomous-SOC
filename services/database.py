@@ -437,22 +437,26 @@ class DatabaseService:
                 return {"total": total, "critical": critical, "high": high}
 
     def get_daily_counts(self, days=30):
-        """Get event counts grouped by day."""
+        """Get exact event counts grouped by day, bypassing row limits."""
         if self._use_supabase:
-            # Use Supabase select with date filtering
+            import concurrent.futures
             from datetime import timedelta
-            cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-            rows = self._supabase.select(
-                "events",
-                params={"timestamp": f"gte.{cutoff}", "select": "timestamp"},
-                limit=100000,
-                order="timestamp.asc"
-            )
-            # Group by day in Python
+            
             day_counts = {}
-            for row in rows:
-                ts = row.get("timestamp", "")[:10]
-                day_counts[ts] = day_counts.get(ts, 0) + 1
+            today = datetime.now()
+            # Generate the list of days. E.g. '2026-02-13'
+            days_list = [(today - timedelta(days=d)).strftime("%Y-%m-%d") for d in range(days)]
+            
+            def fetch_day_count(d_str):
+                next_day = (datetime.strptime(d_str, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+                filters = {"and": f"(timestamp.gte.{d_str} 00:00:00,timestamp.lt.{next_day} 00:00:00)"}
+                return d_str, self._supabase.count("events", filters)
+                
+            # Fetch concurrently to ensure speed
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+                for d_str, count in executor.map(fetch_day_count, days_list):
+                    day_counts[d_str] = count
+                    
             return [{"date": k, "count": v} for k, v in sorted(day_counts.items())]
         else:
             with _db_lock:
@@ -470,20 +474,34 @@ class DatabaseService:
                 return [{"date": row[0], "count": row[1]} for row in rows]
 
     def get_monthly_counts(self):
-        """Get event counts grouped by month."""
+        """Get exact event counts grouped by month, bypassing row limits."""
         if self._use_supabase:
+            import concurrent.futures
             from datetime import timedelta
-            cutoff = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
-            rows = self._supabase.select(
-                "events",
-                params={"timestamp": f"gte.{cutoff}", "select": "timestamp"},
-                limit=20000,
-                order="timestamp.asc"
-            )
+            import calendar
+            
             month_counts = {}
-            for row in rows:
-                month = row.get("timestamp", "")[:7]
-                month_counts[month] = month_counts.get(month, 0) + 1
+            today = datetime.now()
+            # Generate unique last 12 months (e.g. '2025-10')
+            months_list = sorted(list(set([(today - timedelta(days=d)).strftime("%Y-%m") for d in range(365)])))[-12:]
+            
+            def fetch_month_count(m_str):
+                y, m = m_str.split('-')
+                last_day = calendar.monthrange(int(y), int(m))[1]
+                start_str = f"{m_str}-01 00:00:00"
+                # Need the first day of the *next* month to do a strict < bound
+                if int(m) == 12:
+                    next_month_str = f"{int(y)+1}-01-01 00:00:00"
+                else:
+                    next_month_str = f"{y}-{int(m)+1:02d}-01 00:00:00"
+                    
+                filters = {"and": f"(timestamp.gte.{start_str},timestamp.lt.{next_month_str})"}
+                return m_str, self._supabase.count("events", filters)
+                
+            with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
+                for m_str, count in executor.map(fetch_month_count, months_list):
+                    month_counts[m_str] = count
+                    
             return [{"month": k, "count": v} for k, v in sorted(month_counts.items())]
         else:
             with _db_lock:
