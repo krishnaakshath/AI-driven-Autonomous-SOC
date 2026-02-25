@@ -410,7 +410,7 @@ if ALERTS_AVAILABLE and not df.empty and "risk_score" in df.columns:
 
 
 # Premium Header
-c_head, c_live = st.columns([3, 1])
+c_head, c_live = st.columns([2.5, 1.5])
 with c_head:
     st.markdown(page_header("Security Operations Center", "Real-time threat monitoring and autonomous response"), unsafe_allow_html=True)
 
@@ -425,21 +425,8 @@ with c_head:
         # If DB total is greater than loaded df (5000), use DB total
         if true_total > len(df):
             total = true_total
-            # Estimate other counts based on distribution in loaded data if reliable real counts aren't available
-            # But we have true_critical from DB
             critical = true_critical
             
-            # For Blocked/Restricted/Allowed, we don't have direct DB stats yet without scanning all rows
-            # So we can project them or just leave them as 'Recent Blocked'. 
-            # Better approach: Let's assume the user cares most about "Total Events" being accurate.
-            # We will use the dataframe counts for status but update Total and Critical.
-            
-            # However, if we show Total = 10,000 but Blocked+Allowed+Restricted = 5,000, it looks wrong.
-            # Let's try to get a rough projection or just keep them as "visible" counts?
-            # User specifically asked: "why is it showing only 5000 events".
-            # So updating TOTAL is the key.
-            
-            # Let's assume the dataframe distribution is representative
             if len(df) > 0:
                 ratio = true_total / len(df)
                 blocked = int((df["access_decision"] == "BLOCK").sum() * ratio) if "access_decision" in df else 0
@@ -468,29 +455,12 @@ with c_head:
         from services.soc_monitor import SOCMonitor
         soc = SOCMonitor()
         state = soc.get_current_state()
-        
-        # If we get valid state, we treat it as live for critical counters
-        if state:
-            IS_LIVE_CONNECTION = True
-            # Overlay real blocked/critical counts if they are non-zero/available
-            real_blocked = state.get('blocked_today', 0)
-            real_critical = state.get('threat_count', 0)
-            
-            if real_blocked > 0 or real_critical > 0:
-                # If these are just 'today', they might be smaller than total historical
-                # So only use them if reasonable or specific to 'today' view?
-                # The dashboard generally shows 'all time' or 'loaded window'.
-                # Let's stick to the DB stats for Total/Critical as they are more accurate for "History".
-                # But SOCMonitor might be "Today's" live stats. 
-                # Let's prioritize the DB stats calculated above for consistency.
-                pass 
-                
+        if state: IS_LIVE_CONNECTION = True
     except Exception as e:
         pass
             
 
 # Adjust allowed if blocked changed significantly to keep total sane
-# (Optional, but keeps math cleaner if total < blocked)
 if blocked > total:
     total = blocked + restricted + allowed
 
@@ -502,17 +472,19 @@ with c_live:
     badge_text = "LIVE SYSTEM" if IS_LIVE_CONNECTION else "SIMULATION MODE"
     
     st.markdown(f"""
-        <div style="height: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding-top: 1rem;">
-            <div class="live-badge" style="padding: 0.8rem 1.5rem; border-color: {badge_color}; color: {badge_color}; background: {badge_bg};">
+        <div style="height: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding-top: 1.5rem; padding-bottom: 0.5rem;">
+            <div class="live-badge" style="padding: 0.6rem 1.2rem; border-color: {badge_color}; color: {badge_color}; background: {badge_bg}; white-space: nowrap;">
                 <span class="live-dot" style="background: {badge_color};"></span>
                 {badge_text}
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    col_auto, col_refresh = st.columns([1, 1])
+    col_auto, col_refresh = st.columns([1.5, 1])
     with col_auto:
+        st.markdown("<div style='padding-top: 5px; float: right;'>", unsafe_allow_html=True)
         auto_refresh = st.toggle("Auto-Sync", value=True)
+        st.markdown("</div>", unsafe_allow_html=True)
     with col_refresh:
         if st.button("↻ Refresh", use_container_width=True):
             st.cache_data.clear()
