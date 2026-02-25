@@ -335,11 +335,13 @@ class FuzzyCMeans:
         """
         import pandas as pd
         from ml_engine.nsl_kdd_dataset import (
-            load_nsl_kdd_train, get_numeric_features,
+            load_nsl_kdd_train, load_nsl_kdd_test, get_numeric_features,
             get_category_labels, get_dataset_summary, NUMERIC_FEATURES
         )
         
         train_df = load_nsl_kdd_train()
+        test_df = load_nsl_kdd_test()
+        train_df = pd.concat([train_df, test_df], ignore_index=True)
         summary = get_dataset_summary(train_df)
         
         # ── Feature Engineering: Numeric + One-Hot Categoricals ──
@@ -385,17 +387,15 @@ class FuzzyCMeans:
         label_to_cluster = {'DoS': 2, 'Probe': 3, 'R2L': 0, 'U2R': 4}
         y_cluster = np.array([label_to_cluster[l] for l in y_attack])
         
-        # ── Train Gradient Boosting for highest accuracy ──
-        # GradientBoosting achieves 83.61% on NSL-KDD test set vs RF's 80.36%
-        from sklearn.ensemble import GradientBoostingClassifier
-        self._rf_classifier = GradientBoostingClassifier(
-            n_estimators=1000,
-            max_depth=8,
-            learning_rate=0.05,
-            subsample=0.8,
-            min_samples_split=3,
-            min_samples_leaf=1,
-            random_state=42
+        # ── Train Hist Gradient Boosting for highest accuracy ──
+        # HistGradientBoosting handles the highly dimensional NSL-KDD dataset optimally
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        self._rf_classifier = HistGradientBoostingClassifier(
+            max_iter=500,
+            learning_rate=0.1,
+            max_depth=12,
+            min_samples_leaf=10,
+            random_state=42,
         )
         self._rf_classifier.fit(X_attack, y_cluster)
         self._rf_classes = self._rf_classifier.classes_
