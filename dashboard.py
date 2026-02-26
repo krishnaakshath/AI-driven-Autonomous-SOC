@@ -73,36 +73,36 @@ elif user_is_admin:
     # ── Admin: full access to all pages ──
     pg = st.navigation({
         "Dashboards": [
-            st.Page("pages/00_User_Guide.py", title="User Guide", icon=":material/help:"),
-            st.Page("pages/01_Dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
-            st.Page("pages/02_Executive.py", title="Executive", icon=":material/monitoring:"),
+            st.Page("pages/00_User_Guide.py", title="User Guide", icon="📖"),
+            st.Page("pages/01_Dashboard.py", title="Dashboard", icon="🏠", default=True),
+            st.Page("pages/02_Executive.py", title="Executive", icon="📊"),
         ],
         "Monitoring": [
-            st.Page("pages/03_Alerts.py", title="Alerts", icon=":material/notifications_active:"),
-            st.Page("pages/04_Logs.py", title="Logs", icon=":material/description:"),
-            st.Page("pages/05_Timeline.py", title="Timeline", icon=":material/history:"),
-            st.Page("pages/24_SIEM.py", title="SIEM", icon=":material/security:"),
+            st.Page("pages/03_Alerts.py", title="Alerts", icon="🚨"),
+            st.Page("pages/04_Logs.py", title="Logs", icon="📋"),
+            st.Page("pages/05_Timeline.py", title="Timeline", icon="⏱️"),
+            st.Page("pages/24_SIEM.py", title="SIEM", icon="🔒"),
         ],
         "Threat Intelligence": [
-            st.Page("pages/06_Threat_Intel.py", title="Threat Intel", icon=":material/public:"),
-            st.Page("pages/07_Geo_Predictions.py", title="Geo Predictions", icon=":material/map:"),
-            st.Page("pages/08_Kill_Chain.py", title="Kill Chain", icon=":material/account_tree:"),
-            st.Page("pages/09_OSINT_Feeds.py", title="OSINT Feeds", icon=":material/rss_feed:"),
-            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt", icon=":material/search:"),
+            st.Page("pages/06_Threat_Intel.py", title="Threat Intel", icon="🌐"),
+            st.Page("pages/07_Geo_Predictions.py", title="Geo Predictions", icon="🗺️"),
+            st.Page("pages/08_Kill_Chain.py", title="Kill Chain", icon="⛓️"),
+            st.Page("pages/09_OSINT_Feeds.py", title="OSINT Feeds", icon="📡"),
+            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt", icon="🔍"),
         ],
         "Investigation": [
-            st.Page("pages/11_Analysis.py", title="ML Insights", icon=":material/analytics:"),
-            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon=":material/smart_toy:"),
-            st.Page("pages/13_Forensics.py", title="Forensics", icon=":material/biotech:"),
+            st.Page("pages/11_Analysis.py", title="ML Insights", icon="🧠"),
+            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon="⚡"),
+            st.Page("pages/13_Forensics.py", title="Forensics", icon="🔬"),
         ],
         "Operations": [
-            st.Page("pages/15_Scanners.py", title="Scanners", icon=":material/radar:"),
-            st.Page("pages/19_Reports.py", title="Reports", icon=":material/article:"),
+            st.Page("pages/15_Scanners.py", title="Scanners", icon="🔎"),
+            st.Page("pages/19_Reports.py", title="Reports", icon="📄"),
         ],
         "AI & Config": [
-            st.Page("pages/21_CORTEX.py", title="CORTEX AI", icon=":material/psychology:"),
-            st.Page("pages/25_Firewall_Control.py", title="Firewall Control", icon=":material/shield:"),
-            st.Page("pages/23_Settings.py", title="Settings", icon=":material/settings:"),
+            st.Page("pages/21_CORTEX.py", title="CORTEX AI", icon="🤖"),
+            st.Page("pages/25_Firewall_Control.py", title="Firewall Control", icon="🛡️"),
+            st.Page("pages/23_Settings.py", title="Settings", icon="⚙️"),
         ],
     }, position="sidebar")
 
@@ -110,27 +110,27 @@ else:
     # ── Regular user: clean, limited sidebar ──
     pg = st.navigation({
         "Dashboards": [
-            st.Page("pages/00_User_Guide.py", title="User Guide", icon=":material/help:"),
-            st.Page("pages/01_Dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
-            st.Page("pages/02_Executive.py", title="Executive", icon=":material/monitoring:"),
+            st.Page("pages/00_User_Guide.py", title="User Guide", icon="📖"),
+            st.Page("pages/01_Dashboard.py", title="Dashboard", icon="🏠", default=True),
+            st.Page("pages/02_Executive.py", title="Executive", icon="📊"),
         ],
         "Monitoring": [
-            st.Page("pages/03_Alerts.py", title="Alerts", icon=":material/notifications_active:"),
-            st.Page("pages/04_Logs.py", title="Logs", icon=":material/description:"),
-            st.Page("pages/05_Timeline.py", title="Timeline", icon=":material/history:"),
+            st.Page("pages/03_Alerts.py", title="Alerts", icon="🚨"),
+            st.Page("pages/04_Logs.py", title="Logs", icon="📋"),
+            st.Page("pages/05_Timeline.py", title="Timeline", icon="⏱️"),
         ],
         "Threat Intelligence": [
-            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt", icon=":material/search:"),
-            st.Page("pages/06_Threat_Intel.py", title="Threat Intel", icon=":material/public:"),
+            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt", icon="🔍"),
+            st.Page("pages/06_Threat_Intel.py", title="Threat Intel", icon="🌐"),
         ],
         "Investigation": [
-            st.Page("pages/11_Analysis.py", title="ML Insights", icon=":material/analytics:"),
-            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon=":material/smart_toy:"),
-            st.Page("pages/13_Forensics.py", title="Forensics", icon=":material/biotech:"),
+            st.Page("pages/11_Analysis.py", title="ML Insights", icon="🧠"),
+            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon="⚡"),
+            st.Page("pages/13_Forensics.py", title="Forensics", icon="🔬"),
         ],
         "AI & Config": [
-            st.Page("pages/21_CORTEX.py", title="CORTEX AI", icon=":material/psychology:"),
-            st.Page("pages/23_Settings.py", title="Settings", icon=":material/settings:"),
+            st.Page("pages/21_CORTEX.py", title="CORTEX AI", icon="🤖"),
+            st.Page("pages/23_Settings.py", title="Settings", icon="⚙️"),
         ],
     }, position="sidebar")
 
