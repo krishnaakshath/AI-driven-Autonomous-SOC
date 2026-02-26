@@ -32,68 +32,26 @@ class SIEMService:
     def generate_events(self, count: int = 100) -> List[Dict]:
         """
         Produce events. 
-        Combines background simulated data for visual density with real OSINT feeds.
+        Uses real data from DB and live OSINT feeds.
         """
-        # Only backfill historically via background processes, not synchronously. 
-        # For live events, just generate a very small number if we want noise.
         stats = db.get_stats()
+        
+        # If DB is low, pull fresh real data immediately
         if stats.get('total', 0) < 500:
-            # Only do a tiny seed if absolutely empty, to avoid 30-min HTTP hangs
-            self.simulate_ingestion(count=100, days_back=1)
-            
-        # Add random simulated background noise (90% chance)
-        if random.random() < 0.9:
-            self.simulate_ingestion(count=random.randint(1, 10))
-            
-        # Check if we should pull fresh OSINT threat intelligence to keep real data flowing (10% chance)
-        if random.random() < 0.1:
             try:
-                self.ingest_live_threats(limit=5)
+                self.ingest_live_threats(limit=50)
+            except Exception:
+                pass
+            
+        # Periodically pull fresh OSINT threat intelligence (20% chance)
+        if random.random() < 0.2:
+            try:
+                self.ingest_live_threats(limit=10)
             except Exception:
                 pass
                 
         return db.get_recent_events(limit=count)
-        
-    def simulate_ingestion(self, count: int = 1, days_back: int = 0):
-        """
-        Generate random simulated events and save to DB.
-        If days_back > 0, distributes events across the past X days.
-        """
-        severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-        severity_weights = [0.4, 0.35, 0.2, 0.05]
-        
-        new_events = []
-        for i in range(count):
-            source = random.choice(self.sources)
-            event_type = random.choice(self.event_types[source])
-            severity = random.choices(severities, weights=severity_weights)[0]
-            
-            # Timestamp logic
-            if days_back > 0:
-                seconds_back = random.randint(0, days_back * 24 * 3600)
-                ts = datetime.now() - timedelta(seconds=seconds_back)
-            else:
-                ts = datetime.now() - timedelta(seconds=random.randint(0, 60))
-            
-            event = {
-                "id": f"EVT-SIM-{str(uuid.uuid4())[:8]}",
-                "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
-                "source": source,
-                "event_type": event_type,
-                "severity": severity,
-                "source_ip": f"{random.randint(10,192)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
-                "dest_ip": f"{random.randint(10,192)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
-                "user": random.choice(["jsmith", "alee", "mwilson", "admin", "service-account", "kpatel", "rjones", "-"]),
-                "hostname": random.choice(["WS-001", "SRV-DB-01", "LAPTOP-IT42", "DC-PROD-01", "WS-FINANCE-05"]),
-                "status": random.choice(["Open", "Investigating", "Resolved", "False Positive"])
-            }
-            
-            new_events.append(event)
-            
-        # Bulk Insert for efficiency!
-        db.bulk_insert_events(new_events)
-            
-        return new_events
+
 
     def ingest_threat_intelligence(self):
         """
@@ -104,6 +62,7 @@ class SIEMService:
     def ingest_live_threats(self, limit: int = 50) -> int:
         """
         Extended ingestion for background jobs. Pulls fresh indicators and logs them.
+        Uses bulk insertion for better performance.
         """
         try:
             from services.threat_intel import threat_intel
@@ -111,13 +70,12 @@ class SIEMService:
             # Get real indicators (OTX/AbuseIPDB/Fallbacks)
             indicators = threat_intel.get_recent_indicators(limit=limit)
             
-            count = 0
+            events_to_insert = []
+            alerts_to_insert = []
+            
             for ioc in indicators:
                 ip = ioc.get('indicator')
                 desc = ioc.get('description', 'Known Malicious IP')
-                
-                # Check if we already logged this recently to avoid spam
-                # (Simple check: just do it for now, DB handles storage)
                 
                 # Create a "Real" event
                 event = {
@@ -151,14 +109,15 @@ class SIEMService:
                 except Exception:
                     pass
                 
-                db.insert_event(event)
+                try:
+                    from ml_engine.neural_predictor import add_security_event
+                    add_security_event("firewall_block", severity="high")
+                except Exception:
+                    pass
                 
-                # Also block in firewall shim
-                from services.firewall_shim import firewall
-                firewall.block_ip(ip, reason=f"Threat Intel: {desc}", source="SIEM Ingestion")
+                events_to_insert.append(event)
                 
-                # GENERATE ALERT (Phase 17)
-                # Ensure this threat appears on the Alerts Page
+                # GENERATE ALERT
                 alert = {
                     "id": f"ALRT-{str(uuid.uuid4())[:8]}",
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -167,11 +126,14 @@ class SIEMService:
                     "status": "New",
                     "details": json.dumps({"source_ip": ip, "reason": desc, "action": "Blocked"})
                 }
-                db.insert_alert(alert)
+                alerts_to_insert.append(alert)
                 
-                count += 1
+            if events_to_insert:
+                db.bulk_insert_events(events_to_insert)
+            if alerts_to_insert:
+                db.bulk_insert_alerts(alerts_to_insert)
                 
-            return count
+            return len(events_to_insert)
         except Exception as e:
             print(f"Error ingesting threat intel: {e}")
             return 0
@@ -264,72 +226,48 @@ class SIEMService:
         return sorted(result, key=lambda x: x["risk_score"], reverse=True)
     
     def get_incidents(self) -> List[Dict]:
-        """Get incidents derived from DB events."""
+        """Get incidents derived from real DB events."""
         events = db.get_recent_events(limit=500)
         
         # Group high/critical events into incidents
         incidents = []
         critical_events = [e for e in events if e.get("severity") in ["HIGH", "CRITICAL"]]
         
-        # Create sample incidents from critical events
-        incident_templates = [
-            {"title": "Ransomware Attack Detected", "severity": "CRITICAL", "status": "Investigating"},
-            {"title": "Credential Theft Attempt", "severity": "HIGH", "status": "Contained"},
-            {"title": "Data Exfiltration Alert", "severity": "CRITICAL", "status": "Active"},
-            {"title": "Brute Force Attack", "severity": "HIGH", "status": "Resolved"},
-            {"title": "Malware Infection", "severity": "HIGH", "status": "Investigating"},
-        ]
+        # Track already processed event chains to avoid duplicate incidents for same threat
+        processed_ips = set()
         
-        mitre_techniques = {
-            "Ransomware Attack Detected": [
-                {"time": -6, "phase": "Initial Access", "technique": "T1566.001", "description": "Phishing email received"},
-                {"time": -5, "phase": "Execution", "technique": "T1059.001", "description": "PowerShell execution detected"},
-                {"time": -4, "phase": "Persistence", "technique": "T1053.005", "description": "Scheduled task created"},
-                {"time": -2, "phase": "Impact", "technique": "T1486", "description": "File encryption started"},
-            ],
-            "Credential Theft Attempt": [
-                {"time": -3, "phase": "Initial Access", "technique": "T1078", "description": "Compromised credentials used"},
-                {"time": -2, "phase": "Credential Access", "technique": "T1003.001", "description": "Mimikatz detected"},
-            ],
-        }
-        
-        for i, template in enumerate(incident_templates[:min(len(critical_events), 5)]):
-            event = critical_events[i] if i < len(critical_events) else critical_events[0]
+        for i, event in enumerate(critical_events):
+            source_ip = event.get("source_ip")
+            if source_ip in processed_ips and source_ip != "-":
+                continue
+                
+            processed_ips.add(source_ip)
+            
+            # Create a more organic incident title based on event type
+            etype = event.get("event_type", "Security Breach")
+            title = f"{etype} Detected"
             
             incident = {
-                "id": f"INC-2024-{1000 + i}",
-                "title": template["title"],
-                "severity": template["severity"],
-                "status": template["status"],
-                "source": "Real (SIEM)" if i < len(critical_events) else "Simulation (Fallback)",
+                "id": f"INC-{datetime.now().year}-{1000 + i}",
+                "title": title,
+                "severity": event.get("severity", "HIGH"),
+                "status": event.get("status", "Active"),
+                "source": "SIEM (Event Log)",
                 "start_time": event.get("timestamp"),
                 "affected_host": event.get("hostname", "Unknown"),
                 "affected_user": event.get("user", "Unknown"),
-                "source_ip": event.get("source_ip"),
-                "timeline": mitre_techniques.get(template["title"], []),
-                "is_simulated": False if i < len(critical_events) else True
+                "source_ip": source_ip,
+                "details": event.get("details", ""),
+                "timeline": [], # Real timelines would be built from correlated events
+                "is_simulated": False
             }
             incidents.append(incident)
-        
-        # If absolutely no critical events, return pure simulation
-        if not incidents:
-             for i, template in enumerate(incident_templates):
-                incident = {
-                    "id": f"INC-SIM-{2000 + i}",
-                    "title": template["title"],
-                    "severity": template["severity"],
-                    "status": template["status"],
-                    "source": "Simulation (Empty DB)",
-                    "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "affected_host": "SIM-HOST-01",
-                    "affected_user": "sim_user",
-                    "source_ip": "192.168.1.100",
-                    "timeline": mitre_techniques.get(template["title"], []),
-                    "is_simulated": True
-                }
-                incidents.append(incident)
+            
+            if len(incidents) >= 10:
+                break
 
         return incidents
+
     
     def get_logs(self, source_filter: str = None, severity_filter: str = None, limit: int = 100) -> List[Dict]:
         """Get filtered logs from DB."""
@@ -366,9 +304,6 @@ siem_service = SIEMService()
 # Convenience functions
 def get_siem_events(count: int = 100) -> List[Dict]:
     return siem_service.generate_events(count)
-
-def simulate_siem_ingestion(count: int = 1) -> List[Dict]:
-    return siem_service.simulate_ingestion(count)
 
 def get_user_behavior() -> List[Dict]:
     return siem_service.get_user_behavior_data()

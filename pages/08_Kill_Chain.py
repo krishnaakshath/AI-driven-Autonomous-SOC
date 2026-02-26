@@ -226,7 +226,7 @@ def get_active_threats_from_db():
         # Map each alert in group to a stage
         stages_found = set()
         for a in alert_group:
-            idx = get_stage_index(a.get('title', '') + " " + a.get('details', ''))
+            idx = get_stage_index(str(a.get('title') or '') + " " + str(a.get('details') or ''))
             if idx != -1:
                 stages_found.add(idx)
         

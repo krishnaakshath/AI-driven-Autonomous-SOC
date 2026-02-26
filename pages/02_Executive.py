@@ -20,11 +20,8 @@ inject_particles()
 # Import real services
 try:
     from services.threat_intel import threat_intel, get_threat_stats
-    from services.soc_monitor import SOCMonitor
     from services.database import db
     HAS_REAL_DATA = True
-except ImportError:
-    HAS_REAL_DATA = False
 except Exception as e:
     import traceback
     st.error(f"CRITICAL ERROR during import: {e}")
@@ -50,23 +47,22 @@ with h_col2:
         st.session_state.executive_refresh += 1
         st.rerun()
 
-
-
 # Get real executive metrics from APIs
 @st.cache_data(ttl=300)
 def get_executive_metrics(refresh_counter=0):
     """Get executive-level security metrics from real APIs."""
     metrics = {
-        "mttr": 4.5,
-        "mttd": 1.5,
+        "mttr": 0.0,
+        "mttd": 0.0,
         "incidents_month": 0,
         "incidents_resolved": 0,
-        "compliance_score": 98,
-        "vulnerability_score": 85,
+        "compliance_score": 100,
+        "vulnerability_score": 0,
         "blocked_attacks": 0,
-        "false_positive_rate": 3.2,
-        "sla_compliance": 99.2,
+        "false_positive_rate": 0.0,
+        "sla_compliance": 100.0,
         "cost_savings": 0,
+        "daily_savings": 0.0,
         "trend_data": [], 
         "category_data": []
     }
@@ -93,7 +89,7 @@ def get_executive_metrics(refresh_counter=0):
             compliance_val = max(80, min(100, compliance_val))
 
             metrics.update({
-                "mttr": 2.4,
+                "mttr": 2.4, # Adjusted benchmarks
                 "mttd": 0.8,
                 "compliance_score": round(compliance_val, 1),
                 "blocked_attacks": critical_threats + high_threats,
@@ -111,24 +107,7 @@ def get_executive_metrics(refresh_counter=0):
         except Exception as e:
             st.warning(f"Failed to calculate metrics: {e}")
     
-    # Fallback to simulated data if no real data or error
-    months = ["Oct", "Nov", "Dec", "Jan", "Feb"]
-    categories = ["Malware", "Phishing", "DDoS", "Ransomware", "Insider", "APT"]
-    
-    return {
-        "mttr": round(random.uniform(2.5, 8.5), 1),
-        "mttd": round(random.uniform(0.5, 3.0), 1),
-        "incidents_month": random.randint(45, 120),
-        "incidents_resolved": random.randint(40, 115),
-        "compliance_score": random.randint(85, 99),
-        "vulnerability_score": random.randint(70, 95),
-        "blocked_attacks": random.randint(2500, 8000),
-        "false_positive_rate": round(random.uniform(2.0, 8.0), 1),
-        "sla_compliance": round(random.uniform(92.0, 99.5), 1),
-        "cost_savings": random.randint(150000, 500000),
-        "trend_data": [{"month": m, "count": random.randint(60, 120)} for m in months],
-        "category_data": [{"category": c, "count": random.randint(10, 40)} for c in categories]
-    }
+    return metrics
 
 metrics = get_executive_metrics(st.session_state.executive_refresh)
 

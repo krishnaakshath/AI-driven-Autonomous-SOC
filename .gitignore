@@ -32,3 +32,17 @@ test_day1.py
 manual_attack_tool.py
 *.pcapng.gz
 live_capture.csv
+test_report.pdf
+
+# User Data & Auth
+.soc_users.json
+data/users.json
+data/users.json.bak
+data/blocked_ips.json
+
+# Logs
+logs/
+*.log
+
+# Reports
+reports/

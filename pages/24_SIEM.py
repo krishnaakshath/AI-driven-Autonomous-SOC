@@ -22,7 +22,7 @@ st.markdown(page_header("SIEM Dashboard", "Security Information and Event Manage
 
 # Import Services (backed by SQLite)
 try:
-    from services.siem_service import get_siem_events, simulate_siem_ingestion, get_siem_stats
+    from services.siem_service import get_siem_events, get_siem_stats
     from services.threat_intel import threat_intel
     HAS_REAL_API = True
 except ImportError as e:
@@ -411,3 +411,10 @@ with tab4:
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Persistent Data Layer (Cloud DB)</p></div>', unsafe_allow_html=True)
+# Live Refresh Logic
+st.sidebar.markdown("---")
+auto_refresh = st.sidebar.toggle("Live Refresh (30s)", value=True)
+if auto_refresh:
+    import time
+    time.sleep(30)
+    st.rerun()

@@ -172,13 +172,66 @@ if source_filter != "All":
 filtered = filtered.sort_values("time", ascending=False)
 
 st.markdown("<br>", unsafe_allow_html=True)
-st.markdown(section_title(f"SIEM Alerts ({len(filtered)})"), unsafe_allow_html=True)
 
-# Display alerts
-for _, alert in filtered.head(25).iterrows():
-    time_str = alert["time"].strftime("%H:%M") if hasattr(alert["time"], "strftime") else str(alert["time"])[:5]
-    desc = f"Source: {alert['source']} | IP: {alert['source_ip']} | Host: {alert['hostname']} | User: {alert['user']} | Risk: {alert['risk_score']}/100"
-    st.markdown(alert_card(alert["severity"], f"{alert['id']} - {alert['type']}", desc, time_str), unsafe_allow_html=True)
+# Operational Workbench Layout
+tabs = st.tabs(["📋 Active Alerts", "🔍 Advanced Filter", "📊 Trends"])
+
+with tabs[0]:
+    st.markdown(section_title(f"Operational Workbench ({len(filtered)})"), unsafe_allow_html=True)
+    
+    # Custom Table Header
+    st.markdown("""
+        <div style="display: grid; grid-template-columns: 80px 1.5fr 1fr 1fr 100px 100px; gap: 10px; padding: 0.8rem 1.5rem; background: rgba(0, 243, 255, 0.05); border-bottom: 2px solid rgba(0, 243, 255, 0.2); font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px;">
+            <div>Time</div>
+            <div>Alert Title / ID</div>
+            <div>Source / Target</div>
+            <div>Attack Type</div>
+            <div>Risk</div>
+            <div>Status</div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Display alerts in high-density rows
+    for _, alert in filtered.head(40).iterrows():
+        time_str = alert["time"].strftime("%H:%M") if hasattr(alert["time"], "strftime") else str(alert["time"])[:5]
+        
+        sev = alert["severity"].lower()
+        sev_color = {"critical": "#ff003c", "high": "#ff6b00", "medium": "#f0ff00", "low": "#0aff0a"}.get(sev, "#00f3ff")
+        
+        status = str(alert["status"]).lower()
+        status_color = {"open": "#ff003c", "investigating": "#00f3ff", "resolved": "#0aff0a"}.get(status, "#888")
+        
+        st.markdown(f"""
+            <div class="glass-card" style="margin: 2px 0; padding: 0.6rem 1.5rem; display: grid; grid-template-columns: 80px 1.5fr 1fr 1fr 100px 100px; gap: 10px; align-items: center; border-left: 2px solid {sev_color}; border-radius: 0; background: rgba(5, 5, 10, 0.4);">
+                <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: #666;">{time_str}</div>
+                <div>
+                    <div style="color: #fff; font-weight: 500; font-size: 0.95rem;">{alert['type']}</div>
+                    <div style="color: #555; font-size: 0.7rem; font-family: 'Share Tech Mono', monospace;">{alert['id']}</div>
+                </div>
+                <div style="color: #888; font-size: 0.85rem;">
+                    <span style="color: {sev_color}70;">{alert['source_ip']}</span>
+                    <div style="font-size: 0.7rem; color: #444;">{alert['hostname']}</div>
+                </div>
+                <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: #FAFAFA;">{alert.get('attack_type', 'N/A')}</div>
+                <div style="font-family: 'Orbitron', sans-serif; color: {sev_color}; font-weight: 700;">{alert['risk_score']}</div>
+                <div style="text-align: right;">
+                    <span style="padding: 2px 8px; border: 1px solid {status_color}; color: {status_color}; font-size: 0.65rem; text-transform: uppercase; border-radius: 2px; background: {status_color}10;">{alert['status']}</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+with tabs[1]:
+    st.markdown(section_title("Advanced Investigation"), unsafe_allow_html=True)
+    st.dataframe(filtered, use_container_width=True)
+
+with tabs[2]:
+    st.markdown(section_title("Alert Velocity"), unsafe_allow_html=True)
+    import plotly.express as px
+    if not filtered.empty:
+        fig = px.histogram(filtered, x="time", color="severity", nbins=24, 
+                          color_discrete_map={"CRITICAL": "#ff003c", "HIGH": "#ff6b00", "MEDIUM": "#f0ff00", "LOW": "#0aff0a"})
+        fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FAFAFA")
+        st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | SIEM-Powered Alerts</p></div>', unsafe_allow_html=True)

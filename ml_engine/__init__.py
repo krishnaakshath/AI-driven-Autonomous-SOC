@@ -1,10 +1,18 @@
-from .ml_scorer import (
-    score_network_event,
-    score_dataframe,
-    get_attack_type,
-    check_ml_status,
-    ML_AVAILABLE
-)
+# ML Scorer (optional, may not exist)
+try:
+    from .ml_scorer import (
+        score_network_event,
+        score_dataframe,
+        get_attack_type,
+        check_ml_status,
+        ML_AVAILABLE
+    )
+except ImportError:
+    ML_AVAILABLE = False
+    def score_network_event(*a, **kw): return 0
+    def score_dataframe(*a, **kw): return None
+    def get_attack_type(*a, **kw): return "Unknown"
+    def check_ml_status(*a, **kw): return {"status": "unavailable"}
 
 # ML Algorithms
 from .isolation_forest import (
@@ -34,3 +42,4 @@ __all__ = [
     'get_threat_distribution',
     'FuzzyCMeans'
 ]
+

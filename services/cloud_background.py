@@ -71,9 +71,6 @@ def _run_continuous_ingestion():
     cycle_count = 0
     while not _STOP_FLAG:
         try:
-            # Generate simulated background noise for visual density
-            sim_count = len(siem_service.simulate_ingestion(count=10))
-            
             # Run real OSINT ingestion (pulls real threats and blocks them) every 5 cycles
             if cycle_count % 5 == 0:
                 real_count = siem_service.ingest_live_threats(limit=5)

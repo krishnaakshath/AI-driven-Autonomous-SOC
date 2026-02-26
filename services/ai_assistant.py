@@ -136,15 +136,14 @@ AVAILABLE TOOLS (Reply with JSON ONLY to use):
 
 2. DEFENSIVE ACTIONS:
    {{"tool": "block_ip", "target": "IP"}} -> Block attacker at firewall
-   {{"tool": "execute_playbook", "playbook": "ransomware|brute_force|ddos|data_exfiltration", "target": "IP"}} -> Execute automated response
 
 3. THREAT INTELLIGENCE:
-   {{"tool": "threat_intel"}} -> Get global threat feed
-   {{"tool": "check_reputation", "indicator": "IP|domain|hash", "type": "ip|domain|hash"}} -> Multi-source reputation check
+   {{"tool": "threat_intel"}} -> Get global threat feed from OTX
+   {{"tool": "check_reputation", "indicator": "IP|domain|hash", "type": "ip|domain|hash"}} -> Multi-source reputation check (VT/AbuseIPDB/OTX)
    {{"tool": "predict_threats"}} -> Neural threat prediction forecast
 
 4. THREAT HUNTING:
-   {{"tool": "hunt_query", "query": "natural language query"}} -> Execute natural language threat hunt
+   {{"tool": "hunt_query", "query": "natural language query"}} -> Execute natural language threat hunt in logs
 
 5. BEHAVIORAL ANALYSIS:
    {{"tool": "analyze_behavior", "entity": "user_id", "event": "login|transfer|access"}} -> Check for anomalies
@@ -200,71 +199,53 @@ PROTOCOL:
             # ============= DEFENSIVE TOOLS =============
             elif tool_name == "block_ip":
                 ip = params.get("target")
-                return f""" **FIREWALL UPDATE**
+                try:
+                    from services.firewall_shim import firewall
+                    firewall.block_ip(ip, reason="CORTEX AI Decision", source="CORTEX")
+                    return f""" **FIREWALL UPDATE**
 - **Action:** IP Blocked
 - **Target:** `{ip}`
 - **Rule ID:** FW-{random.randint(10000, 99999)}
 - **Scope:** All ports, inbound & outbound
 - **Status:** Active immediately"""
-
-            elif tool_name == "execute_playbook":
-                playbook = params.get("playbook", "generic")
-                target = params.get("target", "affected_systems")
-                
-                try:
-                    from services.playbook_engine import execute_playbook
-                    result = execute_playbook(playbook, target)
-                    
-                    actions_summary = "\n".join([
-                        f"  - {r['action']}: {r['status']}" 
-                        for r in result.get('results', [])
-                    ])
-                    
-                    return f""" **PLAYBOOK EXECUTED**
-- **Playbook:** {result.get('playbook', playbook).upper()}
-- **Target:** `{target}`
-- **Actions:** {result.get('actions_executed', 0)} completed
-
-**Execution Log:**
-{actions_summary}
-
-**Status:**  All defensive measures activated"""
-                except ImportError:
-                    return f" Playbook engine not available. Manual intervention required for {playbook} response."
+                except Exception as e:
+                    return f" Failed to block IP: {e}"
             
             # ============= THREAT INTELLIGENCE =============
             elif tool_name == "threat_intel":
                 try:
-                    from services.threat_intel import get_latest_threats
-                    threats = get_latest_threats()[:5]
+                    from services.threat_intel import threat_intel
+                    threats = threat_intel.get_otx_pulses(5)
                     return f"**Latest Threat Intelligence:**\n```json\n{json.dumps(threats, indent=2)}\n```"
-                except ImportError:
-                    return " Threat intel service unavailable."
+                except Exception as e:
+                    return f" Threat intel service error: {e}"
             
             elif tool_name == "check_reputation":
                 indicator = params.get("indicator")
                 ind_type = params.get("type", "ip")
                 
                 try:
-                    from services.intel_aggregator import check_ip_reputation, check_domain_reputation, check_file_hash
+                    from services.threat_intel import threat_intel
                     
                     if ind_type == "ip":
-                        result = check_ip_reputation(indicator)
+                        result = threat_intel.check_ip(indicator)
                     elif ind_type == "domain":
-                        result = check_domain_reputation(indicator)
+                        result = threat_intel.check_domain_virustotal(indicator)
                     else:
-                        result = check_file_hash(indicator)
+                        result = threat_intel.check_file_hash(indicator)
                     
                     return f""" **REPUTATION CHECK: {indicator}**
-- **Type:** {result.get('type', ind_type).upper()}
-- **Unified Score:** {result.get('unified_score', 0)}/100
-- **Risk Level:** {result.get('risk_level', 'UNKNOWN')}
-- **Recommendation:** {result.get('recommendation', 'No data')}
+- **Type:** {ind_type.upper()}
+- **Is Malicious:** {result.get('is_malicious', 'UNKNOWN')}
+- **Sources Data:** {', '.join(result.get('sources', ['VirusTotal']))}
+- **Verdict:** {result.get('verdict', 'N/A')}
 
-**Source Breakdown:**
-{json.dumps(result.get('sources', {}), indent=2)}"""
-                except ImportError:
-                    return f" Intel aggregator not available. Cannot check {indicator}."
+**Detailed Analysis:**
+```json
+{json.dumps(result, indent=2)}
+```"""
+                except Exception as e:
+                    return f" Threat intel analysis failed for {indicator}: {e}"
             
             elif tool_name == "predict_threats":
                 try:
@@ -434,8 +415,8 @@ PROTOCOL:
             error_msg = str(e).lower()
             if "rate" in error_msg or "429" in error_msg:
                 return " **Rate Limited:** Please wait a moment and try again."
-            if "authentication" in error_msg or "api key" in error_msg:
-                return " **Authentication Error:** Invalid API key. Please check Settings."
+            if "authentication" in error_msg or "api key" in error_msg or "401" in error_msg:
+                return " **Authentication Error:** Invalid or missing GROQ_API_KEY. Please ensure you have configured your key in **Settings > AI Configuration** and that it is active."
             return f" **Error:** {str(e)}"
 
     def reset_conversation(self):

@@ -28,10 +28,13 @@ CYBERPUNK_CSS = """
         --neon-yellow: #f0ff00;
         --bg-dark: #030303;
         --bg-darker: #000000;
-        --glass-bg: rgba(5, 5, 15, 0.85);
-        --glass-border: rgba(0, 243, 255, 0.15);
-        --text-primary: #e0e0e0;
-        --text-secondary: #888;
+        --glass-bg: rgba(10, 10, 20, 0.7);
+        --glass-border: rgba(0, 243, 255, 0.2);
+        --glass-glow: rgba(0, 243, 255, 0.05);
+        --text-primary: #f0f0f0;
+        --text-secondary: #a0a0a0;
+        --text-muted: #666666;
+        --ease-cyber: cubic-bezier(0.19, 1, 0.22, 1);
     }
     
     /* ═══════════════════════════════════════════════════════════════════════════
@@ -170,63 +173,60 @@ CYBERPUNK_CSS = """
        GLASS CARDS - HOLOGRAPHIC 3D TILT
     ═══════════════════════════════════════════════════════════════════════════ */
     .glass-card, .metric-card {
-        background: rgba(5, 5, 10, 0.6);
-        border: 1px solid rgba(0, 243, 255, 0.1);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        border-radius: 4px;
-        backdrop-filter: blur(10px);
-        /* 3D Transform Properties */
-        transform-style: preserve-3d;
-        perspective: 1000px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        transition: all 0.5s var(--ease-cyber);
         position: relative;
         overflow: hidden;
-        padding: 2rem;
+        padding: 1.5rem;
         margin-bottom: 1rem;
     }
     
     .glass-card:hover, .metric-card:hover {
-        transform: translateY(-5px) scale(1.01);
+        transform: translateY(-5px) perspective(1000px) rotateX(2deg);
         box-shadow: 
-            0 15px 30px rgba(0, 0, 0, 0.5),
-            0 0 20px rgba(0, 243, 255, 0.2);
-        border-color: rgba(0, 243, 255, 0.5);
-        z-index: 10;
+            0 20px 40px rgba(0, 0, 0, 0.6),
+            0 0 20px var(--glass-glow);
+        border-color: rgba(0, 243, 255, 0.4);
     }
     
-    /* Top laser line animation */
+    /* Top accent line */
     .glass-card::before, .metric-card::before {
         content: '';
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
-        transform: translateX(-100%);
-        transition: transform 0.8s ease;
-    }
-    
-    /* Corner accent */
-    .glass-card::after, .metric-card::after {
-        content: '';
-        position: absolute;
-        top: 0; right: 0;
-        width: 30px; height: 30px;
-        border-top: 2px solid var(--neon-cyan);
-        border-right: 2px solid var(--neon-cyan);
-        opacity: 0.5;
+        background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+        opacity: 0.3;
+        transition: opacity 0.3s ease;
     }
     
     .glass-card:hover::before, .metric-card:hover::before {
-        transform: translateX(100%);
+        opacity: 1;
     }
     
-    .glass-card:hover, .metric-card:hover {
-        transform: translateY(-8px) scale(1.01);
-        box-shadow: 
-            0 0 40px rgba(0, 243, 255, 0.15),
-            0 20px 40px rgba(0, 0, 0, 0.4),
-            inset 0 0 40px rgba(0, 243, 255, 0.05);
-        border-color: var(--neon-cyan);
+    /* Subtle scanline overlay for cards */
+    .glass-card::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: linear-gradient(
+            rgba(18, 16, 16, 0) 50%, 
+            rgba(0, 0, 0, 0.1) 50%
+        ), linear-gradient(
+            90deg, 
+            rgba(255, 0, 0, 0.02), 
+            rgba(0, 255, 0, 0.01), 
+            rgba(0, 0, 255, 0.02)
+        );
+        background-size: 100% 4px, 3px 100%;
+        pointer-events: none;
+        opacity: 0.2;
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
@@ -655,6 +655,53 @@ CYBERPUNK_CSS = """
             padding: 0.5rem 1rem !important;
             font-size: 0.7rem !important;
         }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       THREAT RADAR ANIMATION
+    ═══════════════════════════════════════════════════════════════════════════ */
+    .radar-container {
+        position: relative;
+        width: 154px;
+        height: 154px;
+        background: repeating-radial-gradient(
+            rgba(0, 243, 255, 0.1) 0,
+            rgba(0, 243, 255, 0.1) 1px,
+            transparent 1px,
+            transparent 20px
+        );
+        border: 2px solid rgba(0, 243, 255, 0.2);
+        border-radius: 50%;
+        overflow: hidden;
+    }
+    
+    .radar-sweep {
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 100%; height: 100%;
+        background: conic-gradient(from 0deg, var(--neon-cyan) 0deg, transparent 90deg);
+        transform-origin: top left;
+        animation: radarSweep 4s linear infinite;
+        opacity: 0.3;
+    }
+    
+    @keyframes radarSweep {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .radar-point {
+        position: absolute;
+        width: 4px; height: 4px;
+        background: var(--neon-red);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--neon-red);
+        animation: pointPulse 2s ease-out infinite;
+    }
+    
+    @keyframes pointPulse {
+        0% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(3); opacity: 0; }
     }
 
 </style>

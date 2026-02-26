@@ -82,6 +82,47 @@ with tab1:
             </div>
         """, unsafe_allow_html=True)
     
+    # --- NEURAL LINK INVESTIGATION ---
+    selected_inc = st.selectbox("Select Incident for Neural Investigation", [i.get('id') for i in incidents]) if incidents else None
+    
+    if selected_inc:
+        st.markdown(f"### 🧠 CORTEX Neural Analysis: {selected_inc}")
+        if st.button("Generate Root Cause Analysis"):
+            with st.spinner("Linking neural artifacts..."):
+                try:
+                    from services.ai_assistant import ai_assistant
+                    # Mocking a rich prompt for CORTEX
+                    inc_data = next((i for i in incidents if i['id'] == selected_inc), {})
+                    analysis = ai_assistant.chat(f"Perform a forensic root cause analysis for incident {selected_inc}: {inc_data.get('title')}. Evidence: {inc_data.get('details')}")
+                    st.markdown(f"""
+                        <div class="glass-card" style="border-left: 3px solid #bc13fe; padding: 1.5rem;">
+                            {analysis}
+                        </div>
+                    """, unsafe_allow_html=True)
+                except Exception:
+                    st.info("CORTEX Offline. Please check Settings > AI Configuration.")
+
+        st.markdown("### 🕸️ Visual Attack Sequence")
+        # Visualizing the attack chain with Mermaid
+        mermaid_code = f"""
+        graph LR
+            A[External IP] -- Scan --> B[DMZ Gateway]
+            B -- Brute Force --> C[Application Server]
+            C -- Unauthorized Access --> D[Database]
+            style D fill:#ff4444,stroke:#fff,stroke-width:2px
+        """
+        st.components.v1.html(f"""
+            <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid rgba(0,243,255,0.2);">
+                <pre class="mermaid">
+                    {mermaid_code}
+                </pre>
+                <script type="module">
+                    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+                    mermaid.initialize({{ startOnLoad: true, theme: 'dark' }});
+                </script>
+            </div>
+        """, height=250)
+
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(section_title("Analysis Tools"), unsafe_allow_html=True)
     

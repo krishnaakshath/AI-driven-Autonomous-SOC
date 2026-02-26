@@ -5,116 +5,33 @@
 ![AI Model](https://img.shields.io/badge/AI-Llama%203.3%20(Groq)-purple.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-An enterprise-grade, AI-powered Security Operations Center (SOC) with real-time log ingestion, persistent incident tracking, and autonomous response playbooks.
+An enterprise-grade, AI-powered Security Operations Center featuring real-time threat detection, autonomous response, and predictive intelligence — all in a single platform.
 
-## Key Features
+## Core Features
 
-- **🛡️ Real-Time Dashboard**: Live monitoring of simulated or real network traffic.
-- **🧠 Cortex AI**: Autonomous security analyst powered by **Llama-3.3-70b** (via Groq) for threat hunting and explaining alerts.
-- **🔍 Advanced Analytics**: 
-  - **Isolation Forest**: Unsupervised anomaly detection on NSL-KDD dataset.
-  - **Fuzzy C-Means**: Soft clustering for attack categorization.
-- **⚡ Autonomous Response**: Automated playbooks for IP blocking, User Quarantine, and Ransomware containment.
-- **📂 Persistence**: SQLite-backed event logging and incident tracking (survives restarts).
-- **🕸️ Zero Trust Architecture**: Continuous risk scoring for every user and entity.
-
-## Quick Start
-
-### 1. Installation
-
-```bash
-# Clone repository
-git clone https://github.com/your-username/ai-driven-autonomous-soc.git
-cd ai-driven-autonomous-soc
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Configuration
-
-Create a `.soc_config.json` file in the root directory (optional but recommended for API keys):
-
-```json
-{
-    "gmail_email": "your-bot@gmail.com",
-    "gmail_password": "your-app-password",
-    "GROQ_API_KEY": "gsk_..."
-}
-```
-
-*Note: You can also set these as Environment Variables or Streamlit Secrets.*
-
-### 3. Run the SOC
-
-```bash
-streamlit run streamlit_app.py
-```
-
-Access the dashboard at **http://localhost:8501**
-
-## Project Structure
-
-```
-├── streamlit_app.py          # Main Entry Point (Redirects to Dashboard)
-├── Home.py                   # Background Service Initialization
-├── pages/
-│   ├── 01_Dashboard.py       # Main Operations View
-│   ├── 11_Analysis.py        # ML Engine (Isolation Forest/Fuzzy C-Means)
-│   ├── 21_CORTEX.py          # AI Chat Interface
-│   ├── 24_SIEM.py            # Log Viewer & Correlation
-│   └── ... (20+ modules)
-├── services/
-│   ├── ai_assistant.py       # Groq/Llama Interface
-│   ├── auth_service.py       # User Management & 2FA
-│   ├── database.py           # SQLite Persistence Layer
-│   ├── log_ingestor.py       # Real-time Log Tailing
-│   └── ...
-├── ml_engine/
-│   ├── isolation_forest.py   # Anomaly Detection Model
-│   └── fuzzy_clustering.py   # Attack Categorization
-└── data/                     # Persistent Storage (SQLite, JSON)
-```
-
-## AI Integration
-
-This project uses **Groq** for ultra-fast inference with **Llama-3.3-70b**. 
-1. Get a free API Key from [console.groq.com](https://console.groq.com).
-2. Add it to your configuration (see above).
-3. Chat with CORTEX in the "CORTEX AI" page to hunt threats or analyze files.
-
-## License
-
-MIT License - See LICENSE file for details.
-
-## Features
-
-- **Multi-Page Dashboard**: Dashboard, Alerts, Threat Map, Forensics, Reports, Settings
-- **Real-time Monitoring**: Auto-refresh with configurable intervals
-- **AI-Powered Analysis**: Gemini integration for threat analysis
-- **IEEE Format Reports**: Professional security reports
-- **Alerting**: Gmail and Telegram notifications
-- **Zero Trust**: Risk-based access decisions (BLOCK/RESTRICT/ALLOW)
+| Layer | Feature | Technology |
+|---|---|---|
+| 🛡️ **Dashboard** | Real-time metrics, Global Threat Matrix, Live Action Ticker | Plotly, Supabase |
+| 🧠 **CORTEX AI** | Autonomous security analyst with tool-use | Llama-3.3-70b (Groq) |
+| 🔬 **ML Insights** | Isolation Forest anomaly detection, Fuzzy C-Means clustering | scikit-learn, NSL-KDD |
+| 🔮 **Neural Predictor** | LSTM-style probability forecasts for future attacks | Custom time-series |
+| ⚡ **SOAR Workbench** | One-click playbooks (Quarantine, Revocation, Termination) | Custom SOAR engine |
+| 🔥 **Active Firewall** | Real-time WAF with stateful auto-shun | Regex + DB-backed |
+| 🕵️ **Forensics** | AI-powered root cause analysis with visual attack graphs | CORTEX + Mermaid.js |
+| 📊 **Reports** | IEEE-format security reports with executive summaries | PDF generation |
+| 🌍 **Threat Intel** | Live feeds from AbuseIPDB, VirusTotal, OTX | REST APIs |
+| 🔐 **Auth** | bcrypt hashing, TOTP 2FA, session persistence | bcrypt, pyotp |
 
 ## Quick Start
 
 ```bash
-# Clone repository
-git clone https://github.com/your-username/soc-dashboard.git
-cd soc-dashboard
-
-# Create virtual environment
-python3 -m venv soc-env
-source soc-env/bin/activate
-
-# Install dependencies
+# Clone & install
+git clone https://github.com/KrishnaAkshath/AI-driven-Autonomous-SOC.git
+cd AI-driven-Autonomous-SOC
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# Run dashboard
+# Run
 streamlit run dashboard.py
 ```
 
@@ -122,27 +39,55 @@ Access at **http://localhost:8501**
 
 ## Configuration
 
-### Gmail Alerts
-1. Enable 2FA on your Gmail account
-2. Generate an App Password (Google Account → Security → App Passwords)
-3. Configure in Settings → Gmail Alerts
+Create `.soc_config.json` in the root (or use env vars / Streamlit Secrets):
 
-### Telegram Alerts
-1. Create a bot via @BotFather
-2. Get your Chat ID from @userinfobot
-3. Configure in Settings → Telegram Alerts
+```json
+{
+    "GROQ_API_KEY": "gsk_...",
+    "gmail_email": "your-bot@gmail.com",
+    "gmail_password": "your-app-password"
+}
+```
 
-### AI Integration
-1. Get free API key from [Google AI Studio](https://aistudio.google.com/)
-2. Configure in Settings → AI Integration
+## Project Structure
+
+```
+├── dashboard.py              # Main entry point & navigation
+├── pages/
+│   ├── 00_User_Guide.py      # Interactive platform guide
+│   ├── 01_Dashboard.py       # SOC command center
+│   ├── 02_Executive.py       # C-suite overview
+│   ├── 03_Alerts.py          # Alert management
+│   ├── 06_Threat_Intel.py    # Threat intelligence feeds
+│   ├── 11_Analysis.py        # ML Insights (IF + FCM)
+│   ├── 12_SOAR_Workbench.py  # Autonomous response
+│   ├── 13_Forensics.py       # Neural forensics
+│   ├── 21_CORTEX.py          # AI assistant
+│   ├── 24_SIEM.py            # Log aggregation
+│   ├── 25_Firewall_Control.py# WAF management
+│   └── ... (20+ modules)
+├── services/
+│   ├── ai_assistant.py       # Groq/Llama interface
+│   ├── auth_service.py       # Authentication & 2FA
+│   ├── database.py           # Supabase persistence layer
+│   ├── firewall_service.py   # Active WAF engine
+│   ├── siem_service.py       # SIEM event correlation
+│   └── threat_intel.py       # AbuseIPDB/VT/OTX integration
+├── ml_engine/
+│   ├── isolation_forest.py   # Anomaly detection (NSL-KDD trained)
+│   ├── fuzzy_clustering.py   # Threat categorization
+│   └── neural_predictor.py   # Predictive threat engine
+└── ui/
+    └── theme.py              # Cyberpunk design system
+```
 
 ## Deployment
 
 ### Streamlit Cloud
 1. Push to GitHub
 2. Visit [share.streamlit.io](https://share.streamlit.io)
-3. Connect repository
-4. Set secrets in Advanced Settings
+3. Set `dashboard.py` as the main file
+4. Add secrets in Advanced Settings
 
 ### Docker
 ```bash
@@ -150,26 +95,6 @@ docker build -t soc-dashboard .
 docker run -p 8501:8501 soc-dashboard
 ```
 
-## Project Structure
-
-```
-├── dashboard.py              # Main entry point
-├── pages/
-│   ├── 1_🏠_Dashboard.py     # Security metrics
-│   ├── 2_🚨_Alerts.py        # Active alerts
-│   ├── 3_🌍_Threat_Map.py    # Geographic view
-│   ├── 4_🔬_Forensics.py     # Analysis tools
-│   ├── 5_📊_Reports.py       # IEEE reports
-│   └── 6_⚙️_Settings.py      # Configuration
-├── ai_engine/
-│   └── threat_analyzer.py    # Gemini AI
-├── alerting/
-│   ├── telegram_bot.py       # Telegram alerts
-│   └── email_sender.py       # Gmail alerts
-└── .streamlit/
-    └── config.toml           # Theme config
-```
-
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License — See [LICENSE](LICENSE) for details.
