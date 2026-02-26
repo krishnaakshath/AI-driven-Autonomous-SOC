@@ -23,17 +23,20 @@ except st.errors.StreamlitAPIException:
 from ui.theme import CYBERPUNK_CSS, inject_particles
 
 from services.auth_service import auth_service, is_authenticated, check_persistent_session, login_user
-from auth.google_oauth import is_oauth_configured, get_google_auth_url, handle_oauth_callback, create_oauth_user
 
-# Handle Google OAuth Callback
-oauth_user = handle_oauth_callback()
-if oauth_user:
-    login_user(oauth_user['email'], remember=True)
-    # create_oauth_user already sets session internally, but login_user updates streamlit session state
-    st.session_state.session_start = __import__('time').time()
-    st.success(f" Welcome {oauth_user['name']}")
-    __import__('time').sleep(0.5)
-    st.rerun()
+# Google OAuth (optional — module may not be present)
+try:
+    from auth.google_oauth import is_oauth_configured, get_google_auth_url, handle_oauth_callback, create_oauth_user
+    oauth_user = handle_oauth_callback()
+    if oauth_user:
+        login_user(oauth_user['email'], remember=True)
+        st.session_state.session_start = __import__('time').time()
+        st.success(f" Welcome {oauth_user['name']}")
+        __import__('time').sleep(0.5)
+        st.rerun()
+except (ImportError, ModuleNotFoundError):
+    def is_oauth_configured(): return False
+    def get_google_auth_url(): return "#"
 
 # Auto-login check (persistent session)
 if check_persistent_session():
