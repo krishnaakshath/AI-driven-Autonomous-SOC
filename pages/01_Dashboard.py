@@ -329,7 +329,7 @@ try:
                 line = dict(width=1, color='rgba(102, 102, 102)'),
                 colorscale = 'Electric',
                 cmin = 0,
-                color = map_df['ml_anomaly_score'] if 'ml_anomaly_score' in map_df else np.random.randint(50, 100, len(map_df)),
+                color = np.random.randint(50, 100, len(map_df)),
                 colorbar_title="Risk Intensity"
             )))
 

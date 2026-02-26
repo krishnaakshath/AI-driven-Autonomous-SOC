@@ -73,36 +73,36 @@ elif user_is_admin:
     # ── Admin: full access to all pages ──
     pg = st.navigation({
         "Dashboards": [
-            st.Page("pages/00_User_Guide.py", title="User Guide", icon="📖"),
-            st.Page("pages/01_Dashboard.py", title="Dashboard", icon="🏠", default=True),
-            st.Page("pages/02_Executive.py", title="Executive", icon="📊"),
+            st.Page("pages/00_User_Guide.py", title="User Guide"),
+            st.Page("pages/01_Dashboard.py", title="Dashboard", default=True),
+            st.Page("pages/02_Executive.py", title="Executive"),
         ],
         "Monitoring": [
-            st.Page("pages/03_Alerts.py", title="Alerts", icon="🚨"),
-            st.Page("pages/04_Logs.py", title="Logs", icon="📋"),
-            st.Page("pages/05_Timeline.py", title="Timeline", icon="⏱️"),
-            st.Page("pages/24_SIEM.py", title="SIEM", icon="🔒"),
+            st.Page("pages/03_Alerts.py", title="Alerts"),
+            st.Page("pages/04_Logs.py", title="Logs"),
+            st.Page("pages/05_Timeline.py", title="Timeline"),
+            st.Page("pages/24_SIEM.py", title="SIEM"),
         ],
         "Threat Intelligence": [
-            st.Page("pages/06_Threat_Intel.py", title="Threat Intel", icon="🌐"),
-            st.Page("pages/07_Geo_Predictions.py", title="Geo Predictions", icon="🗺️"),
-            st.Page("pages/08_Kill_Chain.py", title="Kill Chain", icon="⛓️"),
-            st.Page("pages/09_OSINT_Feeds.py", title="OSINT Feeds", icon="📡"),
-            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt", icon="🔍"),
+            st.Page("pages/06_Threat_Intel.py", title="Threat Intel"),
+            st.Page("pages/07_Geo_Predictions.py", title="Geo Predictions"),
+            st.Page("pages/08_Kill_Chain.py", title="Kill Chain"),
+            st.Page("pages/09_OSINT_Feeds.py", title="OSINT Feeds"),
+            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt"),
         ],
         "Investigation": [
-            st.Page("pages/11_Analysis.py", title="ML Insights", icon="🧠"),
-            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon="⚡"),
-            st.Page("pages/13_Forensics.py", title="Forensics", icon="🔬"),
+            st.Page("pages/11_Analysis.py", title="ML Insights"),
+            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench"),
+            st.Page("pages/13_Forensics.py", title="Forensics"),
         ],
         "Operations": [
-            st.Page("pages/15_Scanners.py", title="Scanners", icon="🔎"),
-            st.Page("pages/19_Reports.py", title="Reports", icon="📄"),
+            st.Page("pages/15_Scanners.py", title="Scanners"),
+            st.Page("pages/19_Reports.py", title="Reports"),
         ],
         "AI & Config": [
-            st.Page("pages/21_CORTEX.py", title="CORTEX AI", icon="🤖"),
-            st.Page("pages/25_Firewall_Control.py", title="Firewall Control", icon="🛡️"),
-            st.Page("pages/23_Settings.py", title="Settings", icon="⚙️"),
+            st.Page("pages/21_CORTEX.py", title="CORTEX AI"),
+            st.Page("pages/25_Firewall_Control.py", title="Firewall Control"),
+            st.Page("pages/23_Settings.py", title="Settings"),
         ],
     }, position="sidebar")
 
@@ -110,27 +110,27 @@ else:
     # ── Regular user: clean, limited sidebar ──
     pg = st.navigation({
         "Dashboards": [
-            st.Page("pages/00_User_Guide.py", title="User Guide", icon="📖"),
-            st.Page("pages/01_Dashboard.py", title="Dashboard", icon="🏠", default=True),
-            st.Page("pages/02_Executive.py", title="Executive", icon="📊"),
+            st.Page("pages/00_User_Guide.py", title="User Guide"),
+            st.Page("pages/01_Dashboard.py", title="Dashboard", default=True),
+            st.Page("pages/02_Executive.py", title="Executive"),
         ],
         "Monitoring": [
-            st.Page("pages/03_Alerts.py", title="Alerts", icon="🚨"),
-            st.Page("pages/04_Logs.py", title="Logs", icon="📋"),
-            st.Page("pages/05_Timeline.py", title="Timeline", icon="⏱️"),
+            st.Page("pages/03_Alerts.py", title="Alerts"),
+            st.Page("pages/04_Logs.py", title="Logs"),
+            st.Page("pages/05_Timeline.py", title="Timeline"),
         ],
         "Threat Intelligence": [
-            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt", icon="🔍"),
-            st.Page("pages/06_Threat_Intel.py", title="Threat Intel", icon="🌐"),
+            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt"),
+            st.Page("pages/06_Threat_Intel.py", title="Threat Intel"),
         ],
         "Investigation": [
-            st.Page("pages/11_Analysis.py", title="ML Insights", icon="🧠"),
-            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon="⚡"),
-            st.Page("pages/13_Forensics.py", title="Forensics", icon="🔬"),
+            st.Page("pages/11_Analysis.py", title="ML Insights"),
+            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench"),
+            st.Page("pages/13_Forensics.py", title="Forensics"),
         ],
         "AI & Config": [
-            st.Page("pages/21_CORTEX.py", title="CORTEX AI", icon="🤖"),
-            st.Page("pages/23_Settings.py", title="Settings", icon="⚙️"),
+            st.Page("pages/21_CORTEX.py", title="CORTEX AI"),
+            st.Page("pages/23_Settings.py", title="Settings"),
         ],
     }, position="sidebar")
 
