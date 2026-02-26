@@ -92,7 +92,7 @@ elif user_is_admin:
         ],
         "Investigation": [
             st.Page("pages/11_Analysis.py", title="ML Insights", icon=":material/analytics:"),
-            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon=":material/auto_fix_high:"),
+            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon=":material/smart_toy:"),
             st.Page("pages/13_Forensics.py", title="Forensics", icon=":material/biotech:"),
         ],
         "Operations": [
@@ -125,7 +125,7 @@ else:
         ],
         "Investigation": [
             st.Page("pages/11_Analysis.py", title="ML Insights", icon=":material/analytics:"),
-            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon=":material/auto_fix_high:"),
+            st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench", icon=":material/smart_toy:"),
             st.Page("pages/13_Forensics.py", title="Forensics", icon=":material/biotech:"),
         ],
         "AI & Config": [
