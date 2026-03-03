@@ -1,0 +1,32 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit: offline deterministic tests (no DB/API)",
+    "integration: online tests requiring SUPABASE_URL",
+]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["services", "ml_engine"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__",
+    "except ImportError",
+    "pytest.skip",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.isort]
+profile = "black"
+line_length = 120

@@ -83,7 +83,7 @@ class TestAuthService:
     def test_register_user(self):
         from services.auth_service import auth_service
         test_email = f"test_{datetime.now().timestamp()}@test.com"
-        success, msg = auth_service.register(test_email, "TestUser", "testpass123")
+        success, msg = auth_service.register(test_email, "testpass123", "TestUser")
         # May succeed or fail (duplicate), both are valid
         assert isinstance(success, bool)
         assert isinstance(msg, str)
@@ -97,7 +97,7 @@ class TestAuthService:
         from services.auth_service import auth_service
         # Register a test user first
         test_email = "otptest@test.com"
-        auth_service.register(test_email, "OTPTest", "pass123")
+        auth_service.register(test_email, "testpass123", "OTPTest")
         success, msg = auth_service.generate_otp(test_email)
         # Should succeed even without SMTP (falls back to UI display)
         assert success is True

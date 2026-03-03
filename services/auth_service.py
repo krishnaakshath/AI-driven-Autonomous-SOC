@@ -28,9 +28,13 @@ SESSIONS_FILE = os.path.join(DATA_DIR, 'sessions.json')
 
 class AuthService:
     """Authentication service with 2FA support and persistent storage."""
-    
+
+    # Rate limiting: max attempts per minute per email
+    MAX_ATTEMPTS_PER_MIN = 5
+
     def __init__(self):
         self._ensure_data_dir()
+        self._rate_limiter = {}  # {email: [timestamps]}
         # NOTE: users are loaded fresh from disk on every access via the
         # `users` property — this fixes the persistence bug where
         # registrations were lost because the old singleton cached data
@@ -204,6 +208,18 @@ class AuthService:
         
         return True, "Registration successful! Please login."
     
+    def _check_rate_limit(self, key: str) -> Tuple[bool, str]:
+        """Returns (allowed, message). Prunes old timestamps."""
+        now = datetime.now()
+        window = timedelta(minutes=1)
+        attempts = self._rate_limiter.get(key, [])
+        attempts = [t for t in attempts if now - t < window]
+        if len(attempts) >= self.MAX_ATTEMPTS_PER_MIN:
+            return False, "Too many attempts. Please wait 60 seconds."
+        attempts.append(now)
+        self._rate_limiter[key] = attempts
+        return True, ""
+
     def login(self, email: str, password: str) -> Tuple[bool, str, bool]:
         """
         Verify login credentials.
@@ -212,7 +228,12 @@ class AuthService:
             Tuple of (success, message, requires_2fa)
         """
         email = email.lower().strip()
-        
+
+        # Rate limit check
+        allowed, rate_msg = self._check_rate_limit(f"login:{email}")
+        if not allowed:
+            return False, rate_msg, False
+
         current_users = self._load_users()
         
         from services.database import db
@@ -336,7 +357,12 @@ class AuthService:
             Also stores otp_fallback_code in self for UI display when email fails.
         """
         email = email.lower().strip()
-        
+
+        # Rate limit check
+        allowed, rate_msg = self._check_rate_limit(f"otp:{email}")
+        if not allowed:
+            return False, rate_msg
+
         if email not in self._load_users():
             return False, "User not found"
         

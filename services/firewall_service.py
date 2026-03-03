@@ -30,8 +30,6 @@ class FirewallService:
         self.shun_threshold = 3 # 3 violations = perm block
         
     def scan_payload(self, text: str) -> Tuple[bool, Optional[str]]:
-        
-    def scan_payload(self, text: str) -> Tuple[bool, Optional[str]]:
         """
         Scans a text payload for malicious patterns.
         Returns: (is_blocked, threat_type)

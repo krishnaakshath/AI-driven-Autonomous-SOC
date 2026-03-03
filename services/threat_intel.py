@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -8,6 +9,35 @@ import time
 CACHE_FILE = ".threat_intel_cache.json"
 CACHE_DURATION = 300  # 5 minutes — keep data fresh
 CONFIG_FILE = ".soc_config.json"
+
+# Max payload sizes for external IOC data
+MAX_IOC_LENGTH = 2048
+MAX_DESCRIPTION_LENGTH = 5000
+
+
+def sanitize_ioc(value: str) -> str:
+    """Sanitize an IOC value — strip control chars, validate length."""
+    if not isinstance(value, str):
+        value = str(value)
+    # Strip control characters (keep printable + whitespace)
+    value = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', value)
+    # Truncate
+    return value[:MAX_IOC_LENGTH].strip()
+
+
+def validate_ip(ip: str) -> bool:
+    """Validate IPv4 address format."""
+    return bool(re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ip))
+
+
+def validate_domain(domain: str) -> bool:
+    """Basic domain format validation."""
+    return bool(re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]*\.)+[a-zA-Z]{2,}$', domain))
+
+
+def validate_hash(h: str) -> bool:
+    """Validate MD5/SHA1/SHA256 hash format."""
+    return bool(re.match(r'^[a-fA-F0-9]{32,64}$', h))
 
 
 def load_config():
