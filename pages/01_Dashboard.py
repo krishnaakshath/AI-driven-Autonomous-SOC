@@ -501,8 +501,7 @@ try:
                 cmin = 20,
                 cmax = 100,
                 colorbar = dict(
-                    title="Risk",
-                    titlefont=dict(color="#8B95A5", size=11),
+                    title=dict(text="Risk", font=dict(color="#8B95A5", size=11)),
                     tickfont=dict(color="#8B95A5", size=10),
                     thickness=12,
                     len=0.5,
