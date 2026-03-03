@@ -191,11 +191,20 @@ class RLThreatClassifier:
         """
         severity_map = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
 
-        bytes_in = float(event.get("bytes_in", 0))
-        bytes_out = float(event.get("bytes_out", 0))
-        packets = float(event.get("packets", 1))
-        duration = float(event.get("duration", 0))
-        port = float(event.get("port", 0))
+        def _sf(val, default=0.0):
+            """Safe float conversion — handles None, bad types."""
+            if val is None:
+                return default
+            try:
+                return float(val)
+            except (TypeError, ValueError):
+                return default
+
+        bytes_in = _sf(event.get("bytes_in", 0))
+        bytes_out = _sf(event.get("bytes_out", 0))
+        packets = _sf(event.get("packets", 1), 1.0)
+        duration = _sf(event.get("duration", 0))
+        port = _sf(event.get("port", 0))
 
         severity_str = event.get("severity", event.get("siem_severity", "LOW"))
         severity_num = severity_map.get(str(severity_str).upper(), 1)
@@ -374,8 +383,18 @@ class RLThreatClassifier:
         signals = []
         scores = {}
 
+        def _safe_float(val, default=0.0):
+            """Safely convert any value to float, handling None and bad types."""
+            if val is None:
+                return default
+            try:
+                return float(val)
+            except (TypeError, ValueError):
+                return default
+
         # ── Signal 1: Isolation Forest Anomaly Score (weight: 30%) ──
-        if_score = float(event.get("anomaly_score", event.get("ml_anomaly_score", -1)))
+        raw_score = event.get("anomaly_score", event.get("ml_anomaly_score", None))
+        if_score = _safe_float(raw_score, -1)
         if if_score < 0:
             try:
                 from ml_engine.isolation_forest import isolation_forest
@@ -422,7 +441,10 @@ class RLThreatClassifier:
         scores["event_type"] = type_score
 
         # ── Signal 4: Suspicious Port Analysis (weight: 10%) ──
-        port = int(event.get("port", 0))
+        try:
+            port = int(event.get("port", 0) or 0)
+        except (TypeError, ValueError):
+            port = 0
         if port in self.DANGEROUS_PORTS:
             port_score = 95
             signals.append(f"Port {port} is a known malware/C2 port")
@@ -436,9 +458,9 @@ class RLThreatClassifier:
         scores["port"] = port_score
 
         # ── Signal 5: Traffic Volume Analysis (weight: 10%) ──
-        bytes_in = float(event.get("bytes_in", 0))
-        bytes_out = float(event.get("bytes_out", 0))
-        packets = float(event.get("packets", 1))
+        bytes_in = _safe_float(event.get("bytes_in", 0))
+        bytes_out = _safe_float(event.get("bytes_out", 0))
+        packets = _safe_float(event.get("packets", 1), 1.0)
 
         volume_score = 20  # default normal
         if bytes_out > 500_000:
