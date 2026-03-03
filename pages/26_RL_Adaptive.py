@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime
+import random
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -16,7 +17,7 @@ from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
 
-st.markdown(page_header("RL Adaptive Classifier", "Deep Q-Network Agent — Learns what is dangerous through analyst feedback"), unsafe_allow_html=True)
+st.markdown(page_header("RL Adaptive Classifier", "Deep Q-Network Agent — Autonomously learns what is dangerous vs safe"), unsafe_allow_html=True)
 
 # ── Load RL Module ──
 RL_LOADED = False
@@ -52,6 +53,52 @@ def render_metric(label, value, color):
 
 ACTION_COLORS = {"SAFE": "#00C853", "SUSPICIOUS": "#FF8C00", "DANGEROUS": "#FF0040"}
 ACTION_ICONS = {"SAFE": "🟢", "SUSPICIOUS": "🟡", "DANGEROUS": "🔴"}
+SIGNAL_COLORS = {"isolation_forest": "#00D4FF", "severity": "#FF8C00", "event_type": "#8B5CF6",
+                 "port": "#FF0066", "traffic_volume": "#00C853"}
+
+
+def generate_realistic_events(n=20):
+    """Generate diverse security events for classification."""
+    templates = [
+        {"event_type": "Normal Connection", "severity": "LOW", "port": 443, "bytes_in": 3000, "bytes_out": 1500, "packets": 20, "duration": 5, "source": "Web Server"},
+        {"event_type": "SQL Injection Attempt", "severity": "CRITICAL", "port": 3306, "bytes_in": 15000, "bytes_out": 800, "packets": 45, "duration": 2, "source": "WAF"},
+        {"event_type": "Port Scan Detected", "severity": "HIGH", "port": 0, "bytes_in": 200, "bytes_out": 100, "packets": 8000, "duration": 10, "source": "IDS/IPS"},
+        {"event_type": "Login Failure", "severity": "MEDIUM", "port": 22, "bytes_in": 500, "bytes_out": 200, "packets": 15, "duration": 1, "source": "Endpoint"},
+        {"event_type": "Malware Beacon Detected", "severity": "CRITICAL", "port": 4444, "bytes_in": 100, "bytes_out": 100, "packets": 5, "duration": 3600, "source": "IDS/IPS"},
+        {"event_type": "DNS Query", "severity": "LOW", "port": 53, "bytes_in": 100, "bytes_out": 50, "packets": 2, "duration": 0.1, "source": "DNS Server"},
+        {"event_type": "Data Exfiltration Alert", "severity": "CRITICAL", "port": 443, "bytes_in": 500, "bytes_out": 800000, "packets": 3000, "duration": 120, "source": "DLP"},
+        {"event_type": "Brute Force Attack", "severity": "HIGH", "port": 22, "bytes_in": 50000, "bytes_out": 10000, "packets": 500, "duration": 30, "source": "Firewall"},
+        {"event_type": "HTTP GET Request", "severity": "LOW", "port": 80, "bytes_in": 2000, "bytes_out": 500, "packets": 8, "duration": 0.5, "source": "Web Server"},
+        {"event_type": "C2 Communication Detected", "severity": "CRITICAL", "port": 8888, "bytes_in": 50, "bytes_out": 50, "packets": 3, "duration": 7200, "source": "IDS/IPS"},
+        {"event_type": "File Access", "severity": "LOW", "port": 445, "bytes_in": 5000, "bytes_out": 100, "packets": 10, "duration": 1, "source": "Endpoint"},
+        {"event_type": "DDoS Flood Detected", "severity": "CRITICAL", "port": 80, "bytes_in": 5000000, "bytes_out": 100, "packets": 50000, "duration": 60, "source": "Firewall"},
+        {"event_type": "Ransomware Activity", "severity": "CRITICAL", "port": 5555, "bytes_in": 200, "bytes_out": 100000, "packets": 800, "duration": 300, "source": "Endpoint"},
+        {"event_type": "SSL Connection", "severity": "LOW", "port": 443, "bytes_in": 10000, "bytes_out": 5000, "packets": 30, "duration": 15, "source": "Web Server"},
+        {"event_type": "DNS Tunneling Suspected", "severity": "HIGH", "port": 53, "bytes_in": 100000, "bytes_out": 80000, "packets": 2000, "duration": 600, "source": "DNS Server"},
+        {"event_type": "Privilege Escalation Attempt", "severity": "CRITICAL", "port": 135, "bytes_in": 1000, "bytes_out": 500, "packets": 20, "duration": 3, "source": "Endpoint"},
+        {"event_type": "SMTP Connection", "severity": "LOW", "port": 25, "bytes_in": 800, "bytes_out": 20000, "packets": 15, "duration": 5, "source": "Mail Server"},
+        {"event_type": "Suspicious Outbound Connection", "severity": "MEDIUM", "port": 31337, "bytes_in": 100, "bytes_out": 50000, "packets": 200, "duration": 60, "source": "Firewall"},
+    ]
+
+    events = []
+    for i in range(n):
+        tmpl = random.choice(templates)
+        noise = lambda v, pct=0.2: max(0, v * (1 + random.uniform(-pct, pct)))
+        events.append({
+            "id": f"EVT-RL-{i:03d}",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "event_type": tmpl["event_type"],
+            "severity": tmpl["severity"],
+            "port": tmpl["port"],
+            "bytes_in": noise(tmpl["bytes_in"]),
+            "bytes_out": noise(tmpl["bytes_out"]),
+            "packets": max(1, int(noise(tmpl["packets"]))),
+            "duration": noise(tmpl["duration"]),
+            "source": tmpl["source"],
+            "source_ip": f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
+        })
+    return events
+
 
 if RL_LOADED:
     stats = rl_classifier.get_stats()
@@ -76,164 +123,155 @@ if RL_LOADED:
     # ═════════════════════════════════════════════════════════════════════════
     # TABS
     # ═════════════════════════════════════════════════════════════════════════
-    tab1, tab2, tab3 = st.tabs(["Live Classification", "Learning Metrics", "Agent Control"])
+    tab1, tab2, tab3 = st.tabs(["Autonomous Learning", "Learning Metrics", "Agent Control"])
 
-    # ── TAB 1: Live Classification + Feedback ──
+    # ── TAB 1: Autonomous Classification & Self-Learning ──
     with tab1:
-        st.markdown(section_title("Classify & Teach"), unsafe_allow_html=True)
+        st.markdown(section_title("Self-Learning Classifier"), unsafe_allow_html=True)
 
         st.markdown("""
         <div class="glass-card">
-            <h4 style="color: #00D4FF; margin: 0;">How it works</h4>
+            <h4 style="color: #00D4FF; margin: 0;">How it learns by itself</h4>
             <p style="color: #8B95A5; margin: 0.5rem 0;">
-                Click <strong>Classify Events</strong> to run the RL agent on live SIEM data.
-                Then review each classification and click <strong>✅ Correct</strong> or <strong>❌ Wrong</strong>.
-                The agent learns from your feedback in real-time — its accuracy improves with every review.
+                The RL agent classifies each event, then <strong>autonomously determines the correct answer</strong>
+                using 5 independent intelligence signals: <strong>Isolation Forest anomaly score</strong>, 
+                <strong>severity level</strong>, <strong>event type pattern matching</strong>, 
+                <strong>port reputation analysis</strong>, and <strong>traffic volume anomalies</strong>.
+                It compares its classification against this ground truth, receives a reward or penalty,
+                and improves its neural network — all automatically, no human input needed.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        col_btn, col_auto = st.columns([1, 1])
-        with col_btn:
-            classify_clicked = st.button("Classify Events", type="primary", key="classify_btn")
-        with col_auto:
-            auto_reward_clicked = st.button("Auto-Train (Use IF Scores)", key="auto_btn",
-                                            help="Automatically train using Isolation Forest anomaly scores as ground truth")
+        col_run, col_count = st.columns([2, 1])
+        with col_run:
+            learn_clicked = st.button("Run Self-Learning Cycle", type="primary", key="learn_btn")
+        with col_count:
+            n_events = st.slider("Events per cycle", min_value=5, max_value=50, value=20, key="n_slider")
 
-        if classify_clicked:
-            with st.spinner("Classifying events..."):
+        if learn_clicked:
+            with st.spinner(f"Classifying {n_events} events and learning from results..."):
                 events = []
                 if SIEM_AVAILABLE:
                     try:
-                        siem_events = get_siem_events(20)
-                        if siem_events:
-                            # Convert SIEM events to ML-compatible format
-                            from pages import _siem_to_ml_events_for_rl
-                            events = siem_events
+                        events = get_siem_events(n_events) or []
                     except Exception:
                         pass
-
                 if not events:
-                    # Generate sample events
-                    import random
-                    events = []
-                    for i in range(15):
-                        sev = random.choice(["LOW", "MEDIUM", "HIGH", "CRITICAL"])
-                        events.append({
-                            "id": f"EVT-RL-{i:03d}",
-                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "bytes_in": random.randint(100, 500000),
-                            "bytes_out": random.randint(100, 300000),
-                            "packets": random.randint(1, 10000),
-                            "duration": random.uniform(0, 3600),
-                            "port": random.choice([22, 80, 443, 3389, 4444, 8080, 8888]),
-                            "severity": sev,
-                            "source_ip": f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
-                            "event_type": random.choice(["Connection Blocked", "Port Scan Detected",
-                                                          "Login Failure", "Malicious Payload",
-                                                          "SQL Injection Attempt", "DNS Tunneling",
-                                                          "File Access", "Normal Connection"]),
-                            "source": random.choice(["Firewall", "IDS/IPS", "Endpoint", "Web Server"]),
-                        })
+                    events = generate_realistic_events(n_events)
 
-                # Classify
-                classifications = rl_classifier.classify_batch(events)
-                st.session_state["rl_classifications"] = list(zip(events, classifications))
-                st.session_state["rl_feedback_submitted"] = set()
-
-        if auto_reward_clicked:
-            with st.spinner("Auto-training with Isolation Forest scores..."):
-                events = []
-                if SIEM_AVAILABLE:
-                    try:
-                        events = get_siem_events(50) or []
-                    except Exception:
-                        pass
-
-                if not events:
-                    import random
-                    events = []
-                    for i in range(30):
-                        sev = random.choice(["LOW", "MEDIUM", "HIGH", "CRITICAL"])
-                        events.append({
-                            "id": f"EVT-AUTO-{i:03d}",
-                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "bytes_in": random.randint(100, 500000),
-                            "bytes_out": random.randint(100, 300000),
-                            "packets": random.randint(1, 10000),
-                            "duration": random.uniform(0, 3600),
-                            "port": random.choice([22, 80, 443, 3389, 4444, 8080]),
-                            "severity": sev,
-                        })
-
-                total_reward = 0
+                results = []
                 for evt in events:
-                    c = rl_classifier.classify(evt)
-                    r = rl_classifier.auto_reward(evt, c)
-                    total_reward += r
+                    classification = rl_classifier.classify(evt)
+                    feedback = rl_classifier.auto_reward(evt, classification)
+                    results.append({
+                        "event": evt,
+                        "classification": classification,
+                        "feedback": feedback,
+                    })
 
                 rl_classifier._save_to_disk()
+                st.session_state["rl_results"] = results
 
-                new_stats = rl_classifier.get_stats()
-                st.success(
-                    f"Auto-trained on {len(events)} events. "
-                    f"Total reward: {total_reward:+.1f} | "
-                    f"Accuracy: {new_stats['current_accuracy']}% | "
-                    f"ε: {new_stats['epsilon']:.4f}"
-                )
-                st.rerun()
+        # Display results
+        if "rl_results" in st.session_state:
+            results = st.session_state["rl_results"]
 
-        # Display classifications with feedback buttons
-        if "rl_classifications" in st.session_state:
+            # Summary bar
+            correct = sum(1 for r in results if r["feedback"]["is_correct"])
+            incorrect = len(results) - correct
+            total_reward = sum(r["feedback"]["reward"] for r in results)
+            acc = round(correct / len(results) * 100, 1) if results else 0
+
             st.markdown("---")
-            st.markdown("### Classification Results")
+            sc1, sc2, sc3, sc4 = st.columns(4)
+            with sc1:
+                render_metric("This Cycle", f"{len(results)} events", "#00D4FF")
+            with sc2:
+                color = "#00C853" if acc >= 60 else "#FF8C00" if acc >= 40 else "#FF0040"
+                render_metric("Accuracy", f"{acc}%", color)
+            with sc3:
+                render_metric("Correct", f"{correct}", "#00C853")
+            with sc4:
+                render_metric("Reward", f"{total_reward:+.1f}", "#FF8C00")
 
-            feedback_submitted = st.session_state.get("rl_feedback_submitted", set())
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("### Classification Results — Agent vs Ground Truth")
 
-            for i, (event, result) in enumerate(st.session_state["rl_classifications"]):
-                action = result["action"]
-                confidence = result["confidence"]
-                color = ACTION_COLORS[action]
-                icon = ACTION_ICONS[action]
-                event_id = result["event_id"]
+            for i, r in enumerate(results):
+                evt = r["event"]
+                cls = r["classification"]
+                fb = r["feedback"]
 
-                already_reviewed = event_id in feedback_submitted
+                agent_action = fb["agent_said"]
+                truth_action = fb["ground_truth"]
+                is_correct = fb["is_correct"]
+                threat_score = fb["threat_score"]
+                signals = fb["signals"]
+                signal_scores = fb["signal_scores"]
+
+                agent_color = ACTION_COLORS[agent_action]
+                truth_color = ACTION_COLORS[truth_action]
+                agent_icon = ACTION_ICONS[agent_action]
+                truth_icon = ACTION_ICONS[truth_action]
+
+                verdict_text = "✅ CORRECT" if is_correct else "❌ WRONG"
+                verdict_color = "#00C853" if is_correct else "#FF0040"
+                border_color = "#00C853" if is_correct else "#FF0040"
 
                 st.markdown(f"""
-                <div class="glass-card" style="margin: 0.4rem 0; border-left: 3px solid {color};">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="glass-card" style="margin: 0.4rem 0; border-left: 4px solid {border_color};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
                         <div>
-                            <span style="color: #8B95A5; font-size: 0.85rem;">{event.get('source', 'Unknown')} | {event.get('event_type', 'N/A')}</span>
-                            <span style="color: #555; margin-left: 0.5rem;">IP: {event.get('source_ip', 'N/A')}</span>
+                            <span style="color: #8B95A5; font-size: 0.85rem;">{evt.get('source', 'Unknown')}</span>
+                            <span style="color: #FAFAFA; font-weight: 600; margin-left: 0.5rem;">{evt.get('event_type', 'N/A')}</span>
+                            <span style="color: #555; margin-left: 0.5rem;">IP: {evt.get('source_ip', 'N/A')}</span>
                         </div>
-                        <div>
-                            <span style="color: {color}; font-weight: 700; font-size: 1.1rem;">{icon} {action}</span>
-                            <span style="color: #666; margin-left: 0.5rem;">({confidence}% conf)</span>
+                        <div style="display: flex; gap: 1.5rem; align-items: center;">
+                            <div style="text-align: center;">
+                                <div style="color: #666; font-size: 0.65rem; text-transform: uppercase;">Agent Said</div>
+                                <span style="color: {agent_color}; font-weight: 700;">{agent_icon} {agent_action}</span>
+                            </div>
+                            <div style="color: #444;">→</div>
+                            <div style="text-align: center;">
+                                <div style="color: #666; font-size: 0.65rem; text-transform: uppercase;">Ground Truth</div>
+                                <span style="color: {truth_color}; font-weight: 700;">{truth_icon} {truth_action}</span>
+                            </div>
+                            <span style="color: {verdict_color}; font-weight: 800; font-size: 0.9rem; min-width: 80px;">{verdict_text}</span>
                         </div>
                     </div>
-                    <div style="color: #555; font-size: 0.75rem; margin-top: 0.3rem;">
-                        Q-values: Safe={result['q_values'][0]:.2f} | Suspicious={result['q_values'][1]:.2f} | Dangerous={result['q_values'][2]:.2f}
+                    <div style="color: #555; font-size: 0.7rem; margin-top: 0.4rem;">
+                        Threat Score: <span style="color: {'#FF0040' if threat_score >= 65 else '#FF8C00' if threat_score >= 35 else '#00C853'}; font-weight: 600;">{threat_score}/100</span>
+                        &nbsp;|&nbsp; Reward: <span style="color: {'#00C853' if fb['reward'] > 0 else '#FF0040'};">{fb['reward']:+.1f}</span>
+                        &nbsp;|&nbsp; Confidence: {cls['confidence']}%
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                if not already_reviewed:
-                    fc1, fc2, fc3 = st.columns([1, 1, 4])
-                    with fc1:
-                        if st.button("✅ Correct", key=f"correct_{i}"):
-                            rl_classifier.submit_feedback(event_id, correct=True)
-                            st.session_state["rl_feedback_submitted"].add(event_id)
-                            st.rerun()
-                    with fc2:
-                        if st.button("❌ Wrong", key=f"wrong_{i}"):
-                            rl_classifier.submit_feedback(event_id, correct=False)
-                            st.session_state["rl_feedback_submitted"].add(event_id)
-                            st.rerun()
-                else:
-                    st.markdown("<span style='color: #00C853; font-size: 0.8rem;'>✔ Feedback submitted</span>",
-                                unsafe_allow_html=True)
+                with st.expander(f"Signal Intelligence — {evt.get('event_type', 'Event')} [{evt['id']}]"):
+                    # Signal breakdown bars
+                    for sig_name, sig_score in signal_scores.items():
+                        sig_label = sig_name.replace("_", " ").title()
+                        sig_color = SIGNAL_COLORS.get(sig_name, "#888")
+                        bar_width = min(sig_score, 100)
+                        st.markdown(f"""
+                        <div style="margin: 0.3rem 0;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: #8B95A5; font-size: 0.8rem;">{sig_label}</span>
+                                <span style="color: {sig_color}; font-weight: 600; font-size: 0.8rem;">{sig_score}/100</span>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); border-radius: 4px; height: 6px; margin-top: 2px;">
+                                <div style="background: {sig_color}; width: {bar_width}%; height: 100%; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # Signal reasoning
+                    st.markdown("**Intelligence Signals:**")
+                    for sig in signals:
+                        st.markdown(f"- {sig}")
 
     # ── TAB 2: Learning Metrics ──
     with tab2:
@@ -242,15 +280,13 @@ if RL_LOADED:
         stats = rl_classifier.get_stats()
 
         if stats["episodes"] == 0:
-            st.info("No training data yet. Classify some events and provide feedback, or use Auto-Train to get started.")
+            st.info("No training data yet. Click **Run Self-Learning Cycle** on the first tab to start.")
         else:
-            # Reward History
             reward_hist = stats.get("reward_history", [])
             if reward_hist:
                 col1, col2 = st.columns(2)
 
                 with col1:
-                    # Cumulative reward
                     cumulative = np.cumsum(reward_hist).tolist()
                     fig = go.Figure()
                     fig.add_trace(go.Scatter(
@@ -261,17 +297,14 @@ if RL_LOADED:
                     ))
                     fig.update_layout(
                         title="Cumulative Reward Over Time",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font_color="#FAFAFA",
-                        height=300,
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                        font_color="#FAFAFA", height=300,
                         xaxis=dict(title="Episode", showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
                         yaxis=dict(title="Cumulative Reward", showgrid=True, gridcolor="rgba(255,255,255,0.05)")
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
                 with col2:
-                    # Epsilon Decay
                     eps_hist = stats.get("epsilon_history", [])
                     if eps_hist:
                         fig = go.Figure()
@@ -282,17 +315,14 @@ if RL_LOADED:
                             name="Epsilon"
                         ))
                         fig.update_layout(
-                            title="Exploration Rate (ε) Decay",
-                            paper_bgcolor="rgba(0,0,0,0)",
-                            plot_bgcolor="rgba(0,0,0,0)",
-                            font_color="#FAFAFA",
-                            height=300,
+                            title="Exploration → Exploitation (ε Decay)",
+                            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                            font_color="#FAFAFA", height=300,
                             xaxis=dict(title="Episode", showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
                             yaxis=dict(title="ε", range=[0, 1.05], showgrid=True, gridcolor="rgba(255,255,255,0.05)")
                         )
                         st.plotly_chart(fig, use_container_width=True)
 
-            # Accuracy over time
             acc_hist = stats.get("accuracy_history", [])
             if acc_hist:
                 fig = go.Figure()
@@ -303,11 +333,9 @@ if RL_LOADED:
                     name="Accuracy"
                 ))
                 fig.update_layout(
-                    title="Classification Accuracy Over Time",
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#FAFAFA",
-                    height=300,
+                    title="Classification Accuracy Over Time (Agent Improving)",
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                    font_color="#FAFAFA", height=300,
                     xaxis=dict(title="Episode", showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
                     yaxis=dict(title="Accuracy (%)", range=[0, 105], showgrid=True, gridcolor="rgba(255,255,255,0.05)")
                 )
@@ -322,19 +350,8 @@ if RL_LOADED:
             for col, (action, count) in zip([ac1, ac2, ac3], action_counts.items()):
                 pct = round(count / total_actions * 100, 1)
                 with col:
-                    render_metric(f"{ACTION_ICONS.get(action, '')} {action}", f"{count} ({pct}%)", ACTION_COLORS.get(action, "#888"))
-
-            # Q-Value Analysis
-            st.markdown("### Q-Value Distribution (Current Network)")
-            st.markdown("""
-            <div class="glass-card">
-                <p style="color: #8B95A5; margin: 0;">
-                    Q-values represent the agent's learned value for each action given a state.
-                    Higher Q-values indicate the agent is more confident in that classification.
-                    As training progresses, these values diverge — meaning the agent becomes more decisive.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+                    render_metric(f"{ACTION_ICONS.get(action, '')} {action}", f"{count} ({pct}%)",
+                                  ACTION_COLORS.get(action, "#888"))
 
     # ── TAB 3: Agent Control ──
     with tab3:
@@ -342,27 +359,35 @@ if RL_LOADED:
 
         st.markdown("""
         <div class="glass-card">
-            <h4 style="color: #FF8C00; margin: 0;">Agent Configuration</h4>
+            <h4 style="color: #FF8C00; margin: 0;">How the RL Agent Decides on Its Own</h4>
             <p style="color: #8B95A5; margin: 0.5rem 0;">
-                Control the RL agent's behavior. Use <strong>Reset</strong> to start fresh,
-                or <strong>Save</strong> to persist the current model to disk.
+                The agent uses <strong>5 independent intelligence signals</strong> to build its own ground truth:
+            </p>
+            <ol style="color: #8B95A5; margin: 0.5rem 0;">
+                <li><strong>Isolation Forest</strong> (30%) — ML anomaly detection score</li>
+                <li><strong>Severity Level</strong> (25%) — CRITICAL/HIGH/MEDIUM/LOW rating</li>
+                <li><strong>Event Type Patterns</strong> (25%) — Keyword matching against known attack types</li>
+                <li><strong>Port Reputation</strong> (10%) — Known malware/C2 ports vs normal service ports</li>
+                <li><strong>Traffic Volume</strong> (10%) — Unusual data transfer patterns</li>
+            </ol>
+            <p style="color: #8B95A5; margin: 0.5rem 0;">
+                These signals create a <strong>composite threat score (0-100)</strong>. The agent compares its
+                classification against this score, gets rewarded or penalized, and improves its Q-network.
+                Over time, epsilon (ε) decays from 1.0 → 0.05, shifting from random exploration to confident exploitation.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Agent details
         stats = rl_classifier.get_stats()
-
         st.markdown("### Agent Status")
         detail_data = {
             "Total Classifications": f"{stats['total_classifications']:,}",
             "Total Episodes (Training Steps)": f"{stats['episodes']:,}",
             "Current Accuracy": f"{stats['current_accuracy']}%",
-            "Exploration Rate (ε)": f"{stats['epsilon']}",
+            "Exploration Rate (ε)": f"{stats['epsilon']} {'← Exploring' if stats['epsilon'] > 0.5 else '← Exploiting learned knowledge'}",
             "Replay Buffer Size": f"{stats['replay_buffer_size']:,}",
-            "Pending Feedback": f"{stats['pending_feedback_count']}",
             "Total Rewards Earned": f"{stats['total_rewards']:+.1f}",
             "Correct Classifications": f"{stats['correct_count']:,}",
             "Incorrect Classifications": f"{stats['incorrect_count']:,}",
@@ -381,20 +406,18 @@ if RL_LOADED:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Control buttons
         bc1, bc2, bc3 = st.columns(3)
         with bc1:
-            if st.button("💾 Save Model", use_container_width=True, key="save_model"):
+            if st.button("Save Model", use_container_width=True, key="save_model"):
                 rl_classifier._save_to_disk()
                 st.success("Model saved to disk.")
         with bc2:
-            if st.button("🔄 Reload Model", use_container_width=True, key="reload_model"):
+            if st.button("Reload Model", use_container_width=True, key="reload_model"):
                 rl_classifier._load_from_disk()
                 st.success("Model reloaded from disk.")
                 st.rerun()
         with bc3:
-            if st.button("⚠️ Reset Agent", use_container_width=True, key="reset_agent",
-                         type="primary"):
+            if st.button("Reset Agent", use_container_width=True, key="reset_agent", type="primary"):
                 st.session_state["confirm_reset"] = True
 
         if st.session_state.get("confirm_reset"):
@@ -404,7 +427,7 @@ if RL_LOADED:
                 if st.button("Yes, Reset Everything", key="confirm_yes"):
                     rl_classifier.reset()
                     st.session_state.pop("confirm_reset", None)
-                    st.session_state.pop("rl_classifications", None)
+                    st.session_state.pop("rl_results", None)
                     st.success("Agent reset to initial state.")
                     st.rerun()
             with rc2:

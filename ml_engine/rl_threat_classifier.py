@@ -344,45 +344,167 @@ class RLThreatClassifier:
 
         return True
 
-    def auto_reward(self, event: Dict, classification: Dict) -> float:
-        """
-        Generate automatic reward based on existing ML models.
-        Uses Isolation Forest anomaly score as ground truth proxy.
-        """
-        action = classification["action"]
+    # ═══════════════════════════════════════════════════════════════════════════
+    # AUTONOMOUS GROUND TRUTH (Multi-Signal Intelligence)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Known-dangerous ports used by malware / C2 / backdoors
+    DANGEROUS_PORTS = {4444, 5555, 8888, 1337, 31337, 6667, 6666, 12345, 54321}
+    SUSPICIOUS_PORTS = {3389, 23, 445, 135, 139, 1433, 3306, 5432, 27017}
 
-        # Try to get IF anomaly score
-        anomaly_score = float(event.get("anomaly_score", event.get("ml_anomaly_score", -1)))
+    # Event type keywords that indicate threats
+    DANGEROUS_KEYWORDS = [
+        "malware", "ransomware", "trojan", "c2", "command_and_control", "backdoor",
+        "exploit", "payload", "injection", "exfiltration", "data_theft", "rootkit",
+        "keylogger", "cryptominer", "botnet", "malicious",
+    ]
+    SUSPICIOUS_KEYWORDS = [
+        "scan", "probe", "brute", "flood", "ddos", "dos", "suspicious", "blocked",
+        "denied", "failed", "unauthorized", "anomal", "tunneling", "escalat",
+    ]
 
-        if anomaly_score < 0:
-            # No IF score available — try to compute
+    def determine_ground_truth(self, event: Dict) -> Dict:
+        """
+        Autonomously determine the true threat level of an event using
+        5 independent intelligence signals. No human input needed.
+
+        Returns:
+            Dict with: expected_action, threat_score (0-100), signals (list of reasons),
+                        signal_scores (breakdown)
+        """
+        signals = []
+        scores = {}
+
+        # ── Signal 1: Isolation Forest Anomaly Score (weight: 30%) ──
+        if_score = float(event.get("anomaly_score", event.get("ml_anomaly_score", -1)))
+        if if_score < 0:
             try:
                 from ml_engine.isolation_forest import isolation_forest
                 results = isolation_forest.predict([event])
                 if results:
-                    anomaly_score = results[0].get("anomaly_score", 50)
+                    if_score = results[0].get("anomaly_score", 50)
             except Exception:
-                anomaly_score = 50  # neutral
+                if_score = 50
+        scores["isolation_forest"] = round(if_score, 1)
+        if if_score >= 70:
+            signals.append(f"IF anomaly score {if_score:.0f}/100 → high risk")
+        elif if_score <= 30:
+            signals.append(f"IF anomaly score {if_score:.0f}/100 → normal")
 
-        # Determine expected classification from IF score
-        if anomaly_score >= 70:
+        # ── Signal 2: Severity Level (weight: 25%) ──
+        severity_map = {"LOW": 10, "MEDIUM": 35, "HIGH": 65, "CRITICAL": 95}
+        severity_str = str(event.get("severity", event.get("siem_severity", "LOW"))).upper()
+        sev_score = severity_map.get(severity_str, 25)
+        scores["severity"] = sev_score
+        if sev_score >= 65:
+            signals.append(f"Severity {severity_str} → elevated threat")
+
+        # ── Signal 3: Event Type Pattern Matching (weight: 25%) ──
+        event_type = str(event.get("event_type", event.get("type", ""))).lower()
+        details = str(event.get("details", "")).lower()
+        combined_text = event_type + " " + details
+
+        type_score = 30  # default neutral
+        for kw in self.DANGEROUS_KEYWORDS:
+            if kw in combined_text:
+                type_score = 90
+                signals.append(f"Event type matches dangerous pattern: '{kw}'")
+                break
+        else:
+            for kw in self.SUSPICIOUS_KEYWORDS:
+                if kw in combined_text:
+                    type_score = 60
+                    signals.append(f"Event type matches suspicious pattern: '{kw}'")
+                    break
+            else:
+                if combined_text.strip():
+                    signals.append("Event type appears benign")
+                    type_score = 15
+        scores["event_type"] = type_score
+
+        # ── Signal 4: Suspicious Port Analysis (weight: 10%) ──
+        port = int(event.get("port", 0))
+        if port in self.DANGEROUS_PORTS:
+            port_score = 95
+            signals.append(f"Port {port} is a known malware/C2 port")
+        elif port in self.SUSPICIOUS_PORTS:
+            port_score = 55
+            signals.append(f"Port {port} is commonly targeted")
+        elif port in (80, 443, 53, 22):
+            port_score = 10
+        else:
+            port_score = 25
+        scores["port"] = port_score
+
+        # ── Signal 5: Traffic Volume Analysis (weight: 10%) ──
+        bytes_in = float(event.get("bytes_in", 0))
+        bytes_out = float(event.get("bytes_out", 0))
+        packets = float(event.get("packets", 1))
+
+        volume_score = 20  # default normal
+        if bytes_out > 500_000:
+            volume_score = 80
+            signals.append(f"High outbound traffic ({bytes_out/1_000_000:.1f}MB) — possible exfiltration")
+        elif bytes_in > 1_000_000:
+            volume_score = 70
+            signals.append(f"High inbound traffic ({bytes_in/1_000_000:.1f}MB) — possible DDoS/flood")
+        elif packets > 5000:
+            volume_score = 65
+            signals.append(f"High packet count ({int(packets)}) — possible scan/flood")
+        scores["traffic_volume"] = volume_score
+
+        # ── Weighted Composite Score ──
+        composite = (
+            scores["isolation_forest"] * 0.30
+            + scores["severity"] * 0.25
+            + scores["event_type"] * 0.25
+            + scores["port"] * 0.10
+            + scores["traffic_volume"] * 0.10
+        )
+        composite = round(min(100, max(0, composite)), 1)
+
+        # ── Determine expected action ──
+        if composite >= 65:
             expected = "DANGEROUS"
-        elif anomaly_score >= 40:
+        elif composite >= 35:
             expected = "SUSPICIOUS"
         else:
             expected = "SAFE"
+
+        if not signals:
+            signals.append("All signals nominal")
+
+        return {
+            "expected_action": expected,
+            "threat_score": composite,
+            "signals": signals,
+            "signal_scores": scores,
+        }
+
+    def auto_reward(self, event: Dict, classification: Dict) -> Dict:
+        """
+        Autonomously determine reward using multi-signal ground truth.
+        The agent decides by itself what is correct — no human needed.
+
+        Returns:
+            Dict with reward, ground_truth details, and reasoning
+        """
+        action = classification["action"]
+
+        # Use multi-signal intelligence to determine ground truth
+        ground_truth = self.determine_ground_truth(event)
+        expected = ground_truth["expected_action"]
 
         # Compute reward
         if action == expected:
             reward = 1.0
         elif abs(ACTIONS.index(action) - ACTIONS.index(expected)) == 1:
-            reward = -0.3  # off by one category
+            reward = -0.3  # off by one category — partial penalty
         else:
             reward = -1.0  # completely wrong
 
-        event_id = classification.get("event_id", "unknown")
+        is_correct = reward > 0
 
-        # Clean up pending feedback for auto-rewarded events
+        event_id = classification.get("event_id", "unknown")
         self.pending_feedback.pop(event_id, None)
 
         # Store experience
@@ -397,7 +519,7 @@ class RLThreatClassifier:
 
         # Update stats
         self.stats["total_rewards"] += reward
-        if reward > 0:
+        if is_correct:
             self.stats["correct_count"] += 1
         else:
             self.stats["incorrect_count"] += 1
@@ -419,7 +541,15 @@ class RLThreatClassifier:
         self.stats["epsilon_history"] = self.stats["epsilon_history"][-200:]
         self.stats["episodes"] += 1
 
-        return reward
+        return {
+            "reward": reward,
+            "is_correct": is_correct,
+            "agent_said": action,
+            "ground_truth": expected,
+            "threat_score": ground_truth["threat_score"],
+            "signals": ground_truth["signals"],
+            "signal_scores": ground_truth["signal_scores"],
+        }
 
     # ═══════════════════════════════════════════════════════════════════════════
     # TRAINING
