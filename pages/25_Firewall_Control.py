@@ -100,7 +100,7 @@ try:
                 <div style="display: flex; justify-content: space-between; padding: 0.3rem 0;
                             border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center;">
                     <span style="color: #8B95A5; font-size: 0.85rem;">{ip} — {evt_type[:40]}</span>
-                    <span style="background:{color}15; border:1px solid {color}; color:{color};
+                    <span style="border:1px solid {color}; color:{color};
                            padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:700;">
                         {action} ({conf}%)
                     </span>

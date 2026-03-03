@@ -321,26 +321,25 @@ with col1:
                 rl_result = rl_ti.classify(data)
                 rl_ti.auto_reward(data, rl_result)
                 rl_action = rl_result["action"]
-                rl_conf = rl_result["confidence"]
                 rl_c = {"MONITOR": "#00C853", "ELEVATED": "#FF8C00", "CRITICAL": "#FF0040"}.get(rl_action, "#888")
-                rl_badge = f'<span style="background:{rl_c}15; border:1px solid {rl_c}; color:{rl_c}; padding:1px 6px; border-radius:3px; font-size:0.6rem; font-weight:700;">RL:{rl_action}</span>'
+                rl_badge = f'<span style="border:1px solid {rl_c}; color:{rl_c}; padding:1px 6px; border-radius:3px; font-size:0.6rem; font-weight:700; margin-left:6px;">RL:{rl_action}</span>'
             except Exception:
                 pass
 
         st.markdown(f"""
-            <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color};"></span>
-                        <span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{country}</span>
-                        {rl_badge}
-                    </div>
-                    <span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{data['real_count']:,}</span>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; margin-top: 0.5rem; overflow: hidden;">
-                    <div style="background: linear-gradient(90deg, {color}, {color}80); width: {pct}%; height: 100%; box-shadow: 0 0 10px {color};"></div>
-                </div>
-            </div>
+<div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color}; display: inline-block;"></span>
+            <span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{country}</span>
+            {rl_badge}
+        </div>
+        <span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{data['real_count']:,}</span>
+    </div>
+    <div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; margin-top: 0.5rem; overflow: hidden;">
+        <div style="background: linear-gradient(90deg, {color}, {color}80); width: {pct}%; height: 100%; box-shadow: 0 0 10px {color};"></div>
+    </div>
+</div>
         """, unsafe_allow_html=True)
 
 with col2:

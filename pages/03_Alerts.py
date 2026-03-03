@@ -218,7 +218,7 @@ with tabs[0]:
                 rl_conf = rl_result["confidence"]
                 rl_color = {"P1-CRITICAL": "#FF0040", "P2-QUEUE": "#FF8C00", "P3-LOW": "#00C853"}.get(rl_action, "#888")
                 rl_label = rl_action.split("-")[0]
-                rl_badge = f'<span style="background:{rl_color}20; border:1px solid {rl_color}; color:{rl_color}; padding:1px 6px; border-radius:3px; font-size:0.65rem; font-weight:700; margin-left:6px;" title="RL Confidence: {rl_conf}%">RL:{rl_label}</span>'
+                rl_badge = f'<span style="border:1px solid {rl_color}; color:{rl_color}; padding:1px 6px; border-radius:3px; font-size:0.65rem; font-weight:700; margin-left:6px;" title="RL Confidence: {rl_conf}%">RL:{rl_label}</span>'
             except Exception:
                 pass
 

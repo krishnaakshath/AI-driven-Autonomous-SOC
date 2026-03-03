@@ -43,35 +43,6 @@ if st.session_state.get('login_warning'):
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
 <style>
-    /* Live Action Ticker */
-    .ticker-wrap {
-        width: 100%;
-        overflow: hidden;
-        background: linear-gradient(90deg, rgba(0,0,0,0.6), rgba(0,212,255,0.03), rgba(0,0,0,0.6));
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(0, 243, 255, 0.15);
-        margin-bottom: 1.5rem;
-        backdrop-filter: blur(10px);
-    }
-    .ticker {
-        display: inline-block;
-        white-space: nowrap;
-        padding-right: 100%;
-        animation: ticker 35s linear infinite;
-    }
-    @keyframes ticker {
-        0% { transform: translate3d(100%, 0, 0); }
-        100% { transform: translate3d(-100%, 0, 0); }
-    }
-    .ticker-item {
-        display: inline-block;
-        padding: 0 2.5rem;
-        color: #00D4FF;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 0.8rem;
-        letter-spacing: 0.03em;
-    }
-
     /* Premium Metric Cards */
     .metric-card-pro {
         background: linear-gradient(135deg, rgba(15, 18, 30, 0.9), rgba(26, 31, 46, 0.7));
@@ -293,18 +264,6 @@ if ALERTS_AVAILABLE and not df.empty and "risk_score" in df.columns:
             st.toast(" Critical alert sent!", icon="🚨")
 
 
-# --- LIVE ACTION TICKER ---
-try:
-    from services.database import db
-    recent_fw = [e for e in db.get_recent_events(limit=50) if e.get("source") == "Firewall"][:5]
-    if recent_fw:
-        ticker_html = '<div class="ticker-wrap"><div class="ticker">'
-        for r in recent_fw:
-            ticker_html += f'<span class="ticker-item">🛡️ [FIREWALL] Blocked IP {r.get("source_ip")} ({r.get("event_type").replace("Active Block: ", "")})</span>'
-        ticker_html += '</div></div>'
-        st.markdown(ticker_html, unsafe_allow_html=True)
-except Exception:
-    pass
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # HEADER SECTION

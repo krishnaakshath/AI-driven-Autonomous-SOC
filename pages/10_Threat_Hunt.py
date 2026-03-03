@@ -184,7 +184,7 @@ with tab2:
                 rl_action = rl_result["action"]
                 rl_conf = rl_result["confidence"]
                 rl_c = {"HUNT-NOW": "#FF0040", "SCHEDULE": "#FF8C00", "SKIP": "#00C853"}.get(rl_action, "#888")
-                rl_badge = f'<span style="background:{rl_c}15; border:1px solid {rl_c}; color:{rl_c}; padding:1px 6px; border-radius:3px; font-size:0.6rem; font-weight:700; margin-left:8px;">RL:{rl_action}</span>'
+                rl_badge = f'<span style="border:1px solid {rl_c}; color:{rl_c}; padding:1px 6px; border-radius:3px; font-size:0.6rem; font-weight:700; margin-left:8px;">RL:{rl_action}</span>'
             except Exception:
                 pass
 

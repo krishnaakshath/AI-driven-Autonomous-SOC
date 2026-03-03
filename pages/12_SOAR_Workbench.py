@@ -85,7 +85,7 @@ with col_exec:
                     act_colors = {"BLOCK-IP": "#FF8C00", "ISOLATE-HOST": "#FF0040", "RATE-LIMIT": "#8B5CF6",
                                   "ALERT-ONLY": "#00C853", "FULL-QUARANTINE": "#FF0040"}
                     rl_c = act_colors.get(rl_action, "#00D4FF")
-                    rl_html = f'<div style="margin-top:0.4rem;"><span style="background:{rl_c}15; border:1px solid {rl_c}; color:{rl_c}; padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:700;">RL: {rl_action} ({rl_conf}%)</span></div>'
+                    rl_html = f'<div style="margin-top:0.4rem;"><span style="border:1px solid {rl_c}; color:{rl_c}; padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:700;">RL: {rl_action} ({rl_conf}%)</span></div>'
                 except Exception:
                     pass
 
