@@ -30,110 +30,55 @@ if st.session_state.get('login_warning'):
     )
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CLEAN PROFESSIONAL STYLES
+# IMPORT THEME (same cyberpunk as all other pages)
 # ═══════════════════════════════════════════════════════════════════════════════
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card
+st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+
+# Extra spacing overrides for dashboard only
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* Dashboard KPI Cards */
-.kpi-row { display: flex; gap: 12px; margin: 0.5rem 0 1.2rem 0; }
-.kpi-card {
-    flex: 1;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 8px;
-    padding: 1rem 0.8rem;
-    text-align: center;
-}
-.kpi-val {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.3;
-}
-.kpi-lbl {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #6B7280;
-    margin-top: 2px;
+/* Spacious override for dashboard */
+.stColumns { gap: 1.5rem !important; }
+section[data-testid="stSidebar"] + div .block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 1200px !important;
 }
 
-/* Section headers */
-.sec-hdr {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #9CA3AF;
-    margin: 1.8rem 0 0.8rem 0;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-/* Header */
-.dash-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #F9FAFB;
-    margin: 0 0 0.15rem 0;
-    letter-spacing: -0.01em;
-}
-.dash-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    color: #6B7280;
-    margin: 0;
-}
-
-/* Status badge */
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-.status-pill .pulse {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-@keyframes pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
-    50% { opacity: 0.5; box-shadow: 0 0 0 4px transparent; }
-}
-
-/* RL Strip */
+/* RL Bar */
 .rl-bar {
-    background: rgba(99, 102, 241, 0.06);
-    border: 1px solid rgba(99, 102, 241, 0.12);
+    background: linear-gradient(90deg, rgba(139,92,246,0.06), rgba(0,212,255,0.03));
+    border: 1px solid rgba(139,92,246,0.15);
     border-radius: 8px;
-    padding: 0.5rem 1rem;
+    padding: 0.7rem 1.2rem;
     display: flex;
     align-items: center;
     gap: 1.2rem;
-    margin-bottom: 0.8rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    color: #818CF8;
+    margin: 1rem 0 1.5rem 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: #A78BFA;
 }
-.rl-bar .rl-v { font-weight: 700; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
+.rl-bar .rl-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* More breathing room between sections */
+.section-gap { height: 2rem; }
+
+/* Buttons & toggles more spacious */
+.stButton > button {
+    padding: 0.6rem 1.5rem !important;
+    font-size: 0.85rem !important;
+    border-radius: 6px !important;
+    margin-top: 0.5rem !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
-from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DATA LOADING
@@ -253,34 +198,28 @@ security_score = max(0, min(100, 100 - avg_risk))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# HEADER
+# HEADER — uses same page_header as other pages
 # ═══════════════════════════════════════════════════════════════════════════════
-h1, h2 = st.columns([3, 1])
-with h1:
+st.markdown(page_header("Security Operations Center", "Autonomous threat detection & response platform"), unsafe_allow_html=True)
+
+# Status + Controls — spread out
+st.markdown('<div style="height: 0.5rem;"></div>', unsafe_allow_html=True)
+h_col1, h_col2, h_col3 = st.columns([2, 1, 1])
+with h_col1:
     st.markdown("""
-<div style="padding: 0.3rem 0 0.8rem 0;">
-    <h1 class="dash-title">Security Operations Center</h1>
-    <p class="dash-sub">Autonomous threat detection & response platform</p>
+<div style="display:inline-flex; align-items:center; gap:6px; padding:6px 16px; border-radius:20px;
+     background:rgba(0,200,83,0.08); border:1px solid rgba(0,200,83,0.2);
+     color:#00C853; font-family:'Share Tech Mono',monospace; font-size:0.75rem; font-weight:600; letter-spacing:0.06em;">
+    <span style="width:6px;height:6px;border-radius:50%;background:#00C853;box-shadow:0 0 6px #00C853;display:inline-block;"></span>
+    PRODUCTION LIVE
 </div>
     """, unsafe_allow_html=True)
-
-with h2:
-    c1, c2 = st.columns([1.5, 1])
-    with c1:
-        st.markdown("""
-<div style="display:flex; justify-content:flex-end; padding-top:1rem;">
-    <span class="status-pill" style="background:rgba(16,185,129,0.1); color:#10B981; border:1px solid rgba(16,185,129,0.2);">
-        <span class="pulse" style="background:#10B981;"></span>
-        LIVE
-    </span>
-</div>
-        """, unsafe_allow_html=True)
-        auto_refresh = st.toggle("Auto-Sync", value=True)
-    with c2:
-        st.markdown("<div style='padding-top:1rem;'></div>", unsafe_allow_html=True)
-        if st.button("Refresh", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
+with h_col2:
+    auto_refresh = st.toggle("Auto-Sync", value=True)
+with h_col3:
+    if st.button("Refresh Data", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # RL INTELLIGENCE BAR
@@ -297,39 +236,44 @@ try:
 
     st.markdown(f"""
 <div class="rl-bar">
-    <span style="color:#6366F1;">● RL ENGINE</span>
-    <span class="rl-v" style="color:#10B981;">{rl_acc}%</span> <span>accuracy</span>
+    <span style="color:#8B5CF6;">● RL ENGINE</span>
+    <span class="rl-val" style="color:#00C853;">{rl_acc}%</span> <span>accuracy</span>
     <span style="margin-left:auto;">{n_agents} agents</span>
     <span>·</span>
-    <span class="rl-v" style="color:#E0E7FF;">{total_episodes:,}</span> <span>episodes</span>
+    <span class="rl-val" style="color:#00f3ff;">{total_episodes:,}</span> <span>episodes</span>
     <span>·</span>
-    <span>ε {rl_stats.get('epsilon', 0):.3f}</span>
+    <span>ε = {rl_stats.get('epsilon', 0):.3f}</span>
 </div>
     """, unsafe_allow_html=True)
 except Exception:
     pass
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# KPI CARDS
+# KPI CARDS — using theme's metric_card (same as other pages)
 # ═══════════════════════════════════════════════════════════════════════════════
 def fmt(v):
     return f"{v:,}" if isinstance(v, (int, np.integer)) else v
 
-st.markdown(f"""
-<div class="kpi-row">
-    <div class="kpi-card"><div class="kpi-val" style="color:#E0E7FF;">{fmt(total)}</div><div class="kpi-lbl">Total Events</div></div>
-    <div class="kpi-card" style="border-color:rgba(239,68,68,0.15);"><div class="kpi-val" style="color:#EF4444;">{fmt(critical)}</div><div class="kpi-lbl">Critical</div></div>
-    <div class="kpi-card"><div class="kpi-val" style="color:#A78BFA;">{fmt(blocked)}</div><div class="kpi-lbl">Blocked</div></div>
-    <div class="kpi-card"><div class="kpi-val" style="color:#F59E0B;">{fmt(restricted)}</div><div class="kpi-lbl">Restricted</div></div>
-    <div class="kpi-card"><div class="kpi-val" style="color:#10B981;">{fmt(allowed)}</div><div class="kpi-lbl">Allowed</div></div>
-    <div class="kpi-card"><div class="kpi-val" style="color:#8B5CF6;">{avg_risk:.1f}</div><div class="kpi-lbl">Avg Risk</div></div>
-</div>
-""", unsafe_allow_html=True)
+m1, m2, m3, m4, m5, m6 = st.columns(6)
+with m1:
+    st.markdown(metric_card("Total Events", fmt(total), "#00f3ff"), unsafe_allow_html=True)
+with m2:
+    st.markdown(metric_card("Critical", fmt(critical), "#ff003c"), unsafe_allow_html=True)
+with m3:
+    st.markdown(metric_card("Blocked", fmt(blocked), "#bc13fe"), unsafe_allow_html=True)
+with m4:
+    st.markdown(metric_card("Restricted", fmt(restricted), "#ff6b00"), unsafe_allow_html=True)
+with m5:
+    st.markdown(metric_card("Allowed", fmt(allowed), "#00C853"), unsafe_allow_html=True)
+with m6:
+    st.markdown(metric_card("Avg Risk", f"{avg_risk:.1f}", "#8B5CF6"), unsafe_allow_html=True)
+
+st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # GLOBAL THREAT MAP
 # ═══════════════════════════════════════════════════════════════════════════════
-st.markdown('<div class="sec-hdr">Global Threat Map</div>', unsafe_allow_html=True)
+st.markdown(section_title("Global Threat Map"), unsafe_allow_html=True)
 
 try:
     map_events = [e for e in db.get_recent_events(limit=200) if e.get("severity") in ["HIGH", "CRITICAL"]]
@@ -348,14 +292,13 @@ try:
             text=map_df['source_ip'] + " — " + map_df['event_type'],
             mode='markers',
             marker=dict(
-                size=map_df['risk'] / 10,
-                opacity=0.6,
+                size=map_df['risk'] / 10, opacity=0.6,
                 color=map_df['risk'],
-                colorscale=[[0, "#6366F1"], [0.5, "#F59E0B"], [1, "#EF4444"]],
+                colorscale=[[0, "#00f3ff"], [0.5, "#bc13fe"], [1, "#ff003c"]],
                 cmin=20, cmax=100,
                 colorbar=dict(
-                    title=dict(text="Risk", font=dict(color="#6B7280", size=10)),
-                    tickfont=dict(color="#6B7280", size=9),
+                    title=dict(text="Risk", font=dict(color="#8B95A5", size=10)),
+                    tickfont=dict(color="#8B95A5", size=9),
                     thickness=10, len=0.4,
                 ),
                 line=dict(width=0),
@@ -364,11 +307,11 @@ try:
         fig_map.update_layout(
             geo=dict(
                 scope='world', projection_type='natural earth',
-                showland=True, landcolor="rgb(17, 24, 39)",
-                countrycolor="rgba(75, 85, 99, 0.3)",
-                showocean=True, oceancolor="rgb(11, 15, 25)",
+                showland=True, landcolor="rgb(12, 14, 28)",
+                countrycolor="rgba(0, 200, 255, 0.12)",
+                showocean=True, oceancolor="rgb(8, 10, 20)",
                 bgcolor="rgba(0,0,0,0)", showframe=False,
-                coastlinecolor="rgba(75, 85, 99, 0.2)",
+                coastlinecolor="rgba(0,200,255,0.08)",
             ),
             paper_bgcolor="rgba(0,0,0,0)",
             margin=dict(l=0, r=0, t=0, b=0), height=380
@@ -377,19 +320,22 @@ try:
 except Exception as e:
     st.error(f"Map Error: {e}")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CHARTS ROW 1
-# ═══════════════════════════════════════════════════════════════════════════════
-chart1, chart2 = st.columns([2, 1])
+st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 
-CHART_LAYOUT = dict(
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHARTS — Shared dark layout
+# ═══════════════════════════════════════════════════════════════════════════════
+DARK_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#9CA3AF", family="Inter"),
+    font=dict(color="#FAFAFA", family="Rajdhani"),
     margin=dict(l=10, r=10, t=10, b=10),
 )
 
+# Row 1: Timeline + Decision Split
+chart1, spc1, chart2 = st.columns([2.2, 0.1, 1])
+
 with chart1:
-    st.markdown('<div class="sec-hdr">Threat Activity · 6 Months</div>', unsafe_allow_html=True)
+    st.markdown(section_title("Threat Activity Timeline"), unsafe_allow_html=True)
     try:
         daily_counts = db.get_daily_counts(days=180)
         if daily_counts:
@@ -400,16 +346,22 @@ with chart1:
                 df_t = df_t.set_index('date').reindex(pd.date_range(mn, mx, freq='D'), fill_value=0).reset_index().rename(columns={'index': 'date'})
 
             fig = go.Figure()
+            # Glow
             fig.add_trace(go.Scatter(
-                x=df_t["date"], y=df_t["count"],
-                mode="lines", fill="tozeroy",
-                line=dict(color="#6366F1", width=2, shape='spline'),
-                fillcolor="rgba(99, 102, 241, 0.06)",
+                x=df_t["date"], y=df_t["count"], mode="lines",
+                line=dict(color="rgba(0, 243, 255, 0.1)", width=10, shape='spline'),
+                hoverinfo='skip', showlegend=False
+            ))
+            # Main
+            fig.add_trace(go.Scatter(
+                x=df_t["date"], y=df_t["count"], mode="lines", fill="tozeroy",
+                line=dict(color="#00f3ff", width=2, shape='spline'),
+                fillcolor="rgba(0, 243, 255, 0.05)",
                 hovertemplate="<b>%{x|%b %d}</b><br>%{y:,} events<extra></extra>",
                 showlegend=False
             ))
             fig.update_layout(
-                **CHART_LAYOUT, height=300, hovermode="x unified",
+                **DARK_LAYOUT, height=320, hovermode="x unified",
                 xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)"),
                 yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.03)"),
             )
@@ -425,7 +377,7 @@ with chart1:
                         if rows:
                             st.dataframe(pd.DataFrame(rows)[['timestamp', 'event_type', 'source_ip', 'severity', 'status']], use_container_width=True, hide_index=True)
                         else:
-                            st.info("No records found for this date.")
+                            st.info("No records for this date.")
                     except Exception as e:
                         st.error(f"Lookup error: {e}")
         else:
@@ -434,107 +386,117 @@ with chart1:
         st.error(f"Timeline error: {e}")
 
 with chart2:
-    st.markdown('<div class="sec-hdr">Decision Distribution</div>', unsafe_allow_html=True)
+    st.markdown(section_title("Decision Split"), unsafe_allow_html=True)
     if not df.empty and "access_decision" in df.columns:
         dc = df["access_decision"].value_counts()
-        colors_map = {"ALLOW": "#10B981", "RESTRICT": "#F59E0B", "BLOCK": "#EF4444"}
+        colors_map = {"ALLOW": "#00C853", "RESTRICT": "#ff6b00", "BLOCK": "#ff003c"}
 
         fig2 = go.Figure(go.Pie(
-            labels=dc.index, values=dc.values, hole=0.6,
-            marker_colors=[colors_map.get(d, "#6B7280") for d in dc.index],
-            textinfo="percent", textfont=dict(size=12, color="#E5E7EB"),
+            labels=dc.index, values=dc.values, hole=0.65,
+            marker_colors=[colors_map.get(d, "#888") for d in dc.index],
+            textinfo="percent", textfont=dict(size=12, color="#FAFAFA"),
             hovertemplate="<b>%{label}</b><br>%{value:,} (%{percent})<extra></extra>"
         ))
         fig2.update_layout(
-            **CHART_LAYOUT, height=300, showlegend=True,
-            legend=dict(orientation="h", y=-0.12, font=dict(size=10, color="#9CA3AF")),
+            **DARK_LAYOUT, height=320, showlegend=True,
+            legend=dict(orientation="h", y=-0.12, font=dict(size=10, color="#8B95A5")),
         )
         st.plotly_chart(fig2, use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CHARTS ROW 2
-# ═══════════════════════════════════════════════════════════════════════════════
-chart3, chart4 = st.columns(2)
+st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+
+# Row 2: Attack Vectors + Origins
+chart3, spc2, chart4 = st.columns([1, 0.1, 1])
 
 with chart3:
-    st.markdown('<div class="sec-hdr">Top Attack Vectors</div>', unsafe_allow_html=True)
+    st.markdown(section_title("Top Attack Vectors"), unsafe_allow_html=True)
     if not df.empty:
         ac = df[df["attack_type"] != "Normal"]["attack_type"].value_counts().head(6)
         if not ac.empty:
             fig3 = go.Figure(go.Bar(
                 x=ac.values, y=ac.index, orientation="h",
-                marker=dict(color="#6366F1", line=dict(width=0)),
+                marker=dict(
+                    color=ac.values,
+                    colorscale=[[0, "#00f3ff"], [0.5, "#bc13fe"], [1, "#ff003c"]],
+                    line=dict(width=0),
+                ),
                 hovertemplate="<b>%{y}</b>: %{x:,}<extra></extra>"
             ))
             fig3.update_layout(
-                **CHART_LAYOUT, height=260,
+                **DARK_LAYOUT, height=280,
                 xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.03)"),
                 yaxis=dict(showgrid=False, tickfont=dict(size=11)),
             )
             st.plotly_chart(fig3, use_container_width=True)
 
 with chart4:
-    st.markdown('<div class="sec-hdr">Attack Origins</div>', unsafe_allow_html=True)
+    st.markdown(section_title("Attack Origins"), unsafe_allow_html=True)
     if "source_country" in df.columns and not df.empty:
         cc = df[df["attack_type"] != "Normal"]["source_country"].value_counts().head(6)
         if not cc.empty:
             fig4 = go.Figure(go.Bar(
                 x=cc.index, y=cc.values,
-                marker=dict(color="#F59E0B", line=dict(width=0)),
+                marker=dict(
+                    color=cc.values,
+                    colorscale=[[0, "#ff6b00"], [1, "#ff003c"]],
+                ),
                 hovertemplate="<b>%{x}</b>: %{y:,}<extra></extra>"
             ))
             fig4.update_layout(
-                **CHART_LAYOUT, height=260,
+                **DARK_LAYOUT, height=280,
                 xaxis=dict(showgrid=False, tickangle=-25, tickfont=dict(size=10)),
                 yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.03)"),
             )
             st.plotly_chart(fig4, use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# SECURITY SCORE
-# ═══════════════════════════════════════════════════════════════════════════════
-st.markdown('<div class="sec-hdr">Security Health</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 
-_, gc, _ = st.columns([1, 2, 1])
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECURITY HEALTH GAUGE
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown(section_title("Security Health Score"), unsafe_allow_html=True)
+
+_, gc, _ = st.columns([1.2, 2, 1.2])
 with gc:
     if security_score >= 70:
-        g_color = "#10B981"
+        g_color = "#00C853"
     elif security_score >= 40:
-        g_color = "#F59E0B"
+        g_color = "#ff6b00"
     else:
-        g_color = "#EF4444"
+        g_color = "#ff003c"
 
     fig_g = go.Figure(go.Indicator(
         mode="gauge+number",
         value=security_score,
-        number={'font': {'size': 44, 'color': g_color, 'family': 'Inter'}, 'suffix': ''},
-        title={'text': "Overall Score", 'font': {'size': 13, 'color': '#6B7280', 'family': 'Inter'}},
+        number={'font': {'size': 48, 'color': g_color, 'family': 'Orbitron'}},
+        title={'text': "Overall Score", 'font': {'size': 14, 'color': '#8B95A5', 'family': 'Rajdhani'}},
         gauge={
-            'axis': {'range': [0, 100], 'tickcolor': "#374151", 'tickwidth': 1, 'tickfont': {'size': 9, 'color': '#6B7280'}},
+            'axis': {'range': [0, 100], 'tickcolor': "#555", 'tickwidth': 1, 'tickfont': {'size': 9}},
             'bar': {'color': g_color, 'thickness': 0.2},
-            'bgcolor': "rgba(31, 41, 55, 0.4)",
-            'borderwidth': 0,
+            'bgcolor': "rgba(26, 31, 46, 0.5)",
+            'borderwidth': 1, 'bordercolor': "rgba(255, 255, 255, 0.06)",
             'steps': [
-                {'range': [0, 40], 'color': 'rgba(239,68,68,0.06)'},
-                {'range': [40, 70], 'color': 'rgba(245,158,11,0.06)'},
-                {'range': [70, 100], 'color': 'rgba(16,185,129,0.06)'}
+                {'range': [0, 40], 'color': 'rgba(255, 0, 60, 0.08)'},
+                {'range': [40, 70], 'color': 'rgba(255, 107, 0, 0.08)'},
+                {'range': [70, 100], 'color': 'rgba(0, 200, 83, 0.08)'}
             ],
         }
     ))
     fig_g.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
-        font={'color': "#E5E7EB", 'family': "Inter"},
-        height=230, margin=dict(l=30, r=30, t=30, b=0)
+        font={'color': "#FAFAFA", 'family': "Rajdhani"},
+        height=250, margin=dict(l=30, r=30, t=30, b=10)
     )
     st.plotly_chart(fig_g, use_container_width=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FOOTER
 # ═══════════════════════════════════════════════════════════════════════════════
+st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 st.markdown("---")
 st.markdown("""
-<div style="text-align:center; color:#4B5563; padding:0.3rem; font-family:'Inter',sans-serif; font-size:0.75rem; letter-spacing:0.04em;">
-    AI-Driven Autonomous SOC · Zero Trust · RL-Powered Intelligence
+<div style="text-align:center; color:#555; padding:0.5rem; font-family:'Share Tech Mono',monospace; font-size:0.8rem;">
+    // AI-DRIVEN AUTONOMOUS SOC // ZERO TRUST PLATFORM // RL-POWERED INTELLIGENCE //
 </div>
 """, unsafe_allow_html=True)
 

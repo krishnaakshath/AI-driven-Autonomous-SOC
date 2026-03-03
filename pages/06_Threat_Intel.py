@@ -378,18 +378,18 @@ with col2:
     for attack_type, color, count in attack_types:
         pct = (count / max_count) * 100
         st.markdown(f"""
-            <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color};"></span>
-                        <span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{attack_type}</span>
-                    </div>
-                    <span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{count}</span>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; margin-top: 0.5rem; overflow: hidden;">
-                    <div style="background: linear-gradient(90deg, {color}, {color}80); width: {pct}%; height: 100%; box-shadow: 0 0 10px {color};"></div>
-                </div>
-            </div>
+<div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color}; display: inline-block;"></span>
+            <span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{attack_type}</span>
+        </div>
+        <span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{count}</span>
+    </div>
+    <div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; margin-top: 0.5rem; overflow: hidden;">
+        <div style="background: linear-gradient(90deg, {color}, {color}80); width: {pct}%; height: 100%;"></div>
+    </div>
+</div>
         """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -403,25 +403,25 @@ try:
             desc = pulse.get('description', '')[:120] + "..." if pulse.get('description') else "No description available."
             
             st.markdown(f"""
-                <div class="glass-card" style="margin-bottom: 0.8rem; border-left: 3px solid #bc13fe;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div style="flex: 1;">
-                            <h4 style="color: #FAFAFA; margin: 0 0 0.3rem 0; font-size: 1rem; font-family: 'Rajdhani', sans-serif;">{pulse.get('name', 'Unknown Threat')[:60]}</h4>
-                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                                <span style="color: #00f3ff; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">// {pulse.get('author') or 'AlienVault'}</span>
-                                <span style="color: #666; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">{pulse.get('created', '')[:10]}</span>
-                            </div>
-                            <div style="margin-bottom: 0.5rem;">{tags_html}</div>
-                            <p style="color: #8B95A5; margin: 0; font-size: 0.85rem; line-height: 1.4;">{desc}</p>
-                        </div>
-                        <div style="text-align: center; min-width: 70px; padding-left: 1rem;">
-                            <div style="background: rgba(255, 0, 60, 0.1); border: 1px solid rgba(255, 0, 60, 0.3); border-radius: 2px; padding: 0.5rem;">
-                                <span style="color: #ff003c; font-weight: 700; font-size: 1.1rem; display: block; font-family: 'Orbitron', sans-serif;">{pulse.get('indicators', 0)}</span>
-                                <span style="color: #ff6b00; font-size: 0.6rem; text-transform: uppercase; font-family: 'Share Tech Mono', monospace;">IOCs</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<div class="glass-card" style="margin-bottom: 0.8rem; border-left: 3px solid #bc13fe;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="flex: 1;">
+            <h4 style="color: #FAFAFA; margin: 0 0 0.3rem 0; font-size: 1rem; font-family: 'Rajdhani', sans-serif;">{pulse.get('name', 'Unknown Threat')[:60]}</h4>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                <span style="color: #00f3ff; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">// {pulse.get('author') or 'AlienVault'}</span>
+                <span style="color: #666; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">{pulse.get('created', '')[:10]}</span>
+            </div>
+            <div style="margin-bottom: 0.5rem;">{tags_html}</div>
+            <p style="color: #8B95A5; margin: 0; font-size: 0.85rem; line-height: 1.4;">{desc}</p>
+        </div>
+        <div style="text-align: center; min-width: 70px; padding-left: 1rem;">
+            <div style="background: rgba(255, 0, 60, 0.1); border: 1px solid rgba(255, 0, 60, 0.3); border-radius: 2px; padding: 0.5rem;">
+                <span style="color: #ff003c; font-weight: 700; font-size: 1.1rem; display: block; font-family: 'Orbitron', sans-serif;">{pulse.get('indicators', 0)}</span>
+                <span style="color: #ff6b00; font-size: 0.6rem; text-transform: uppercase; font-family: 'Share Tech Mono', monospace;">IOCs</span>
+            </div>
+        </div>
+    </div>
+</div>
             """, unsafe_allow_html=True)
     else:
         st.info("No recent OTX data available. Check your API key in Settings.")
