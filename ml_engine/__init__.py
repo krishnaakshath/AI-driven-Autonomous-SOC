@@ -27,6 +27,23 @@ from .fuzzy_clustering import (
     FuzzyCMeans
 )
 
+# RL Threat Classifier (optional, may not exist on first run)
+try:
+    from .rl_threat_classifier import (
+        classify_event,
+        classify_events,
+        submit_feedback,
+        get_rl_stats,
+        RLThreatClassifier
+    )
+    RL_AVAILABLE = True
+except ImportError:
+    RL_AVAILABLE = False
+    def classify_event(*a, **kw): return {}
+    def classify_events(*a, **kw): return []
+    def submit_feedback(*a, **kw): return False
+    def get_rl_stats(*a, **kw): return {}
+
 __all__ = [
     'score_network_event',
     'score_dataframe', 
@@ -40,6 +57,14 @@ __all__ = [
     # Fuzzy C-Means
     'cluster_threats',
     'get_threat_distribution',
-    'FuzzyCMeans'
+    'FuzzyCMeans',
+    # RL Threat Classifier
+    'classify_event',
+    'classify_events',
+    'submit_feedback',
+    'get_rl_stats',
+    'RLThreatClassifier',
+    'RL_AVAILABLE',
 ]
+
 

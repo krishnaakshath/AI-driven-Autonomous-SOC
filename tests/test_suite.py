@@ -250,5 +250,49 @@ class TestDarkWebOSINT:
             pytest.skip("ThreatFox API unreachable")
 
 
+
+class TestRLClassifier:
+    """Test RL Threat Classifier."""
+
+    def test_rl_import(self):
+        from ml_engine.rl_threat_classifier import RLThreatClassifier, ACTIONS
+        assert RLThreatClassifier is not None
+        assert len(ACTIONS) == 3
+
+    def test_rl_classify_event(self):
+        from ml_engine.rl_threat_classifier import RLThreatClassifier
+        agent = RLThreatClassifier()
+        event = {
+            "id": "TEST-001",
+            "bytes_in": 50000, "bytes_out": 10000,
+            "packets": 500, "duration": 30,
+            "port": 443, "severity": "HIGH"
+        }
+        result = agent.classify(event)
+        assert result["action"] in ["SAFE", "SUSPICIOUS", "DANGEROUS"]
+        assert "q_values" in result
+        assert "confidence" in result
+
+    def test_rl_feedback_loop(self):
+        from ml_engine.rl_threat_classifier import RLThreatClassifier
+        agent = RLThreatClassifier()
+        event = {"id": "TEST-FB-001", "bytes_in": 100, "bytes_out": 50,
+                 "packets": 10, "duration": 1, "port": 80, "severity": "LOW"}
+        result = agent.classify(event)
+        # Submit feedback
+        accepted = agent.submit_feedback(result["event_id"], correct=True)
+        assert accepted is True
+        assert agent.stats["correct_count"] >= 1
+
+    def test_rl_state_extraction(self):
+        from ml_engine.rl_threat_classifier import RLThreatClassifier
+        agent = RLThreatClassifier()
+        event = {"bytes_in": 1000000, "bytes_out": 500000, "packets": 10000,
+                 "duration": 3600, "port": 65535, "severity": "CRITICAL"}
+        state = agent.extract_state(event)
+        assert state.shape == (8,)
+        assert all(0.0 <= s <= 1.0 for s in state)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

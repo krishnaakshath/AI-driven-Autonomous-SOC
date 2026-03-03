@@ -92,6 +92,7 @@ elif user_is_admin:
         ],
         "Investigation": [
             st.Page("pages/11_Analysis.py", title="ML Insights"),
+            st.Page("pages/26_RL_Adaptive.py", title="RL Adaptive"),
             st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench"),
             st.Page("pages/13_Forensics.py", title="Forensics"),
         ],
@@ -125,6 +126,7 @@ else:
         ],
         "Investigation": [
             st.Page("pages/11_Analysis.py", title="ML Insights"),
+            st.Page("pages/26_RL_Adaptive.py", title="RL Adaptive"),
             st.Page("pages/12_SOAR_Workbench.py", title="SOAR Workbench"),
             st.Page("pages/13_Forensics.py", title="Forensics"),
         ],

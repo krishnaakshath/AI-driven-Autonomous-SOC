@@ -115,6 +115,17 @@ class SIEMService:
                 except Exception:
                     pass
                 
+                # ── RL ADAPTIVE CLASSIFICATION ──
+                try:
+                    from ml_engine.rl_threat_classifier import rl_classifier
+                    rl_result = rl_classifier.classify(event)
+                    event["rl_classification"] = rl_result.get("action", "UNKNOWN")
+                    event["rl_confidence"] = rl_result.get("confidence", 0)
+                    # Auto-reward using IF anomaly score as ground truth
+                    rl_classifier.auto_reward(event, rl_result)
+                except Exception:
+                    pass
+                
                 events_to_insert.append(event)
                 
                 # GENERATE ALERT
