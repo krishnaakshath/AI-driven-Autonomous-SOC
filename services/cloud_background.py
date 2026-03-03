@@ -14,6 +14,9 @@ _RETRAIN_INTERVAL = 120
 # Weekly report check: every 60 cycles (~1 hour) — checks if 7 days have passed
 _WEEKLY_REPORT_CHECK_INTERVAL = 60
 
+# RL auto-training: every 10 cycles (~10 minutes)
+_RL_TRAIN_INTERVAL = 10
+
 def _run_ml_retrain():
     """Retrain ML models on accumulated live database data."""
     try:
@@ -56,6 +59,36 @@ def _run_weekly_report():
     except Exception as e:
         print(f"[CLOUD-BG] Weekly report error: {e}")
 
+def _run_rl_training():
+    """Run autonomous RL self-learning cycle on recent events."""
+    try:
+        from ml_engine.rl_threat_classifier import rl_classifier
+        from services.database import db
+
+        # Pull latest events from DB
+        recent_events = db.get_recent_events(limit=30)
+        if not recent_events or len(recent_events) < 5:
+            return
+
+        correct = 0
+        total = 0
+        for evt in recent_events:
+            classification = rl_classifier.classify(evt)
+            result = rl_classifier.auto_reward(evt, classification)
+            total += 1
+            if isinstance(result, dict) and result.get("is_correct"):
+                correct += 1
+
+        rl_classifier._save_to_disk()
+
+        acc = round(correct / total * 100, 1) if total > 0 else 0
+        stats = rl_classifier.get_stats()
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] RL auto-train: "
+              f"{total} events, {acc}% accurate, ε={stats['epsilon']:.4f}, "
+              f"total episodes={stats['episodes']}")
+    except Exception as e:
+        print(f"[CLOUD-BG] RL training error: {e}")
+
 def _run_continuous_ingestion():
     """
     The actual worker function that runs in the background thread.
@@ -82,6 +115,10 @@ def _run_continuous_ingestion():
             # Periodic ML retraining (every ~2 hours = 120 cycles)
             if cycle_count % 120 == 0:
                 _run_ml_retrain()
+            
+            # RL auto-training (every ~10 minutes = 10 cycles)
+            if cycle_count % _RL_TRAIN_INTERVAL == 0:
+                _run_rl_training()
             
             # Periodic weekly report check (every ~1 hour = 60 cycles)
             if cycle_count % 60 == 0:
