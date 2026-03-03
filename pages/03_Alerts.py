@@ -174,7 +174,7 @@ filtered = filtered.sort_values("time", ascending=False)
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Operational Workbench Layout
-tabs = st.tabs(["📋 Active Alerts", "🔍 Advanced Filter", "📊 Trends"])
+tabs = st.tabs(["Active Alerts", "Advanced Filter", "Trends"])
 
 with tabs[0]:
     st.markdown(section_title(f"Operational Workbench ({len(filtered)})"), unsafe_allow_html=True)

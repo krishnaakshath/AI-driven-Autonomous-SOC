@@ -303,7 +303,7 @@ elif st.session_state.login_step == '2fa_select':
     with col3:
         st.markdown("""
         <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 2.5rem; opacity: 0.5;">💬</div>
+            <div style="font-size: 2.5rem; opacity: 0.5;"></div>
             <div style="color: #666; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-top: 8px;">SMS</div>
         </div>
         """, unsafe_allow_html=True)
@@ -321,7 +321,7 @@ elif st.session_state.login_step == '2fa_verify':
     # Show OTP fallback if email delivery failed
     fallback_code = st.session_state.get('_otp_fallback_code')
     if fallback_code:
-        st.info(f"📋 **Email not configured. Your verification code is: `{fallback_code}`**")
+        st.info(f"**Email not configured. Your verification code is: `{fallback_code}`**")
     else:
         st.markdown("""
         <div style="background: rgba(0,243,255,0.1); border-left: 3px solid #00f3ff; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
@@ -380,7 +380,7 @@ elif st.session_state.login_step == '2fa_verify':
                 fallback_code = getattr(auth_service, '_last_otp_fallback', None)
                 if fallback_code:
                     st.session_state._otp_fallback_code = fallback_code
-                    st.info(f"📋 **New code: `{fallback_code}`**")
+                    st.info(f"**New code: `{fallback_code}`**")
                 else:
                     st.session_state._otp_fallback_code = None
                     st.success("Code sent!")

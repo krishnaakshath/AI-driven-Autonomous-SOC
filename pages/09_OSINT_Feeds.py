@@ -6,7 +6,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    st.set_page_config(page_title="OSINT Feeds | SOC", page_icon="📡", layout="wide")
+    st.set_page_config(page_title="OSINT Feeds | SOC", page_icon="", layout="wide")
 except st.errors.StreamlitAPIException:
     pass
 

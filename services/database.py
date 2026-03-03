@@ -82,12 +82,12 @@ class SupabaseClient:
             )
             self._connected = r.status_code in (200, 416)
             if self._connected:
-                print(f"[DB] ✅ Supabase connected: {self.url}")
+                print(f"[DB] Supabase connected: {self.url}")
             else:
-                print(f"[DB] ❌ Supabase returned {r.status_code}: {r.text[:200]}")
+                print(f"[DB] Supabase returned {r.status_code}: {r.text[:200]}")
                 self._connected = False
         except Exception as e:
-            print(f"[DB] ❌ Supabase unreachable: {e}")
+            print(f"[DB] Supabase unreachable: {e}")
             self._connected = False
         return self._connected
     

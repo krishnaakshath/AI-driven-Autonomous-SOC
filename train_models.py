@@ -28,7 +28,7 @@ def run_training():
     try:
         train_df = load_nsl_kdd_train()
         test_df = load_nsl_kdd_test()
-        print(f"      ✅ Success: Loaded {len(train_df)} training and {len(test_df)} test records.")
+        print(f"      Success: Loaded {len(train_df)} training and {len(test_df)} test records.")
     except Exception as e:
         print(f"      ❌ Failed to load dataset: {e}")
         return
@@ -38,7 +38,7 @@ def run_training():
     t0 = time.time()
     iso_stats = isolation_forest.train_on_dataset()
     t1 = time.time()
-    print(f"      ✅ Training Complete in {t1-t0:.2f} seconds.")
+    print(f"      Training Complete in {t1-t0:.2f} seconds.")
     
     # 3. Evaluate Isolation Forest
     print("\n[3/5] Evaluating Isolation Forest Ensemble...")
@@ -46,36 +46,36 @@ def run_training():
     acc = iso_metrics.get('accuracy', 0)
     f1 = iso_metrics.get('f1_score', 0)
     
-    print(f"      📊 Results:")
+    print(f"      Results:")
     print(f"         - Accuracy:  {acc:.2f}%")
     print(f"         - Precision: {iso_metrics.get('precision', 0):.2f}%")
     print(f"         - Recall:    {iso_metrics.get('recall', 0):.2f}%")
     print(f"         - F1-Score:  {f1:.2f}%")
     if acc >= 95.0:
-        print("         🏆 STATUS: PASSED USER REQUIREMENT")
+        print("         STATUS: PASSED USER REQUIREMENT")
     else:
-        print("         ⚠️ STATUS: FALLS SHORT OF 95% REQUIREMENT")
+        print("         STATUS: FALLS SHORT OF 95% REQUIREMENT")
 
     # 4. Train Fuzzy C-Means (Threat Categorization)
     print("\n[4/5] Training Fuzzy C-Means Threat Clustering Engine...")
     t0 = time.time()
     fcm_stats = fuzzy_clustering.fit_on_dataset()
     t1 = time.time()
-    print(f"      ✅ Training Complete in {t1-t0:.2f} seconds.")
+    print(f"      Training Complete in {t1-t0:.2f} seconds.")
     
     # 5. Evaluate Fuzzy C-Means
     print("\n[5/5] Evaluating Fuzzy C-Means Clusters...")
     fcm_metrics = fuzzy_clustering.evaluate()
     purity = fcm_metrics.get('overall_purity', 0)
     
-    print(f"      📊 Results:")
+    print(f"      Results:")
     print(f"         - Overall Cluster Purity: {purity:.2f}%")
     if purity >= 95.0:
-        print("         🏆 STATUS: PASSED USER REQUIREMENT")
+        print("         STATUS: PASSED USER REQUIREMENT")
     else:
-        print("         ⚠️ STATUS: FALLS SHORT OF 95% REQUIREMENT")
+        print("         STATUS: FALLS SHORT OF 95% REQUIREMENT")
         
-    print("\n      🔍 Category Accuracy Breakdown:")
+    print("\n      Category Accuracy Breakdown:")
     for cat, val in fcm_metrics.get('category_accuracy', {}).items():
         print(f"         - {cat}: {val}%")
 

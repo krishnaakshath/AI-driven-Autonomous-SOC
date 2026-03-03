@@ -29,7 +29,7 @@ with h_col1:
     st.markdown(page_header("Real-Time Log Viewer", "Live streaming logs from all security sources"), unsafe_allow_html=True)
 with h_col2:
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🔄 Fetch Latest", use_container_width=True):
+    if st.button("Fetch Latest", use_container_width=True):
         st.cache_data.clear()
         st.session_state.log_refresh_counter += 1
         st.rerun()

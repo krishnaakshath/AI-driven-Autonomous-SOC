@@ -34,11 +34,11 @@ with h_col1:
 
 with h_col2:
     st.markdown("<br>", unsafe_allow_html=True)
-    st.session_state.kill_chain_auto = st.toggle("🔄 Auto-Live", value=st.session_state.kill_chain_auto)
+    st.session_state.kill_chain_auto = st.toggle(" Auto-Live", value=st.session_state.kill_chain_auto)
 
 with h_col3:
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🔄 Refresh Data", use_container_width=True):
+    if st.button(" Refresh Data", use_container_width=True):
         st.cache_data.clear()
         st.session_state.kill_chain_refresh += 1
         st.rerun()
@@ -342,7 +342,7 @@ with tab1:
                 
                 st.markdown("**Countermeasures:**")
                 for cm in stage['countermeasures']:
-                    st.markdown(f"  🛡️ {cm}")
+                    st.markdown(f"   {cm}")
 
 with tab2:
     st.markdown("### Active Threats in Kill Chain")

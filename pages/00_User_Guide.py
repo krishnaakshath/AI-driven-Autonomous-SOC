@@ -28,7 +28,7 @@ sections = {
         """,
         "tip": "The platform is 100% data-authentic. Every alert you see represents a real persistent event."
     },
-    "📊 Global Dashboard": {
+    "Global Dashboard": {
         "icon": "dashboard",
         "content": """
         ### Real-Time Intelligence
@@ -40,7 +40,7 @@ sections = {
         """,
         "tip": "Click the 'Refresh' button in the sidebar or toggle 'Auto-refresh' on specific pages for live updates."
     },
-    "🚨 Alerts Workbench": {
+    "Alerts Workbench": {
         "icon": "notifications_active",
         "content": """
         ### Triage & Response
@@ -52,7 +52,7 @@ sections = {
         """,
         "tip": "Always prioritize **CRITICAL** severity alerts first."
     },
-    "🧠 CORTEX AI": {
+    "CORTEX AI": {
         "icon": "psychology",
         "content": """
         ### Neural-Link Investigation
@@ -65,7 +65,7 @@ sections = {
         """,
         "tip": "CORTEX uses real-world data from VirusTotal, AbuseIPDB, and AlienVault OTX."
     },
-    "🛡️ Active Firewall": {
+    "Active Firewall": {
         "icon": "verified_user",
         "content": """
         ### Integrated Defense
@@ -105,8 +105,8 @@ if selected_section:
 st.markdown("---")
 col1, col2 = st.columns(2)
 with col1:
-    if st.button("⬅️ Home Dashboard"):
+    if st.button("Home Dashboard"):
         st.switch_page("pages/01_Dashboard.py")
 with col2:
-    if st.button("🧠 Consult CORTEX"):
+    if st.button("Consult CORTEX"):
         st.switch_page("pages/21_CORTEX.py")

@@ -87,7 +87,7 @@ with col_exec:
                         st.success(f"Response Automated for {inc.get('id')}")
                         st.rerun()
                     except:
-                        st.toast("Automation Engine Timeout", icon="⚠️")
+                        st.toast("Automation Engine Timeout", icon="")
     else:
         st.info("No active incidents requiring SOAR intervention.")
 

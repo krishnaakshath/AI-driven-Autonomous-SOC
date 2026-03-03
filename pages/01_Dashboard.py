@@ -421,7 +421,7 @@ with chart1:
                     try:
                         selected_date = points[0].get("x")
                         target_date = pd.to_datetime(selected_date).strftime('%Y-%m-%d')
-                        st.markdown(f"**🔎 Threat Log for {target_date}**")
+                        st.markdown(f"**Threat Log for {target_date}**")
                         
                         with st.spinner("Checking historical archives..."):
                             # Fetch exact events for that day
