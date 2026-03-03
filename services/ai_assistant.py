@@ -58,7 +58,7 @@ class AIAssistant:
         try:
             if 'GROQ_API_KEY' in st.secrets:
                 return st.secrets['GROQ_API_KEY']
-        except:
+        except Exception:
             pass
         
         # 3. Check local config file
@@ -68,7 +68,7 @@ class AIAssistant:
                 with open(config_path, 'r') as f:
                     config = json.load(f)
                     return config.get('GROQ_API_KEY')
-        except:
+        except Exception:
             pass
         return None
 

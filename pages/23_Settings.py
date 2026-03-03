@@ -330,7 +330,7 @@ with tab2:
         try:
             from services.ai_assistant import ai_assistant
             ai_assistant.update_personality(new_prefs)
-        except:
+        except Exception:
             pass
         
         st.success(" Personality settings saved! CORTEX will use these settings in new conversations.")

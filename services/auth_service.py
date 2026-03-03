@@ -22,7 +22,6 @@ from typing import Dict, Optional, Tuple
 import streamlit as st
 
 # Data file path
-# Data file path
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 SESSIONS_FILE = os.path.join(DATA_DIR, 'sessions.json')
@@ -270,7 +269,7 @@ class AuthService:
             try:
                 with open(SESSIONS_FILE, 'r') as f:
                     return json.load(f)
-            except:
+            except Exception:
                 pass
         return {}
     
@@ -427,7 +426,7 @@ class AuthService:
                 try:
                     gmail_user = st.secrets.get('GMAIL_USER')
                     gmail_password = st.secrets.get('GMAIL_APP_PASSWORD')
-                except:
+                except Exception:
                     pass
             
             # 3. Check .soc_config.json file (multiple paths for different deployment scenarios)
@@ -779,7 +778,7 @@ def check_persistent_session():
                 st.session_state['user_name'] = user.get('name') if user else email
                 st.session_state['auth_token'] = token
                 return True
-        except:
+        except Exception:
             pass
     return False
 
@@ -854,7 +853,7 @@ def logout():
     if os.path.exists(token_file):
         try:
             os.remove(token_file)
-        except:
+        except Exception:
             pass
 
 

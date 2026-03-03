@@ -34,7 +34,7 @@ for rf in report_files:
         mtime = datetime.fromtimestamp(os.path.getmtime(rf))
         if mtime > datetime.now() - timedelta(days=7):
             recent_reports += 1
-    except:
+    except Exception:
         pass
 
 c1, c2, c3, c4 = st.columns(4)
@@ -99,7 +99,7 @@ with tab1:
                 report_data = generate_pdf_report(report_type, date_range, include_charts, include_raw, executive_summary)
                 file_ext = "pdf"
                 mime_type = "application/pdf"
-            except:
+            except Exception:
                 report_data = generate_security_report(report_type, date_range, include_charts, include_raw, executive_summary)
                 file_ext = "txt"
                 mime_type = "text/plain"

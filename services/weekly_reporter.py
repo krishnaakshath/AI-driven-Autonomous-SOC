@@ -28,7 +28,7 @@ def _load_report_log() -> list:
         try:
             with open(REPORT_LOG, 'r') as f:
                 return json.load(f)
-        except:
+        except Exception:
             return []
     return []
 
@@ -49,7 +49,7 @@ def should_generate_weekly_report() -> bool:
     try:
         last_date = datetime.fromisoformat(last['generated_at'])
         return (datetime.now() - last_date).days >= 7
-    except:
+    except Exception:
         return True
 
 
@@ -165,7 +165,7 @@ def _gather_weekly_data(start: datetime, end: datetime) -> Dict:
                 ts = datetime.fromisoformat(evt.get('timestamp', ''))
                 if start <= ts <= end:
                     week_events.append(evt)
-            except:
+            except Exception:
                 # If timestamp parsing fails, include it anyway
                 week_events.append(evt)
         

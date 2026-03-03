@@ -109,7 +109,7 @@ try:
     from services.database import db
     siem_stats = db.get_stats()
     blocked_today = siem_stats.get('critical', 0) + siem_stats.get('high', 0) # Approximation of blocks
-except:
+except Exception:
     blocked_today = 0
 
 total = sum([c["real_count"] for c in threats.values()])

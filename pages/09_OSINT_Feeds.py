@@ -18,7 +18,7 @@ inject_particles()
 try:
     from services.threat_intel import threat_intel
     HAS_INTEL = True
-except:
+except Exception:
     HAS_INTEL = False
 
 st.markdown(page_header("OSINT Threat Feeds", "Real-time actionable threat intelligence from global sources"), unsafe_allow_html=True)

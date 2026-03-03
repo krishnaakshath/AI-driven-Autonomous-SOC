@@ -15,7 +15,7 @@ def load_config():
         try:
             with open(CONFIG_FILE, 'r') as f:
                 return json.load(f)
-        except:
+        except Exception:
             pass
     return {}
 
@@ -41,7 +41,7 @@ class ThreatIntelligence:
             try:
                 with open(CACHE_FILE, 'r') as f:
                     return json.load(f)
-            except:
+            except Exception:
                 pass
         return {}
     
@@ -331,7 +331,7 @@ class ThreatIntelligence:
                     'tags': p.get('tags', [])[:5],
                     'indicators': len(p.get('indicators', []))
                 } for p in pulses]
-        except:
+        except Exception:
             pass
         return []
 

@@ -46,7 +46,7 @@ def _load_json(filepath: str) -> Dict:
         try:
             with open(filepath, 'r') as f:
                 return json.load(f)
-        except:
+        except Exception:
             return {}
     return {}
 
@@ -401,7 +401,7 @@ def check_suspicious_login(user_email: str, current_ip: str = "127.0.0.1") -> Di
             ts = datetime.fromisoformat(h['timestamp'])
             if (now - ts).total_seconds() < 1800 and not h.get('success'):
                 recent_fails += 1
-        except:
+        except Exception:
             pass
     
     if recent_fails >= 3:
@@ -419,7 +419,7 @@ def check_suspicious_login(user_email: str, current_ip: str = "127.0.0.1") -> Di
             ts = datetime.fromisoformat(h['timestamp'])
             if (now - ts).total_seconds() < 3600:
                 recent_ips.add(h.get('ip_address', ''))
-        except:
+        except Exception:
             pass
     
     if len(recent_ips) > 3:

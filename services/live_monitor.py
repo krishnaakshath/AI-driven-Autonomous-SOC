@@ -24,7 +24,7 @@ class LiveNetworkMonitor:
         try:
             result = subprocess.run(["tshark", "-v"], capture_output=True, timeout=5)
             return result.returncode == 0
-        except:
+        except Exception:
             return False
     
     def get_interfaces(self) -> List[str]:
@@ -42,7 +42,7 @@ class LiveNetworkMonitor:
                     if len(parts) >= 2:
                         interfaces.append(parts[1].split(" ")[0])
             return interfaces
-        except:
+        except Exception:
             return []
     
     def start_capture(self, interface: str = "en0", duration: int = 30) -> Dict:
@@ -107,7 +107,7 @@ class LiveNetworkMonitor:
                 subprocess.run(cmd, stdout=f, timeout=60)
             
             return True
-        except:
+        except Exception:
             return False
     
     def analyze_capture(self) -> Dict:

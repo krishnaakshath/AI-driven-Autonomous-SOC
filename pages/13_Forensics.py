@@ -41,7 +41,7 @@ def load_siem_events():
     try:
         from services.siem_service import get_siem_events
         return get_siem_events(100)
-    except:
+    except Exception:
         return []
 
 incidents = load_siem_incidents()

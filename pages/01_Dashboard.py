@@ -127,7 +127,7 @@ def load_soc_data():
             try:
                 # Use the event's actual timestamp
                 ts = datetime.strptime(e.get('timestamp'), "%Y-%m-%d %H:%M:%S")
-            except:
+            except Exception:
                 ts = datetime.now()
 
             data.append({
@@ -152,7 +152,7 @@ df = load_soc_data()
 try:
     from alerting.alert_service import trigger_alert, send_test_alert
     ALERTS_AVAILABLE = True
-except:
+except Exception:
     ALERTS_AVAILABLE = False
 
 # Check for critical events and send alerts

@@ -118,7 +118,7 @@ class PDFScanner:
                                     if re.search(r'(urgent|verify|suspended|click here)', text, re.IGNORECASE):
                                         result['threats_found'].append(f'Phishing content detected on page {i+1}')
                                         result['risk_score'] += 25
-                        except:
+                        except Exception:
                             pass
             except Exception as e:
                 result['threats_found'].append(f'PDF parsing error: {str(e)}')

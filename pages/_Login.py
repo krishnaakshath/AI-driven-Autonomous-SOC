@@ -220,7 +220,7 @@ if st.session_state.login_step == 'credentials':
                         sus = check_suspicious_login(email, current_ip="127.0.0.1")
                         if sus.get('is_suspicious'):
                             st.session_state['login_warning'] = sus
-                    except:
+                    except Exception:
                         pass
                     
                     st.success(" ACCESS GRANTED")
@@ -230,7 +230,7 @@ if st.session_state.login_step == 'credentials':
                 try:
                     from services.user_data import log_login_attempt
                     log_login_attempt(email, success=False, ip_address="127.0.0.1")
-                except:
+                except Exception:
                     pass
                 st.error(" " + message)
         else:
@@ -362,7 +362,7 @@ elif st.session_state.login_step == '2fa_verify':
                         sus = check_suspicious_login(pending, current_ip="127.0.0.1")
                         if sus.get('is_suspicious'):
                             st.session_state['login_warning'] = sus
-                    except:
+                    except Exception:
                         pass
                     
                     st.session_state.pending_email = None

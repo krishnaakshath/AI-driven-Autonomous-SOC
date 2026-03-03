@@ -90,7 +90,7 @@ class SecurityScanner:
             if output.returncode == 0:
                 result["alive"] = True
                 result["response_time"] = round((end - start) * 1000, 2)
-        except:
+        except Exception:
             pass
         
         return result
@@ -129,7 +129,7 @@ class SecurityScanner:
             banner = sock.recv(1024).decode('utf-8', errors='ignore')
             sock.close()
             return banner.strip()[:200]
-        except:
+        except Exception:
             return ""
     
     def full_scan(self, target_ip: str) -> Dict:

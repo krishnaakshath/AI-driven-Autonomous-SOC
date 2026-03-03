@@ -92,7 +92,7 @@ with tab2:
         if not VT_KEY and hasattr(st, 'secrets'):
             try:
                 VT_KEY = st.secrets.get('virustotal_api_key', '')
-            except:
+            except Exception:
                 pass
         
         # Hardcoded fallback for deployment (your API key)

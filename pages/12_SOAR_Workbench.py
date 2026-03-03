@@ -86,7 +86,7 @@ with col_exec:
                         db.update_alert_status(inc.get('id'), "Resolved")
                         st.success(f"Response Automated for {inc.get('id')}")
                         st.rerun()
-                    except:
+                    except Exception:
                         st.toast("Automation Engine Timeout", icon="")
     else:
         st.info("No active incidents requiring SOAR intervention.")

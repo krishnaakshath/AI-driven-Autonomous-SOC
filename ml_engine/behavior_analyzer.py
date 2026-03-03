@@ -110,7 +110,7 @@ class BehavioralAnomalyDetector:
             try:
                 ts_str = event.get("timestamp")
                 ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S") if ts_str else datetime.now()
-            except:
+            except Exception:
                 ts = datetime.now()
                 
             # Map event types to analyzer methods

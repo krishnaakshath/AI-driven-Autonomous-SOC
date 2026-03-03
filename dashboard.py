@@ -151,7 +151,19 @@ if logged_in:
             
         from ui.theme import status_indicator
         st.markdown(status_indicator(status), unsafe_allow_html=True)
-        st.markdown(f"<div style='color: #444; font-size: 0.6rem; font-family: monospace; margin-top: -5px;'>LATENCY: {importlib.util.find_spec('requests') and '12ms' or 'N/A'} | REGION: US-EAST</div>", unsafe_allow_html=True)
+        # Measure real latency to Supabase
+        _latency = "N/A"
+        try:
+            import time as _t
+            _start = _t.time()
+            from services.database import SUPABASE_URL
+            if SUPABASE_URL:
+                requests_mod = importlib.import_module("requests")
+                requests_mod.head(SUPABASE_URL, timeout=3)
+                _latency = f"{int((_t.time() - _start) * 1000)}ms"
+        except Exception:
+            pass
+        st.markdown(f"<div style='color: #444; font-size: 0.6rem; font-family: monospace; margin-top: -5px;'>LATENCY: {_latency}</div>", unsafe_allow_html=True)
         
         st.markdown("---")
         if st.button("🔒 Logout", use_container_width=True):

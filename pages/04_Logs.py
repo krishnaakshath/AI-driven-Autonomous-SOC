@@ -47,7 +47,7 @@ if HAS_SIEM:
     try:
         stats = get_siem_stats()
         st.success(f" Connected to SIEM - {stats.get('total_events_24h', 0)} events analyzed | Indexing active")
-    except:
+    except Exception:
         st.success(" Connected to SIEM Infrastructure")
 else:
     st.warning(" SIEM not available - Using fallback logging simulation")

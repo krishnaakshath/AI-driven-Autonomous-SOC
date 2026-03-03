@@ -139,7 +139,7 @@ if st.button("INITIALIZE ACCOUNT", type="primary", key="register_btn"):
             try:
                 from services.user_data import log_activity
                 log_activity(reg_email, "account_created", {"name": reg_name})
-            except:
+            except Exception:
                 pass
             
             import time

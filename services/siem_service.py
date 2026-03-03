@@ -1,7 +1,7 @@
 """
 SIEM Service - Centralized Security Information and Event Management
-# Provides log aggregation, event correlation, and data sharing across pages.
-# Now backed by SQLite for persistence. Version 1.1.
+Provides log aggregation, event correlation, and data sharing across pages.
+Backed by Supabase (PostgREST) for persistent cloud storage.
 """
 
 import os
@@ -188,7 +188,7 @@ class SIEMService:
                     hour = int(ts_str.split(" ")[1].split(":")[0])
                     if hour < 6 or hour > 20:
                         users[user]["after_hours"] += 1
-            except:
+            except Exception:
                 pass
         
         # Convert to list with risk scores from ML or Fallback

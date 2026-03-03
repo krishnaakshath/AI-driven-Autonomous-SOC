@@ -414,7 +414,7 @@ with tab3:
         from services.threat_intel import threat_intel
         otx_pulses = threat_intel.get_otx_pulses(limit=20)
         otx_loaded = True
-    except:
+    except Exception:
         otx_pulses = []
         otx_loaded = False
     
