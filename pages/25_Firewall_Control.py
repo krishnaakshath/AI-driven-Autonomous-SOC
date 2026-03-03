@@ -71,6 +71,51 @@ try:
             st.text_input("Enter IP Address")
             st.button("Confirm Block", type="primary")
 
+    # ── RL FIREWALL RECOMMENDATIONS ──
+    try:
+        from ml_engine.rl_agents import firewall_optimizer as rl_fw
+        if fw_events and len(fw_events) > 0:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown(section_title("RL Policy Recommendations"), unsafe_allow_html=True)
+            st.markdown("""
+            <div class="glass-card" style="margin-bottom: 1rem;">
+                <p style="color: #8B95A5; margin: 0;">
+                    The RL Firewall Optimizer continuously learns from traffic patterns.
+                    Below are its autonomous policy recommendations for recent events.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            rl_data = []
+            for evt in fw_events[:15]:
+                result = rl_fw.classify(evt)
+                rl_fw.auto_reward(evt, result)
+                act_colors = {"ALLOW": "#00C853", "RATE-LIMIT": "#FF8C00", "BLOCK": "#FF0040"}
+                action = result["action"]
+                color = act_colors.get(action, "#888")
+                ip = evt.get("source_ip", "N/A")
+                evt_type = evt.get("event_type", "Unknown")
+                conf = result["confidence"]
+                st.markdown(f"""
+                <div style="display: flex; justify-content: space-between; padding: 0.3rem 0;
+                            border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center;">
+                    <span style="color: #8B95A5; font-size: 0.85rem;">{ip} — {evt_type[:40]}</span>
+                    <span style="background:{color}15; border:1px solid {color}; color:{color};
+                           padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:700;">
+                        {action} ({conf}%)
+                    </span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            stats = rl_fw.get_stats()
+            st.markdown(f"""
+            <div style="color: #555; font-size: 0.75rem; margin-top: 0.5rem;">
+                RL Agent: {stats['episodes']} episodes | {stats['accuracy']}% accuracy | ε={stats['epsilon']}
+            </div>
+            """, unsafe_allow_html=True)
+    except Exception:
+        pass
+
 except Exception as e:
     st.error(f"Failed to load Firewall stats: {e}")
 

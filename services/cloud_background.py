@@ -60,7 +60,7 @@ def _run_weekly_report():
         print(f"[CLOUD-BG] Weekly report error: {e}")
 
 def _run_rl_training():
-    """Run autonomous RL self-learning cycle on recent events."""
+    """Run autonomous RL self-learning cycle on recent events — all 6 agents."""
     try:
         from ml_engine.rl_threat_classifier import rl_classifier
         from services.database import db
@@ -70,6 +70,7 @@ def _run_rl_training():
         if not recent_events or len(recent_events) < 5:
             return
 
+        # ── Train main threat classifier ──
         correct = 0
         total = 0
         for evt in recent_events:
@@ -83,9 +84,22 @@ def _run_rl_training():
 
         acc = round(correct / total * 100, 1) if total > 0 else 0
         stats = rl_classifier.get_stats()
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] RL auto-train: "
-              f"{total} events, {acc}% accurate, ε={stats['epsilon']:.4f}, "
-              f"total episodes={stats['episodes']}")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] RL threat-classifier: "
+              f"{total} events, {acc}% accurate, ε={stats['epsilon']:.4f}")
+
+        # ── Train domain-specific agents ──
+        try:
+            from ml_engine.rl_agents import ALL_AGENTS
+            for agent in ALL_AGENTS:
+                for evt in recent_events[:15]:
+                    cls = agent.classify(evt)
+                    agent.auto_reward(evt, cls)
+                agent.save()
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] RL domain agents: "
+                  f"5 agents trained on {min(15, len(recent_events))} events each")
+        except Exception as e:
+            print(f"[CLOUD-BG] RL domain agents error: {e}")
+
     except Exception as e:
         print(f"[CLOUD-BG] RL training error: {e}")
 

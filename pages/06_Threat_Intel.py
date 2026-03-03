@@ -298,6 +298,14 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.markdown(section_title("Top Threat Sources"), unsafe_allow_html=True)
+
+    # Load RL Threat Intel Scorer
+    try:
+        from ml_engine.rl_agents import threat_intel_scorer as rl_ti
+        RL_TI = True
+    except Exception:
+        RL_TI = False
+
     sorted_threats = sorted(threats.items(), key=lambda x: x[1]["real_count"], reverse=True)
     for country, data in sorted_threats[:6]:
         color = severity_colors.get(data["severity"], "#00f3ff")
@@ -305,12 +313,27 @@ with col1:
             pct = (data["real_count"] / total) * 100
         else:
             pct = 0
+
+        # RL Risk badge
+        rl_badge = ""
+        if RL_TI:
+            try:
+                rl_result = rl_ti.classify(data)
+                rl_ti.auto_reward(data, rl_result)
+                rl_action = rl_result["action"]
+                rl_conf = rl_result["confidence"]
+                rl_c = {"MONITOR": "#00C853", "ELEVATED": "#FF8C00", "CRITICAL": "#FF0040"}.get(rl_action, "#888")
+                rl_badge = f'<span style="background:{rl_c}15; border:1px solid {rl_c}; color:{rl_c}; padding:1px 6px; border-radius:3px; font-size:0.6rem; font-weight:700;">RL:{rl_action}</span>'
+            except Exception:
+                pass
+
         st.markdown(f"""
             <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color};"></span>
                         <span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{country}</span>
+                        {rl_badge}
                     </div>
                     <span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{data['real_count']:,}</span>
                 </div>

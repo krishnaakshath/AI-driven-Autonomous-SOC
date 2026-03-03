@@ -165,8 +165,29 @@ with tab2:
         </div>
     """, unsafe_allow_html=True)
     
+    # Load RL Hunt Recommender
+    try:
+        from ml_engine.rl_agents import hunt_recommender as rl_hunt
+        RL_HUNT = True
+    except Exception:
+        RL_HUNT = False
+
     for query in HUNT_QUERIES:
         col1, col2 = st.columns([4, 1])
+
+        # RL Priority badge
+        rl_badge = ""
+        if RL_HUNT:
+            try:
+                rl_result = rl_hunt.classify(query)
+                rl_hunt.auto_reward(query, rl_result)
+                rl_action = rl_result["action"]
+                rl_conf = rl_result["confidence"]
+                rl_c = {"HUNT-NOW": "#FF0040", "SCHEDULE": "#FF8C00", "SKIP": "#00C853"}.get(rl_action, "#888")
+                rl_badge = f'<span style="background:{rl_c}15; border:1px solid {rl_c}; color:{rl_c}; padding:1px 6px; border-radius:3px; font-size:0.6rem; font-weight:700; margin-left:8px;">RL:{rl_action}</span>'
+            except Exception:
+                pass
+
         with col1:
             st.markdown(f"""
             <div style="
@@ -177,7 +198,7 @@ with tab2:
                 margin: 10px 0;
             ">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="color: #00D4FF; font-weight: bold;">{query['name']}</span>
+                    <span style="color: #00D4FF; font-weight: bold;">{query['name']}{rl_badge}</span>
                     <span style="background: rgba(139,92,246,0.2); color: #8B5CF6; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">{query['category']}</span>
                 </div>
                 <code style="color: #8B95A5; font-size: 0.85rem;">{query['query']}</code>

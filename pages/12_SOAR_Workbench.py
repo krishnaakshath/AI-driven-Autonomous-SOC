@@ -62,11 +62,33 @@ with col_play:
 with col_exec:
     st.markdown(section_title("Active Investigations & Auto-Triggers"), unsafe_allow_html=True)
     
+    # Load RL SOAR Responder
+    try:
+        from ml_engine.rl_agents import soar_responder as rl_soar
+        RL_SOAR = True
+    except Exception:
+        RL_SOAR = False
+
     if incidents:
         for inc in incidents[:5]:
             status = inc.get("status", "Active")
             btn_label = "Re-validate" if status == "Resolved" else "Deploy Defense"
             
+            # RL Recommended Action
+            rl_html = ""
+            if RL_SOAR and status != "Resolved":
+                try:
+                    rl_result = rl_soar.classify(inc)
+                    rl_soar.auto_reward(inc, rl_result)
+                    rl_action = rl_result["action"]
+                    rl_conf = rl_result["confidence"]
+                    act_colors = {"BLOCK-IP": "#FF8C00", "ISOLATE-HOST": "#FF0040", "RATE-LIMIT": "#8B5CF6",
+                                  "ALERT-ONLY": "#00C853", "FULL-QUARANTINE": "#FF0040"}
+                    rl_c = act_colors.get(rl_action, "#00D4FF")
+                    rl_html = f'<div style="margin-top:0.4rem;"><span style="background:{rl_c}15; border:1px solid {rl_c}; color:{rl_c}; padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:700;">RL: {rl_action} ({rl_conf}%)</span></div>'
+                except Exception:
+                    pass
+
             st.markdown(f"""
                 <div class="glass-card" style="margin-bottom: 1rem;">
                     <div style="display: flex; justify-content: space-between;">
@@ -77,6 +99,7 @@ with col_exec:
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size:0.75rem; color:{'#00C853' if status=='Resolved' else '#FF4444'};">STATUS: {status.upper()}</span>
                     </div>
+                    {rl_html}
                 </div>
             """, unsafe_allow_html=True)
             if status != "Resolved":

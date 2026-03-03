@@ -192,6 +192,13 @@ with tabs[0]:
     """, unsafe_allow_html=True)
     
     # Display alerts in high-density rows
+    # Load RL Alert Prioritizer
+    try:
+        from ml_engine.rl_agents import alert_prioritizer as rl_ap
+        RL_ALERTS = True
+    except Exception:
+        RL_ALERTS = False
+
     for _, alert in filtered.head(40).iterrows():
         time_str = alert["time"].strftime("%H:%M") if hasattr(alert["time"], "strftime") else str(alert["time"])[:5]
         
@@ -201,11 +208,25 @@ with tabs[0]:
         status = str(alert["status"]).lower()
         status_color = {"open": "#ff003c", "investigating": "#00f3ff", "resolved": "#0aff0a"}.get(status, "#888")
         
+        # RL Priority
+        rl_badge = ""
+        if RL_ALERTS:
+            try:
+                rl_result = rl_ap.classify(alert.to_dict())
+                rl_ap.auto_reward(alert.to_dict(), rl_result)
+                rl_action = rl_result["action"]
+                rl_conf = rl_result["confidence"]
+                rl_color = {"P1-CRITICAL": "#FF0040", "P2-QUEUE": "#FF8C00", "P3-LOW": "#00C853"}.get(rl_action, "#888")
+                rl_label = rl_action.split("-")[0]
+                rl_badge = f'<span style="background:{rl_color}20; border:1px solid {rl_color}; color:{rl_color}; padding:1px 6px; border-radius:3px; font-size:0.65rem; font-weight:700; margin-left:6px;" title="RL Confidence: {rl_conf}%">RL:{rl_label}</span>'
+            except Exception:
+                pass
+
         st.markdown(f"""
             <div class="glass-card" style="margin: 2px 0; padding: 0.6rem 1.5rem; display: grid; grid-template-columns: 80px 1.5fr 1fr 1fr 100px 100px; gap: 10px; align-items: center; border-left: 2px solid {sev_color}; border-radius: 0; background: rgba(5, 5, 10, 0.4);">
                 <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: #666;">{time_str}</div>
                 <div>
-                    <div style="color: #fff; font-weight: 500; font-size: 0.95rem;">{alert['type']}</div>
+                    <div style="color: #fff; font-weight: 500; font-size: 0.95rem;">{alert['type']}{rl_badge}</div>
                     <div style="color: #555; font-size: 0.7rem; font-family: 'Share Tech Mono', monospace;">{alert['id']}</div>
                 </div>
                 <div style="color: #888; font-size: 0.85rem;">
