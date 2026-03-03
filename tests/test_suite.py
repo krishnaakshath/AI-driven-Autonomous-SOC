@@ -290,7 +290,7 @@ class TestRLClassifier:
         event = {"bytes_in": 1000000, "bytes_out": 500000, "packets": 10000,
                  "duration": 3600, "port": 65535, "severity": "CRITICAL"}
         state = agent.extract_state(event)
-        assert state.shape == (8,)
+        assert state.shape == (12,)
         assert all(0.0 <= s <= 1.0 for s in state)
 
 

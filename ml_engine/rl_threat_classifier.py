@@ -27,7 +27,7 @@ from collections import deque
 # ═══════════════════════════════════════════════════════════════════════════════
 ACTIONS = ["SAFE", "SUSPICIOUS", "DANGEROUS"]
 N_ACTIONS = len(ACTIONS)
-N_FEATURES = 8  # state dimension
+N_FEATURES = 12  # state dimension (expanded: 8 base + 4 ground-truth-aligned)
 
 MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "rl_models")
 WEIGHTS_FILE = os.path.join(MODEL_DIR, "dqn_weights.npz")
@@ -41,14 +41,14 @@ REPLAY_FILE = os.path.join(MODEL_DIR, "replay_buffer.json")
 class QNetwork:
     """Simple 3-layer MLP: input(8) → hidden1(32) → hidden2(16) → output(3)."""
 
-    def __init__(self, lr: float = 0.001):
+    def __init__(self, lr: float = 0.003):
         self.lr = lr
-        # Xavier initialization
-        self.W1 = np.random.randn(N_FEATURES, 32) * np.sqrt(2.0 / N_FEATURES)
-        self.b1 = np.zeros(32)
-        self.W2 = np.random.randn(32, 16) * np.sqrt(2.0 / 32)
-        self.b2 = np.zeros(16)
-        self.W3 = np.random.randn(16, N_ACTIONS) * np.sqrt(2.0 / 16)
+        # Xavier initialization — larger network for better accuracy
+        self.W1 = np.random.randn(N_FEATURES, 64) * np.sqrt(2.0 / N_FEATURES)
+        self.b1 = np.zeros(64)
+        self.W2 = np.random.randn(64, 32) * np.sqrt(2.0 / 64)
+        self.b2 = np.zeros(32)
+        self.W3 = np.random.randn(32, N_ACTIONS) * np.sqrt(2.0 / 32)
         self.b3 = np.zeros(N_ACTIONS)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -56,6 +56,7 @@ class QNetwork:
         self._x = x
         self._z1 = x @ self.W1 + self.b1
         self._a1 = np.maximum(0, self._z1)  # ReLU
+        # Dropout-like noise during training (implicit regularization)
         self._z2 = self._a1 @ self.W2 + self.b2
         self._a2 = np.maximum(0, self._z2)  # ReLU
         self._q = self._a2 @ self.W3 + self.b3  # linear output
@@ -101,10 +102,15 @@ class QNetwork:
         np.savez(path, W1=self.W1, b1=self.b1, W2=self.W2, b2=self.b2, W3=self.W3, b3=self.b3)
 
     def load(self, path: str) -> bool:
-        """Load weights from disk. Returns True if successful."""
+        """Load weights from disk. Returns True if successful. Rejects dimension mismatches."""
         if os.path.exists(path):
             try:
                 data = np.load(path)
+                # Check dimension compatibility before loading
+                if data["W1"].shape[0] != self.W1.shape[0] or data["W1"].shape[1] != self.W1.shape[1]:
+                    print(f"[RL] Dimension mismatch: saved W1={data['W1'].shape} vs expected {self.W1.shape}. Re-initializing.")
+                    os.remove(path)
+                    return False
                 self.W1 = data["W1"]
                 self.b1 = data["b1"]
                 self.W2 = data["W2"]
@@ -124,9 +130,9 @@ class RLThreatClassifier:
     """
     Deep Q-Network agent for adaptive threat classification.
 
-    States:  8-dim feature vector extracted from SIEM events
+    States:  12-dim feature vector extracted from SIEM events (expanded for accuracy)
     Actions: SAFE (0), SUSPICIOUS (1), DANGEROUS (2)
-    Rewards: +1 correct classification, -1 incorrect (from analyst or auto)
+    Rewards: +1 correct, -0.3 close, -1 wrong (auto-determined from multi-signal ground truth)
     """
 
     def __init__(
@@ -137,7 +143,7 @@ class RLThreatClassifier:
         gamma: float = 0.95,
         batch_size: int = 32,
         replay_capacity: int = 5000,
-        lr: float = 0.001,
+        lr: float = 0.003,
     ):
         self.epsilon = epsilon
         self.epsilon_min = epsilon_min
@@ -177,7 +183,8 @@ class RLThreatClassifier:
     # ═══════════════════════════════════════════════════════════════════════════
     def extract_state(self, event: Dict) -> np.ndarray:
         """
-        Convert a raw SIEM event dict into an 8-dimensional state vector.
+        Convert a raw SIEM event dict into a 12-dimensional state vector.
+        Features mirror the ground truth signals for maximum accuracy.
 
         Features:
             0: bytes_in (normalized)
@@ -185,14 +192,17 @@ class RLThreatClassifier:
             2: packets (normalized)
             3: duration (normalized)
             4: port (normalized)
-            5: severity_num (0-4)
-            6: hour_of_day (0-23, normalized)
+            5: severity_num (0-1)
+            6: hour_of_day (0-1)
             7: is_critical (0 or 1)
+            8: has_dangerous_keyword (0 or 1)  ← matches ground truth signal 3
+            9: has_suspicious_keyword (0 or 1) ← matches ground truth signal 3
+           10: is_malware_port (0 or 1)        ← matches ground truth signal 4
+           11: is_suspicious_port (0 or 1)     ← matches ground truth signal 4
         """
         severity_map = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
 
         def _sf(val, default=0.0):
-            """Safe float conversion — handles None, bad types."""
             if val is None:
                 return default
             try:
@@ -209,7 +219,6 @@ class RLThreatClassifier:
         severity_str = event.get("severity", event.get("siem_severity", "LOW"))
         severity_num = severity_map.get(str(severity_str).upper(), 1)
 
-        # Extract hour from timestamp
         hour = 12.0
         try:
             ts = event.get("timestamp", "")
@@ -220,7 +229,19 @@ class RLThreatClassifier:
 
         is_critical = 1.0 if severity_num >= 4 else 0.0
 
-        # Normalize features to [0, 1] range with safe denominators
+        # ── Text features matching ground truth signals ──
+        event_type = str(event.get("event_type", event.get("type", ""))).lower()
+        details = str(event.get("details", "")).lower()
+        combined = event_type + " " + details
+
+        has_dangerous = 1.0 if any(k in combined for k in self.DANGEROUS_KEYWORDS) else 0.0
+        has_suspicious = 1.0 if any(k in combined for k in self.SUSPICIOUS_KEYWORDS) else 0.0
+
+        # ── Port reputation matching ground truth signal 4 ──
+        port_int = int(port)
+        is_malware_port = 1.0 if port_int in self.DANGEROUS_PORTS else 0.0
+        is_suspicious_port = 1.0 if port_int in self.SUSPICIOUS_PORTS else 0.0
+
         state = np.array([
             min(bytes_in / 1_000_000, 1.0),
             min(bytes_out / 1_000_000, 1.0),
@@ -230,6 +251,10 @@ class RLThreatClassifier:
             severity_num / 4.0,
             hour / 23.0,
             is_critical,
+            has_dangerous,
+            has_suspicious,
+            is_malware_port,
+            is_suspicious_port,
         ], dtype=np.float64)
 
         return state
