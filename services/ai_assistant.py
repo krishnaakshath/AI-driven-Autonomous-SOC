@@ -15,7 +15,12 @@ import streamlit as st
 import json
 import time
 import random
-from openai import OpenAI
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OpenAI = None
+    OPENAI_AVAILABLE = False
 
 # Tools Import
 from services.security_scanner import run_full_scan, run_ping
@@ -24,7 +29,7 @@ class AIAssistant:
     def __init__(self):
         # Initialize Groq API (OpenAI-compatible, FREE tier)
         self.api_key = self._get_api_key()
-        if self.api_key:
+        if self.api_key and OPENAI_AVAILABLE:
             self.client = OpenAI(
                 api_key=self.api_key,
                 base_url="https://api.groq.com/openai/v1"
@@ -38,7 +43,7 @@ class AIAssistant:
     def reload_config(self):
         """Reload configuration from disk."""
         self.api_key = self._get_api_key()
-        if self.api_key:
+        if self.api_key and OPENAI_AVAILABLE:
             self.client = OpenAI(
                 api_key=self.api_key,
                 base_url="https://api.groq.com/openai/v1"
