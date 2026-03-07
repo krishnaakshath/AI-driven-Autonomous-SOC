@@ -359,8 +359,15 @@ with tab4:
         
         # Calculate time since last event
         try:
-            last_dt = datetime.strptime(stats["last_event"], "%Y-%m-%d %H:%M:%S")
-            diff = datetime.now() - last_dt
+            # Use robust pd.to_datetime instead of fragile strptime
+            last_dt = pd.to_datetime(stats["last_event"], format="mixed", errors="coerce")
+            if pd.isna(last_dt):
+                last_dt = pd.Timestamp.now()
+            
+            # Ensure diff logic uses tz-naive if possible to avoid offset errors
+            now = pd.Timestamp.now(tz=last_dt.tz)
+            diff = now - last_dt
+            
             if diff.total_seconds() < 60:
                 last_text = f"{int(diff.total_seconds())} sec ago"
             elif diff.total_seconds() < 3600:
