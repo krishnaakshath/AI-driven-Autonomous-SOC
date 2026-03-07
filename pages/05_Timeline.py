@@ -156,8 +156,8 @@ st.markdown(f"""
 # Timeline visualization
 st.markdown(section_title("Attack Timeline"), unsafe_allow_html=True)
 
-for i, event in enumerate(incident["timeline"]):
-    event_time = incident["start_time"] + timedelta(hours=event["time"] + 36)
+for i, event in enumerate(incident.get("timeline", [])):
+    event_time = incident.get("start_time", datetime.now()) + timedelta(hours=event.get("time", 0) + 36)
     
     # Color based on phase type
     phase_colors = {
@@ -175,10 +175,12 @@ for i, event in enumerate(incident["timeline"]):
         "Credential Access": "#FF4444"
     }
     
-    color = phase_colors.get(event["phase"], "#8B95A5")
+    phase = event.get("phase", "Unknown")
+    color = phase_colors.get(phase, "#8B95A5")
     
-    tech_badge = f'<code style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; color: #00D4FF;">{event["technique"]}</code>' if event["technique"] != "-" else ""
-    line_div = "<div style='width: 2px; flex: 1; background: rgba(255,255,255,0.1);'></div>" if i < len(incident["timeline"]) - 1 else ""
+    technique = event.get("technique", "-")
+    tech_badge = f'<code style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; color: #00D4FF;">{technique}</code>' if technique != "-" else ""
+    line_div = "<div style='width: 2px; flex: 1; background: rgba(255,255,255,0.1);'></div>" if i < len(incident.get("timeline", [])) - 1 else ""
     
     st.markdown(f"""
 <div style="display: flex; margin: 0;">
@@ -195,10 +197,10 @@ for i, event in enumerate(incident["timeline"]):
 <div style="flex: 1; padding: 0 20px 30px;">
 <div style="background: rgba(26,31,46,0.5); border-left: 3px solid {color}; padding: 15px; border-radius: 0 8px 8px 0;">
 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-<span style="color: {color}; font-weight: bold;">{event['phase']}</span>
+<span style="color: {color}; font-weight: bold;">{phase}</span>
 {tech_badge}
 </div>
-<div style="color: #FAFAFA;">{event['description']}</div>
+<div style="color: #FAFAFA;">{event.get('description', 'No additional details')}</div>
 </div>
 </div>
 </div>
@@ -208,7 +210,7 @@ for i, event in enumerate(incident["timeline"]):
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(section_title("MITRE ATT&CK Coverage"), unsafe_allow_html=True)
 
-techniques = [e for e in incident["timeline"] if e["technique"] != "-"]
+techniques = [e for e in incident.get("timeline", []) if e.get("technique", "-") != "-"]
 if techniques:
     cols = st.columns(len(techniques))
     for i, tech in enumerate(techniques):
@@ -221,8 +223,8 @@ if techniques:
                 padding: 10px;
                 text-align: center;
             ">
-                <div style="color: #00D4FF; font-weight: bold;">{tech['technique']}</div>
-                <div style="color: #8B95A5; font-size: 0.8rem;">{tech['phase']}</div>
+                <div style="color: #00D4FF; font-weight: bold;">{tech.get('technique', 'Unknown')}</div>
+                <div style="color: #8B95A5; font-size: 0.8rem;">{tech.get('phase', 'Unknown')}</div>
             </div>
             """, unsafe_allow_html=True)
 
