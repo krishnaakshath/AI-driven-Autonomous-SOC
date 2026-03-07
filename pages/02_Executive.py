@@ -161,14 +161,14 @@ daily_saved = metrics.get('daily_savings', 0)
 total_saved = metrics.get('cost_savings', 0)
 
 kpis = [
-    ("Total Prevented Loss", format_money(total_saved), "Total Breach Costs Avoided", "#00D4FF"),
-    ("Daily Value", format_money(daily_saved) + "/day", "Daily Attack Prevention Val", "#00C853"),
-    ("Compliance", f"{metrics['compliance_score']}%", "Regulatory Target Met", "#8B5CF6"),
-    ("MTTR", f"{metrics['mttr']}h", "Mean Time to Respond", "#FF8C00"),
-    ("Triage Rate", "98.8%", "True Positive Accuracy", "#FF0066")
+    ("Total Prevented Loss", format_money(total_saved), "Total Breach Costs Avoided", "#00D4FF", "Sum of estimated breach costs avoided based on blocked CRITICAL ($25K) and HIGH ($8.5K) threats"),
+    ("Daily Value", format_money(daily_saved) + "/day", "Daily Attack Prevention Val", "#00C853", "Average daily financial value of threats blocked by the autonomous SOC"),
+    ("Compliance", f"{metrics['compliance_score']}%", "Regulatory Target Met", "#8B5CF6", "Percentage compliance score based on ratio of critical threats to total events"),
+    ("MTTR", f"{metrics['mttr']}h", "Mean Time to Respond", "#FF8C00", "Average hours from alert creation to resolution — lower is better"),
+    ("Triage Rate", f"{round(100 - metrics['false_positive_rate'], 1)}%", "True Positive Accuracy", "#FF0066", "Percentage of alerts that were true positives — higher means fewer false alarms")
 ]
 
-for col, (label, value, desc, color) in zip([col1, col2, col3, col4, col5], kpis):
+for col, (label, value, desc, color, tooltip) in zip([col1, col2, col3, col4, col5], kpis):
     with col:
         st.markdown(f"""
         <div style="
@@ -177,7 +177,9 @@ for col, (label, value, desc, color) in zip([col1, col2, col3, col4, col5], kpis
             border-radius: 16px;
             padding: 1.5rem;
             text-align: center;
-        ">
+            position: relative;
+            cursor: help;
+        " title="{tooltip}">
             <div style="font-size: 2.5rem; font-weight: 800; color: {color};">{value}</div>
             <div style="font-size: 1rem; color: #FAFAFA; font-weight: 600;">{label}</div>
             <div style="font-size: 0.8rem; color: #8B95A5; margin-top: 5px;">{desc}</div>

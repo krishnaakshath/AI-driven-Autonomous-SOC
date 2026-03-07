@@ -49,10 +49,32 @@ start_active_services()
 # ═══════════════════════════════════════════════════════════════════════════════
 # SESSION PERSISTENCE — Restore login from token file on every load
 # ═══════════════════════════════════════════════════════════════════════════════
-from services.auth_service import is_authenticated, is_admin, check_persistent_session
+from services.auth_service import is_authenticated, is_admin, check_persistent_session, logout
+import time as _time
 
 # Attempt to restore session from saved token
 check_persistent_session()
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SESSION TIMEOUT — Auto-logout after 30 minutes of inactivity
+# ═══════════════════════════════════════════════════════════════════════════════
+SESSION_TIMEOUT_SECONDS = 1800  # 30 minutes
+
+if is_authenticated():
+    now = _time.time()
+    last_activity = st.session_state.get("_last_activity", now)
+    
+    if now - last_activity > SESSION_TIMEOUT_SECONDS:
+        # Session expired
+        try:
+            logout()
+        except Exception:
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+        st.toast("Session expired due to inactivity. Please log in again.", icon="🔒")
+        st.rerun()
+    else:
+        st.session_state["_last_activity"] = now
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ROLE-BASED NAVIGATION
