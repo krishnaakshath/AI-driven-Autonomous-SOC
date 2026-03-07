@@ -262,9 +262,9 @@ with tab2:
         
         # Create hourly buckets (or minute buckets if very recent)
         # Robust datetime parsing to prevent ValueErrors on mixed formats
-        df_events["parsed_time"] = pd.to_datetime(df_events["timestamp"], format="mixed", errors="coerce")
-        # Fallback to current time if parsing completely fails for a row
-        df_events["parsed_time"] = df_events["parsed_time"].fillna(pd.Timestamp.now())
+        parsed = pd.to_datetime(df_events["timestamp"], format="mixed", errors="coerce")
+        # Fallback to current time if parsing completely fails for a row, ensuring dt type is kept
+        df_events["parsed_time"] = pd.to_datetime(parsed.fillna(pd.Timestamp.now()))
         df_events["time_bucket"] = df_events["parsed_time"].dt.strftime('%H:%M')
         timeline = df_events.groupby("time_bucket").size().reset_index(name="count")
         
