@@ -279,10 +279,18 @@ try:
     map_events = [e for e in db.get_recent_events(limit=200) if e.get("severity") in ["HIGH", "CRITICAL"]]
     if map_events:
         map_df = pd.DataFrame(map_events)
-        np.random.seed(42)
-        map_df['lat'] = np.random.uniform(-40, 60, len(map_df))
-        map_df['lon'] = np.random.uniform(-120, 140, len(map_df))
-        np.random.seed(None)
+
+        # Deterministic geo-mapping: hash each IP to consistent lat/lon
+        import hashlib
+        def ip_to_coords(ip):
+            h = int(hashlib.md5(str(ip).encode()).hexdigest(), 16)
+            lat = (h % 10000) / 10000 * 120 - 50   # Range: -50 to 70
+            lon = ((h >> 16) % 10000) / 10000 * 300 - 140  # Range: -140 to 160
+            return lat, lon
+
+        coords = map_df['source_ip'].apply(lambda ip: ip_to_coords(ip))
+        map_df['lat'] = [c[0] for c in coords]
+        map_df['lon'] = [c[1] for c in coords]
 
         risk_map = {"CRITICAL": 95, "HIGH": 75, "MEDIUM": 50, "LOW": 25}
         map_df['risk'] = map_df['severity'].map(risk_map).fillna(50)

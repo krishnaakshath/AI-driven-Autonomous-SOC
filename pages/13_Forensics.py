@@ -102,15 +102,22 @@ with tab1:
                 except Exception:
                     st.info("CORTEX Offline. Please check Settings > AI Configuration.")
 
-        st.markdown("### 🕸️ Visual Attack Sequence")
-        # Visualizing the attack chain with Mermaid
-        mermaid_code = f"""
-        graph LR
-            A[External IP] -- Scan --> B[DMZ Gateway]
-            B -- Brute Force --> C[Application Server]
-            C -- Unauthorized Access --> D[Database]
-            style D fill:#ff4444,stroke:#fff,stroke-width:2px
-        """
+        st.markdown("### Visual Attack Sequence")
+        # Build dynamic mermaid from incident data
+        inc_data_m = next((i for i in incidents if i['id'] == selected_inc), {})
+        inc_title_m = str(inc_data_m.get('title', 'Unknown')).replace('"', '')
+        inc_source_m = str(inc_data_m.get('source', 'External')).replace('"', '')
+        inc_host_m = str(inc_data_m.get('affected_host', 'Target Host')).replace('"', '')
+        inc_sev_m = inc_data_m.get('severity', 'MEDIUM')
+        sev_fill_m = '#ff4444' if inc_sev_m == 'CRITICAL' else '#FF8C00' if inc_sev_m == 'HIGH' else '#FFD700'
+        mermaid_code = f"""graph LR
+    A["{inc_source_m}"] -->|Reconnaissance| B["Perimeter"]
+    B -->|Exploit| C["{inc_host_m}"]
+    C -->|"{inc_title_m}"| D["Impact"]
+    style D fill:{sev_fill_m},stroke:#fff,stroke-width:2px
+    style A fill:#00f3ff22,stroke:#00f3ff
+    style B fill:#8B5CF622,stroke:#8B5CF6
+    style C fill:#FF8C0022,stroke:#FF8C00"""
         st.components.v1.html(f"""
             <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid rgba(0,243,255,0.2);">
                 <pre class="mermaid">
@@ -145,7 +152,7 @@ with tab1:
 with tab2:
     st.markdown(section_title("MITRE ATT&CK Attack Timeline"), unsafe_allow_html=True)
     
-    # Show timeline from the first incident with timeline data
+    # Show timeline from the first incident with timeline data, OR build from events
     timeline_incident = None
     for inc in incidents:
         if inc.get("timeline"):
@@ -177,8 +184,32 @@ with tab2:
                     </div>
                 </div>
             """, unsafe_allow_html=True)
+    elif events:
+        # Fallback: build a pseudo-timeline from raw SIEM events
+        st.markdown("**Reconstructed from SIEM Event Stream:**")
+        critical_evts = [e for e in events if e.get('severity') in ['CRITICAL', 'HIGH']][:8]
+        if not critical_evts:
+            critical_evts = events[:8]
+        for i, evt in enumerate(critical_evts):
+            evt_time = str(evt.get('timestamp', 'N/A'))[:19]
+            sev_c = '#FF4444' if evt.get('severity') == 'CRITICAL' else '#FF8C00' if evt.get('severity') == 'HIGH' else '#00D4FF'
+            st.markdown(f"""
+                <div style="display: flex; margin: 0.8rem 0;">
+                    <div style="display: flex; flex-direction: column; align-items: center; margin-right: 1.5rem;">
+                        <div style="width: 14px; height: 14px; background: {sev_c}; border-radius: 50%;"></div>
+                        {'<div style="width: 2px; height: 50px; background: rgba(0, 212, 255, 0.2);"></div>' if i < len(critical_evts) - 1 else ''}
+                    </div>
+                    <div class="glass-card" style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: {sev_c}; font-weight: 600;">{evt.get('event_type', 'Event')}</span>
+                            <span style="color: #8B95A5; font-family: monospace;">{evt_time}</span>
+                        </div>
+                        <p style="color: #FAFAFA; margin: 0.3rem 0 0 0; font-size: 0.9rem;">Source: {evt.get('source_ip', 'N/A')} | {evt.get('source', 'N/A')}</p>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
     else:
-        st.info("No incidents with timeline data available.")
+        st.info("No timeline data available. Connect SIEM to populate.")
 
 with tab3:
     st.markdown(section_title("SIEM Event Evidence"), unsafe_allow_html=True)
@@ -228,7 +259,10 @@ with tab3:
     else:
         st.info("No event evidence available from SIEM.")
 
-st.markdown("---")
+st.markdown('---')
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | SIEM-Powered Forensics</p></div>', unsafe_allow_html=True)
-from ui.chat_interface import inject_floating_cortex_link
-inject_floating_cortex_link()
+try:
+    from ui.chat_interface import inject_floating_cortex_link
+    inject_floating_cortex_link()
+except Exception:
+    pass

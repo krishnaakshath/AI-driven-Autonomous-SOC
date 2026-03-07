@@ -250,11 +250,25 @@ st.markdown(section_title("Intelligence Reports"), unsafe_allow_html=True)
 exp1, exp2, exp3 = st.columns(3)
 
 with exp1:
-    if st.button("📄 Generate PDF Executive Summary", use_container_width=True):
-        st.info("Generating secure PDF summary...")
-        import time
-        time.sleep(1.5)
-        st.success("Download link available in Audit Logs.")
+    if st.button("Generate PDF Executive Summary", use_container_width=True):
+        with st.spinner("Generating secure PDF summary..."):
+            try:
+                from services.report_generator import generate_pdf_report
+                pdf_bytes = generate_pdf_report(
+                    report_type="executive",
+                    date_range="30d",
+                    include_charts=True,
+                    executive_summary=True
+                )
+                st.download_button(
+                    label="Download PDF",
+                    data=pdf_bytes,
+                    file_name=f"SOC_Executive_Summary_{datetime.now().strftime('%Y%m%d')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+            except Exception as e:
+                st.error(f"PDF generation error: {e}")
 
 with exp2:
     # CSV Export

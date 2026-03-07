@@ -15,8 +15,8 @@ st.markdown(page_header("Command Manual", "Official Guide to the Autonomous SOC 
 # ═══════════════════════════════════════════════════════════════════════════════
 
 sections = {
-    "🚀 Getting Started": {
-        "icon": "auto_awesome",
+    "Getting Started": {
+        "emoji": "🚀",
         "content": """
         ### Welcome, Commander.
         This platform is a fully autonomous **Security Operations Center**. 
@@ -29,7 +29,7 @@ sections = {
         "tip": "The platform is 100% data-authentic. Every alert you see represents a real persistent event."
     },
     "Global Dashboard": {
-        "icon": "dashboard",
+        "emoji": "📊",
         "content": """
         ### Real-Time Intelligence
         The Dashboard provides a high-level view of your security posture.
@@ -41,7 +41,7 @@ sections = {
         "tip": "Click the 'Refresh' button in the sidebar or toggle 'Auto-refresh' on specific pages for live updates."
     },
     "Alerts Workbench": {
-        "icon": "notifications_active",
+        "emoji": "🔔",
         "content": """
         ### Triage & Response
         Located in the 'Monitoring' category, the Alerts page is your operational hub.
@@ -53,7 +53,7 @@ sections = {
         "tip": "Always prioritize **CRITICAL** severity alerts first."
     },
     "CORTEX AI": {
-        "icon": "psychology",
+        "emoji": "🧠",
         "content": """
         ### Neural-Link Investigation
         CORTEX is your intelligent assistant. It is directly connected to the SIEM and Threat Intel feeds.
@@ -66,7 +66,7 @@ sections = {
         "tip": "CORTEX uses real-world data from VirusTotal, AbuseIPDB, and AlienVault OTX."
     },
     "Active Firewall": {
-        "icon": "verified_user",
+        "emoji": "🛡️",
         "content": """
         ### Integrated Defense
         The platform features an active **Web Application Firewall (WAF)**.
@@ -90,8 +90,8 @@ if selected_section:
     st.markdown(f"""
     <div class="glass-card" style="padding: 2.5rem; border-radius: 12px; margin-bottom: 2rem;">
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem;">
-            <span class="material-icons" style="color: #00D4FF; font-size: 2.5rem;">{data['icon']}</span>
-            <h2 style="margin: 0; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">{selected_section.split(' ', 1)[1]}</h2>
+            <span style="font-size: 2.5rem;">{data['emoji']}</span>
+            <h2 style="margin: 0; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">{selected_section}</h2>
         </div>
         <div style="color: #FAFAFA; line-height: 1.8; font-size: 1.1rem;">
             {data['content']}

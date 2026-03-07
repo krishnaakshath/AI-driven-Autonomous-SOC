@@ -44,6 +44,20 @@ except ImportError:
     def submit_feedback(*a, **kw): return False
     def get_rl_stats(*a, **kw): return {}
 
+# Federated Learning (optional)
+try:
+    from .federated_learning import (
+        FederatedCoordinator,
+        FederatedClient,
+        run_federated_training,
+        get_fl_status,
+        FL_AVAILABLE,
+    )
+except ImportError:
+    FL_AVAILABLE = False
+    def run_federated_training(*a, **kw): return {}
+    def get_fl_status(*a, **kw): return {"status": "unavailable"}
+
 __all__ = [
     'score_network_event',
     'score_dataframe', 
@@ -65,6 +79,12 @@ __all__ = [
     'get_rl_stats',
     'RLThreatClassifier',
     'RL_AVAILABLE',
+    # Federated Learning
+    'FederatedCoordinator',
+    'FederatedClient',
+    'run_federated_training',
+    'get_fl_status',
+    'FL_AVAILABLE',
 ]
 
 
