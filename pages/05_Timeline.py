@@ -20,12 +20,14 @@ inject_particles()
 
 st.markdown(page_header("Incident Timeline", "Visual attack progression and MITRE ATT&CK mapping"), unsafe_allow_html=True)
 
-# Import SIEM service for real incident data
+# Import SIEM service (Robust Error Handling)
 try:
     from services.siem_service import get_siem_incidents
     HAS_SIEM = True
-except ImportError:
+except Exception as e:
+    st.error(f"⚠️ SIEM Service Integration Error: {e}")
     HAS_SIEM = False
+    def get_siem_incidents(): return []
 
 # Auto-refresh logic
 import time
@@ -99,19 +101,27 @@ def load_incidents():
     ]
 
 # Show data source
-# Show data source
-INCIDENTS = load_incidents()
+# Main Page Execution Wrap
+try:
+    # Show data source
+    INCIDENTS = load_incidents()
 
-# Show data source
-if HAS_SIEM:
-    # Check if we have real incidents or just templates
-    real_incidents_count = len([i for i in INCIDENTS if not i.get('is_simulated', False)])
-    if real_incidents_count > 0:
-        st.success(f" Connected to SIEM - Analyzing {real_incidents_count} live incidents from database")
+    # Show data source
+    if HAS_SIEM:
+        # Check if we have real incidents or just templates
+        real_incidents_count = len([i for i in INCIDENTS if not i.get('is_simulated', False)])
+        if real_incidents_count > 0:
+            st.success(f" Connected to SIEM - Analyzing {real_incidents_count} live incidents from database")
+        else:
+            st.warning(" Connected to SIEM - No critical events found in DB (Using Simulation Scenarios)")
     else:
-        st.warning(" Connected to SIEM - No critical events found in DB (Using Simulation Scenarios)")
-else:
-    st.warning(" SIEM not available - Using sample incidents")
+        st.warning(" SIEM not available - Using sample incidents")
+except Exception as e:
+    st.error(f"❌ Critical Timeline UI Error: {e}")
+    st.exception(e)
+    # Define placeholder to prevent further crashes
+    INCIDENTS = []
+    st.stop()
 
 
 

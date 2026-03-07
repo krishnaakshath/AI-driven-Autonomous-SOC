@@ -20,7 +20,18 @@ from ui.theme import MOBILE_CSS
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()
 
-from services.threat_intel import get_latest_threats
+# Import Services (Robust Error Handling)
+try:
+    from services.threat_intel import get_latest_threats, threat_intel
+    HAS_THREAT_SERVICE = True
+except Exception as e:
+    st.error(f"⚠️ Threat Intel Service Error: {e}")
+    HAS_THREAT_SERVICE = False
+    # Define stubs
+    def get_latest_threats(): return []
+    class ThreatIntelStub:
+        def get_country_threat_counts(self, force_refresh=False): return {}
+    threat_intel = ThreatIntelStub()
 
 # Authentication removed - public dashboard
 
@@ -48,9 +59,8 @@ if time.time() - st.session_state.last_refresh > 300:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Generate threat data with attack connections
+# Generate threat data with attack connections (Robust)
 def get_threat_data(refresh=False):
-    from services.threat_intel import threat_intel
-    
     # Base coordinates for major threat sources
     coords = {
         "China": {"lat": 35.86, "lon": 104.19, "severity": "critical"},
@@ -72,8 +82,15 @@ def get_threat_data(refresh=False):
     # Target location (your SOC - e.g., headquarters)
     target = {"lat": 20.59, "lon": 78.96, "name": "SOC HQ"}  # India as SOC location
     
-    # Fetch real counts
-    counts = threat_intel.get_country_threat_counts(force_refresh=refresh)
+    try:
+        # Fetch real counts
+        counts = threat_intel.get_country_threat_counts(force_refresh=refresh)
+    except Exception as e:
+        st.warning(f"Failed to fetch live threat counts: {e}")
+        counts = {}
+    
+    results = {}
+    for country, params in coords.items():
     
     results = {}
     for country, params in coords.items():
