@@ -177,39 +177,32 @@ for i, event in enumerate(incident["timeline"]):
     
     color = phase_colors.get(event["phase"], "#8B95A5")
     
+    tech_badge = f'<code style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; color: #00D4FF;">{event["technique"]}</code>' if event["technique"] != "-" else ""
+    line_div = "<div style='width: 2px; flex: 1; background: rgba(255,255,255,0.1);'></div>" if i < len(incident["timeline"]) - 1 else ""
+    
     st.markdown(f"""
-    <div style="display: flex; margin: 0;">
-        <div style="width: 150px; text-align: right; padding-right: 20px; color: #8B95A5; font-size: 0.85rem;">
-            {event_time.strftime('%H:%M')}
-            <br>
-            <span style="font-size: 0.75rem;">{event_time.strftime('%Y-%m-%d')}</span>
-        </div>
-        <div style="width: 40px; display: flex; flex-direction: column; align-items: center;">
-            <div style="
-                width: 30px; height: 30px;
-                background: {color};
-                border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                font-size: 1rem;
-            ">{event['icon']}</div>
-            {"<div style='width: 2px; flex: 1; background: rgba(255,255,255,0.1);'></div>" if i < len(incident["timeline"]) - 1 else ""}
-        </div>
-        <div style="flex: 1; padding: 0 20px 30px;">
-            <div style="
-                background: rgba(26,31,46,0.5);
-                border-left: 3px solid {color};
-                padding: 15px;
-                border-radius: 0 8px 8px 0;
-            ">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="color: {color}; font-weight: bold;">{event['phase']}</span>
-                    {f'<code style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; color: #00D4FF;">{event["technique"]}</code>' if event["technique"] != "-" else ""}
-                </div>
-                <div style="color: #FAFAFA;">{event['description']}</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+<div style="display: flex; margin: 0;">
+<div style="width: 150px; text-align: right; padding-right: 20px; color: #8B95A5; font-size: 0.85rem;">
+{event_time.strftime('%H:%M')}<br>
+<span style="font-size: 0.75rem;">{event_time.strftime('%Y-%m-%d')}</span>
+</div>
+<div style="width: 40px; display: flex; flex-direction: column; align-items: center;">
+<div style="width: 30px; height: 30px; background: {color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+{event.get('icon', '')}
+</div>
+{line_div}
+</div>
+<div style="flex: 1; padding: 0 20px 30px;">
+<div style="background: rgba(26,31,46,0.5); border-left: 3px solid {color}; padding: 15px; border-radius: 0 8px 8px 0;">
+<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+<span style="color: {color}; font-weight: bold;">{event['phase']}</span>
+{tech_badge}
+</div>
+<div style="color: #FAFAFA;">{event['description']}</div>
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
 # MITRE ATT&CK Mapping
 st.markdown("<br>", unsafe_allow_html=True)
