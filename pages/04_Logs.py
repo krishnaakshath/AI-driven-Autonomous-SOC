@@ -82,13 +82,13 @@ with col1:
     selected_sources = st.multiselect("Sources", LOG_SOURCES, default=LOG_SOURCES)
 
 with col2:
-    selected_severity = st.multiselect("Severity", SEVERITY_LEVELS, default=["INFO", "WARNING", "ERROR", "CRITICAL"])
+    selected_severity = st.multiselect("Severity", SEVERITY_LEVELS, default=["WARNING", "ERROR", "CRITICAL"])
 
 with col3:
     search_query = st.text_input("Deep Search", placeholder="Filter by IP, user, or threat pattern...")
 
 with col4:
-    auto_refresh = st.toggle("Auto-Live", value=False, help="Automatically refreshes every 10 seconds")
+    auto_refresh = st.toggle("Auto-Live", value=False, help="Automatically refreshes every 30 seconds")
 
 # Function to generate logs or fetch from SIEM
 @st.cache_data(ttl=1)

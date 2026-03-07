@@ -114,6 +114,47 @@ reg_email = st.text_input("Email Address", placeholder="your@email.com", key="re
 reg_password = st.text_input("Password", type="password", placeholder="Minimum 8 characters", key="reg_password")
 reg_confirm = st.text_input("Confirm Password", type="password", placeholder="Re-enter password", key="reg_confirm")
 
+# Password strength meter
+if reg_password:
+    score = 0
+    checks = []
+    if len(reg_password) >= 8:
+        score += 1
+        checks.append("✅ 8+ characters")
+    else:
+        checks.append("❌ 8+ characters")
+    if any(c.isupper() for c in reg_password):
+        score += 1
+        checks.append("✅ Uppercase letter")
+    else:
+        checks.append("❌ Uppercase letter")
+    if any(c.isdigit() for c in reg_password):
+        score += 1
+        checks.append("✅ Number")
+    else:
+        checks.append("❌ Number")
+    if any(c in "!@#$%^&*()_+-=[]{}|;:',.<>?/" for c in reg_password):
+        score += 1
+        checks.append("✅ Special character")
+    else:
+        checks.append("❌ Special character")
+    
+    strength_map = {0: ("Weak", "#FF003C", "10%"), 1: ("Weak", "#FF003C", "25%"), 2: ("Medium", "#FF8C00", "50%"), 3: ("Strong", "#FFD700", "75%"), 4: ("Very Strong", "#00C853", "100%")}
+    label, color, width = strength_map[score]
+    
+    st.markdown(f"""
+    <div style="margin: -10px 0 15px 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: #8B95A5; font-size: 0.75rem;">Password Strength</span>
+            <span style="color: {color}; font-size: 0.75rem; font-weight: 700;">{label}</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); border-radius: 4px; height: 6px; overflow: hidden;">
+            <div style="width: {width}; height: 100%; background: {color}; border-radius: 4px; transition: all 0.3s;"></div>
+        </div>
+        <div style="color: #666; font-size: 0.7rem; margin-top: 6px;">{' &nbsp;•&nbsp; '.join(checks)}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 agree_terms = st.checkbox("I agree to the Terms of Service and Privacy Policy", key="agree_terms")
 
 st.markdown("<br>", unsafe_allow_html=True)

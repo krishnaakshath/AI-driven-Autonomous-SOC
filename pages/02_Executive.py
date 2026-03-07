@@ -36,11 +36,14 @@ if 'last_exec_refresh' not in st.session_state:
 if 'executive_refresh' not in st.session_state:
     st.session_state.executive_refresh = 0
 
-# Header with refresh button
-h_col1, h_col2 = st.columns([4, 1])
+# Header with date range + refresh
+h_col1, h_col2, h_col3 = st.columns([3, 1, 1])
 with h_col1:
     st.markdown(page_header("Executive Dashboard", "High-level security KPIs for leadership and stakeholders"), unsafe_allow_html=True)
 with h_col2:
+    st.markdown("<br>", unsafe_allow_html=True)
+    date_range = st.selectbox("📅 Period", ["Last 7 Days", "Last 30 Days", "Last 90 Days", "All Time"], index=1, label_visibility="collapsed")
+with h_col3:
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("↻ Refresh", use_container_width=True):
         st.cache_data.clear()
@@ -48,9 +51,13 @@ with h_col2:
         st.session_state.executive_refresh += 1
         st.rerun()
 
+# Map selection to days
+RANGE_MAP = {"Last 7 Days": 7, "Last 30 Days": 30, "Last 90 Days": 90, "All Time": 9999}
+selected_days = RANGE_MAP.get(date_range, 30)
+
 # Get real executive metrics from APIs
 @st.cache_data(ttl=60)
-def get_executive_metrics(refresh_counter=0):
+def get_executive_metrics(refresh_counter=0, days=30):
     """Get executive-level security metrics from real APIs."""
     metrics = {
         "mttr": 0.0,
@@ -77,8 +84,33 @@ def get_executive_metrics(refresh_counter=0):
             critical_threats = kpi_stats.get('critical', 0)
             high_threats = kpi_stats.get('high', 0)
             
+            # Scale global stats estimating 90-day retention
+            if days != 9999:
+                scale = min(1.0, days / 90.0)
+                total_events = int(total_events * scale)
+                critical_threats = int(critical_threats * scale)
+                high_threats = int(high_threats * scale)
+            
             # All alerts for deeper metrics
-            all_alerts = db.get_alerts(limit=500)
+            all_alerts_raw = db.get_alerts(limit=2000)
+            from datetime import datetime as _dt, timedelta as _td
+            
+            if days == 9999:
+                all_alerts = all_alerts_raw
+            else:
+                cutoff_date = _dt.utcnow() - _td(days=days)
+                all_alerts = []
+                for a in all_alerts_raw:
+                    try:
+                        c_date = a.get("created_at") or a.get("timestamp")
+                        if c_date:
+                            t_str = str(c_date).replace("Z", "+00:00").split("+")[0]
+                            if "." in t_str: t_str = t_str.split(".")[0]
+                            t = _dt.fromisoformat(t_str)
+                            if t >= cutoff_date:
+                                all_alerts.append(a)
+                    except Exception:
+                        pass
             total_alerts = len(all_alerts)
             resolved_alerts = [a for a in all_alerts if str(a.get("status", "")).lower() == "resolved"]
             resolved_count = len(resolved_alerts)
@@ -144,7 +176,7 @@ def get_executive_metrics(refresh_counter=0):
     
     return metrics
 
-metrics = get_executive_metrics(st.session_state.executive_refresh)
+metrics = get_executive_metrics(st.session_state.executive_refresh, selected_days)
 
 # Top KPI Cards
 st.markdown("<br>", unsafe_allow_html=True)

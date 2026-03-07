@@ -68,6 +68,34 @@ with tab1:
     else:
         st.warning(" Using simulated data - configure API keys in Settings for real intelligence")
     
+    # Quick-hunt preset buttons
+    st.markdown("##### ⚡ Quick Hunt Presets")
+    qh1, qh2, qh3, qh4 = st.columns(4)
+    quick_hunt_value = ""
+    with qh1:
+        if st.button("🔓 SSH Brute Force", use_container_width=True, key="qh_ssh"):
+            quick_hunt_value = "ssh"
+    with qh2:
+        if st.button("🌐 Port Scan", use_container_width=True, key="qh_port"):
+            quick_hunt_value = "port_scan"
+    with qh3:
+        if st.button("💉 SQL Injection", use_container_width=True, key="qh_sqli"):
+            quick_hunt_value = "sql_injection"
+    with qh4:
+        if st.button("🦠 Malware C2", use_container_width=True, key="qh_c2"):
+            quick_hunt_value = "malware"
+    
+    if quick_hunt_value:
+        from services.database import db as _hunt_db
+        results = _hunt_db.search_events(quick_hunt_value)
+        if results:
+            st.error(f"🎯 **{len(results)} matches found** for `{quick_hunt_value}`")
+            st.dataframe(pd.DataFrame(results).head(10), use_container_width=True, hide_index=True)
+        else:
+            st.success(f"✅ No matches for `{quick_hunt_value}` in current logs")
+    
+    st.markdown("---")
+    
     col1, col2 = st.columns([3, 1])
     
     with col1:

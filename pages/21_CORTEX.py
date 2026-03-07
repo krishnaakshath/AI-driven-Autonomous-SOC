@@ -128,6 +128,20 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown("---")
 prompt = st.chat_input("Command CORTEX... (e.g., 'Scan 8.8.8.8', 'Block 10.0.0.1', 'Generate report')")
 
+# Suggested prompt buttons
+if len(st.session_state.cortex_messages) <= 1:
+    st.markdown("##### 💡 Suggested Commands")
+    sp1, sp2, sp3 = st.columns(3)
+    with sp1:
+        if st.button("🔍 Latest critical threats", use_container_width=True, key="sp1"):
+            prompt = "What are the latest critical threats in the SIEM?"
+    with sp2:
+        if st.button("📊 Security posture summary", use_container_width=True, key="sp2"):
+            prompt = "Give me a summary of our current security posture"
+    with sp3:
+        if st.button("🛡️ Suggest a playbook", use_container_width=True, key="sp3"):
+            prompt = "Suggest a response playbook for SQL Injection attacks"
+
 if prompt:
     st.session_state.cortex_messages.append({"role": "user", "content": prompt})
     
@@ -137,3 +151,4 @@ if prompt:
         st.session_state.cortex_messages.append({"role": "assistant", "content": response})
     
     st.rerun()
+
