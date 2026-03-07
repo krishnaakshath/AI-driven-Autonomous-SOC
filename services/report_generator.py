@@ -57,20 +57,36 @@ def _get_report_data(date_range: str) -> Dict[str, Any]:
     
     top_ips = sorted(ip_counts.items(), key=lambda x: x[1], reverse=True)[:8]
     
+    # --- Statistical & Probabilistic Engine Integration ---
+    try:
+        from services.statistical_engine import statistical_engine
+        
+        # Calculate dynamic security risk score based on Bayesian-style weighting
+        security_score = statistical_engine.calculate_probabilistic_risk_score(events, alerts)
+        
+        # Calculate Poisson probabilistic forecasts for the next 7 days
+        forecasts = statistical_engine.forecast_threats(events, days_ahead=7, confidence_interval=0.90)
+    except ImportError:
+        # Fallback if statistical engine fails to load
+        security_score = 100 - (min(critical_threats * 2, 100))
+        forecasts = []
+    
     return {
         "total_events": total_events,
         "critical_threats": critical_threats,
         "blocked_count": blocked_count,
         "top_attacks": top_attacks,
         "top_ips": top_ips,
-        "security_score": 100 - (min(critical_threats * 2, 100)),
+        "security_score": security_score,
+        "forecasts": forecasts,
         "alerts": alerts
     }
 
 def _get_mock_data():
     return {
         "total_events": 0, "critical_threats": 0, "blocked_count": 0,
-        "top_attacks": [], "top_ips": [], "security_score": 100, "alerts": []
+        "top_attacks": [], "top_ips": [], "security_score": 100, 
+        "forecasts": [], "alerts": []
     }
 
 def generate_security_report(report_type: str, date_range: str, include_charts: bool = True, 
@@ -125,12 +141,18 @@ def generate_security_report(report_type: str, date_range: str, include_charts: 
         report_lines.append(f"  - {attack}: {count} occurrences")
     report_lines.append("")
     
-    # 3. Top Source IPs
-    report_lines.append("3. TOP SOURCE OBJECTS")
+    # 4. Probabilistic Forecasts
+    report_lines.append("4. PROBABILISTIC THREAT FORECASTS (7-DAY OUTLOOK)")
     report_lines.append("-" * 40)
-    for ip, count in data['top_ips']:
-        report_lines.append(f"  - {ip}: {count} events")
     report_lines.append("")
+    if data.get('forecasts'):
+        for f in data['forecasts']:
+            report_lines.append(f"  - {f['threat_type']}: {f['probability_pct']}% probability ({f['risk_level']} Risk)")
+            report_lines.append(f"    Expected volume: {f['expected_events']} incidents (Momentum: {f['momentum_multiplier']}x)")
+            report_lines.append("")
+    else:
+        report_lines.append("  - Insufficient data for statistical forecasting.")
+        report_lines.append("")
     
     # Footer
     report_lines.append("=" * 80)
@@ -321,8 +343,51 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
             story.append(Paragraph("No significant threats detected in this period.", normal_style))
         story.append(Spacer(1, 0.3*inch))
         
-        # 4. Technical Methodology (Thesis Request)
-        story.append(Paragraph("4. Technical Methodology & Architecture", heading_style))
+        # 4. Probabilistic Threat Forecasts
+        story.append(Paragraph("4. Probabilistic Threat Forecasts (7-Day Outlook)", heading_style))
+        story.append(Paragraph(
+            "Using a poisson distribution model adjusted for short-term Markov momentum, "
+            "the Autonomous SOC has calculated the mathematical probability of specific attack vectors "
+            "occurring in the next 7 days.",
+            normal_style
+        ))
+        story.append(Spacer(1, 0.1*inch))
+        
+        if data.get('forecasts'):
+            forecast_data = [['Threat Type', 'Probability', 'Risk Level', 'Expected Vol']]
+            for f in data['forecasts']:
+                p_text = f"{f['probability_pct']}%"
+                vol_text = f"{f['expected_events']} (x{f['momentum_multiplier']})"
+                forecast_data.append([str(f['threat_type']), p_text, str(f['risk_level']), vol_text])
+            
+            f_table = Table(forecast_data, colWidths=[2.5*inch, 1.2*inch, 1.2*inch, 1.5*inch])
+            f_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8B5CF6')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#444')),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f0ff')),
+                # Color code risk column
+                ('TEXTCOLOR', (2, 1), (2, -1), colors.black),
+            ]))
+            
+            # Apply color coding to individual rows based on risk level
+            for i, row in enumerate(forecast_data[1:], start=1):
+                if row[2] == 'High':
+                    f_table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), colors.red), ('FONTNAME', (2, i), (2, i), 'Helvetica-Bold')]))
+                elif row[2] == 'Medium':
+                    f_table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), colors.orange)]))
+                else:
+                    f_table.setStyle(TableStyle([('TEXTCOLOR', (2, i), (2, i), colors.green)]))
+                    
+            story.append(f_table)
+        else:
+             story.append(Paragraph("Insufficient data for statistical forecasting.", normal_style))
+        story.append(Spacer(1, 0.3*inch))
+        
+        # 5. Technical Methodology & Architecture
+        story.append(Paragraph("5. Technical Methodology & Architecture", heading_style))
         story.append(Paragraph(
             "The security analysis in this report is generated by a multi-layered autonomous system:",
             normal_style
@@ -331,15 +396,16 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
         
         methodology_points = [
             ListItem(Paragraph("<b>Data Ingestion:</b> Real-time log processing and normalization of network traffic events.", normal_style)),
-            ListItem(Paragraph("<b>Anomaly Detection (Unsupervised):</b> Uses an <i>Isolation Forest</i> algorithm to identify zero-day attacks and deviations from established baselines.", normal_style)),
-            ListItem(Paragraph("<b>Threat Classification (Supervised):</b> A Hybrid Gradient Boosting model classifies detected anomalies into specific attack categories (DoS, Probe, U2R, R2L) with >99% accuracy.", normal_style)),
+            ListItem(Paragraph("<b>Anomaly Detection (Unsupervised):</b> Uses an <i>Isolation Forest</i> algorithm alongside moving Z-Scores to identify deviations.", normal_style)),
+            ListItem(Paragraph("<b>Threat Classification (Supervised):</b> A Hybrid Gradient Boosting model classifies detected anomalies into specific attack categories (DoS, Probe, U2R, R2L).", normal_style)),
+            ListItem(Paragraph("<b>Probabilistic Engine:</b> Bayesian-weighted risk scoring and Poisson-distribution modeling for event forecasting.", normal_style)),
             ListItem(Paragraph("<b>Automated Response:</b> High-confidence threats trigger immediate containment actions (IP blocking, Session termination).", normal_style))
         ]
         story.append(ListFlowable(methodology_points, bulletType='bullet', start='square'))
         story.append(Spacer(1, 0.3*inch))
 
-        # 5. Top Source Objects (Dynamic Geographics)
-        story.append(Paragraph("5. Top Source Objects", heading_style))
+        # 6. Top Source Objects (Dynamic Geographics)
+        story.append(Paragraph("6. Top Source Objects", heading_style))
         if data['top_ips']:
             geo_data = [['Source IP', 'Event Count', 'Status']]
             for ip, count in data['top_ips']:
@@ -360,8 +426,8 @@ def generate_pdf_report(report_type: str, date_range: str, include_charts: bool 
             story.append(Paragraph("No specific source IPs identified above threshold.", normal_style))
         story.append(Spacer(1, 0.3*inch))
         
-        # 6. Recommendations (Dynamic)
-        story.append(Paragraph("6. Recommendations", heading_style))
+        # 7. Recommendations (Dynamic)
+        story.append(Paragraph("7. Recommendations", heading_style))
         
         recs = []
         if data['critical_threats'] > 0:

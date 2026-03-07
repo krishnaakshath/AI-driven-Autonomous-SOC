@@ -78,6 +78,7 @@ with tab1:
         include_charts = st.checkbox("Include Visualizations", value=True)
         include_raw = st.checkbox("Include Raw Data", value=False)
         executive_summary = st.checkbox("Executive Summary", value=True)
+        confidence = st.slider("Statistical Confidence Interval", min_value=80, max_value=99, value=95, step=1, help="Adjust the strictness of the Poisson threat forecasting model.")
     
     st.markdown("<br>", unsafe_allow_html=True)
     

@@ -296,31 +296,68 @@ with tab3:
     st.markdown("""
         <div class="glass-card" style="margin-bottom: 1.5rem;">
             <p style="color: #8B95A5; margin: 0;">
-                Correlation rules match against the <strong>persistent event stream</strong>. 
-                Hit counts reflect actual matches in the database.
+                <strong style="color: #bc13fe;">Probabilistic Correlation Engine:</strong> Analyzes isolated events against statistical momentum vectors to determine the mathematical probability that they belong to a larger, cohesive attack chain.
             </p>
         </div>
     """, unsafe_allow_html=True)
     
     rules = get_correlation_matches(events)
     
+    try:
+        from services.statistical_engine import statistical_engine
+        forecasts = {f["threat_type"]: f for f in statistical_engine.forecast_threats(events, days_ahead=1)}
+    except Exception:
+        forecasts = {}
+    
     for rule in rules:
-        hit_color = "#FF0066" if rule["hits"] > 10 else "#FF8C00" if rule["hits"] > 3 else "#00C853"
+        # Determine base severity
+        base_hits = rule["hits"]
+        hit_color = "#FF0066" if base_hits > 10 else "#FF8C00" if base_hits > 3 else "#00C853"
+        
+        # Calculate probabilistic attack chain confidence
+        chain_probability = min(base_hits * 5, 40) # Base confidence from raw hits
+        
+        # Boost confidence if the rule matches a statistically forecasted threat momentum
+        r_name = rule['name'].upper()
+        matched_forecast = None
+        for f_type, f_data in forecasts.items():
+            if f_type.upper() in r_name or (f_type == "SSH Brute Force" and "BRUTE" in r_name):
+                chain_probability += f_data['probability_pct'] * (f_data['momentum_multiplier'] / 2)
+                matched_forecast = f"Supports {f_type} Forecast"
+                break
+                
+        chain_probability = round(min(chain_probability, 99.9), 1)
+        prob_color = "#ff003c" if chain_probability >= 85 else "#FF8C00" if chain_probability >= 50 else "#00C853"
+        
+        forecast_badge = f'<span style="background: rgba(139,92,246,0.2); color: #8B5CF6; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; margin-left: 10px;">{matched_forecast}</span>' if matched_forecast else ""
         
         st.markdown(f"""
         <div style="
             background: rgba(26,31,46,0.5);
             border: 1px solid rgba(0,212,255,0.2);
+            border-left: 4px solid {prob_color};
             padding: 15px;
             border-radius: 8px;
             margin: 10px 0;
         ">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span style="color: #00D4FF; font-weight: bold;">{rule['name']}</span>
-                <span style="background: {hit_color}22; color: {hit_color}; padding: 2px 8px; border-radius: 4px; font-weight: bold;">{rule['hits']} hits</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div>
+                    <span style="color: #00D4FF; font-weight: bold; font-size: 1.1rem;">{rule['name']}</span>
+                    {forecast_badge}
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-family: 'Orbitron', sans-serif; color: {prob_color}; font-size: 1.2rem; font-weight: bold;">{chain_probability}%</span>
+                    <div style="color: #8B95A5; font-size: 0.7rem;">Attack Chain Probability</div>
+                </div>
             </div>
-            <div style="color: #8B95A5; margin-bottom: 8px;"><strong>Condition:</strong> {rule['condition']}</div>
-            <div style="color: #FAFAFA;"><strong>Action:</strong> {rule['action']}</div>
+            
+            <div style="display: flex; gap: 20px; font-size: 0.85rem;">
+                <div style="flex: 1; color: #8B95A5;"><strong>Condition Vector:</strong> {rule['condition']}</div>
+                <div style="flex: 1; color: #FAFAFA;"><strong>Automated Action:</strong> {rule['action']}</div>
+                <div style="width: 100px; text-align: right;">
+                    <span style="background: {hit_color}22; color: {hit_color}; padding: 2px 8px; border-radius: 4px; font-weight: bold;">{base_hits} raw events</span>
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 

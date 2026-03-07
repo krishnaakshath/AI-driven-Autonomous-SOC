@@ -195,7 +195,20 @@ except Exception:
 avg_risk = df["risk_score"].mean() if (isinstance(df, pd.DataFrame) and not df.empty and "risk_score" in df.columns) else 0
 if blocked > total:
     total = blocked + restricted + allowed
-security_score = max(0, min(100, 100 - avg_risk))
+
+# Calculate Probabilistic Security Score
+try:
+    from services.statistical_engine import statistical_engine
+    # Convert dataframe back to dict list for the engine
+    if not df.empty:
+        events_list = df.to_dict('records')
+        alerts_list = [{"severity": "CRITICAL"} for _ in range(critical)]
+        security_score = statistical_engine.calculate_probabilistic_risk_score(events_list, alerts_list)
+    else:
+        security_score = 100.0
+except Exception as e:
+    print(f"Stats Engine Error: {e}")
+    security_score = max(0, min(100, 100 - avg_risk))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -328,6 +341,51 @@ try:
         st.plotly_chart(fig_map, use_container_width=True)
 except Exception as e:
     st.error(f"Map Error: {e}")
+
+st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PROBABILISTIC THREAT FORECAST MATRIX
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown(section_title("Threat Forecast Matrix (7-Day Outlook)"), unsafe_allow_html=True)
+
+try:
+    from services.statistical_engine import statistical_engine
+    if not df.empty:
+        # Generate live forecasts based on current events dataframe
+        forecasts = statistical_engine.forecast_threats(df.to_dict('records'), days_ahead=7)
+        if forecasts:
+            st.markdown("""
+            <div style="background: rgba(0,243,255,0.05); border-left: 3px solid #8B5CF6; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem;">
+                <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">
+                    <strong>Markov-Poisson Probability Engine:</strong> Live mathematical forecasts of incoming attacks based on current network momentum.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            f_cols = st.columns(len(forecasts[:4])) # Show top 4
+            for i, col in enumerate(f_cols):
+                f = forecasts[i]
+                r_color = "#ff003c" if f["risk_level"] == "High" else "#FF8C00" if f["risk_level"] == "Medium" else "#00C853"
+                
+                col.markdown(f"""
+                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(139,92,246,0.2); border-radius: 12px; padding: 1.2rem; text-align: center;">
+                    <h5 style="color: #FAFAFA; margin: 0 0 0.5rem 0; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{f['threat_type']}</h5>
+                    <div style="font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 700; color: {r_color}; margin: 0.5rem 0;">
+                        {f['probability_pct']}%
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #8B95A5; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem;">
+                        <span>Risk: <span style="color: {r_color};">{f['risk_level']}</span></span>
+                        <span>Momentum: {f['momentum_multiplier']}x</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            empty_state("Insufficient Data", "Waiting for more events to calculate statistical momentum.", height=150)
+    else:
+        empty_state("No Events", "Telemetry feed is empty.", height=150)
+except Exception as e:
+    empty_state("Forecast Error", str(e), height=150)
 
 st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 
