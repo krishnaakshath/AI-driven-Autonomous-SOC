@@ -188,7 +188,7 @@ with col_exp2:
 
 # Non-blocking auto-refresh simulation
 if auto_refresh:
-    time.sleep(10)
+    time.sleep(30)
     st.rerun()
 
 st.markdown("---")

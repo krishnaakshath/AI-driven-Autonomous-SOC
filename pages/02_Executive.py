@@ -13,8 +13,9 @@ try:
 except st.errors.StreamlitAPIException:
     pass  # Already set by dashboard.py
 
-from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card, MOBILE_CSS
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()
 
 # Import real services

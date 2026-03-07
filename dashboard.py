@@ -145,28 +145,20 @@ if logged_in:
     with st.sidebar:
         st.markdown("<br>", unsafe_allow_html=True)
         # ── SYSTEM HEALTH HEARTBEAT ──
+        _latency = "N/A"
         try:
-            from services.database import db
-            # Quick check on Supabase connection
-            from services.siem_service import get_siem_events
+            import time as _t
+            _start = _t.time()
+            from services.database import db, SUPABASE_URL
+            # Actually hit the database to verify connectivity
+            db.get_stats()
+            _latency = f"{int((_t.time() - _start) * 1000)}ms"
             status = "online"
         except Exception:
             status = "offline"
             
         from ui.theme import status_indicator
         st.markdown(status_indicator(status), unsafe_allow_html=True)
-        # Measure real latency to Supabase
-        _latency = "N/A"
-        try:
-            import time as _t
-            _start = _t.time()
-            from services.database import SUPABASE_URL
-            if SUPABASE_URL:
-                requests_mod = importlib.import_module("requests")
-                requests_mod.head(SUPABASE_URL, timeout=3)
-                _latency = f"{int((_t.time() - _start) * 1000)}ms"
-        except Exception:
-            pass
         st.markdown(f"<div style='color: #444; font-size: 0.6rem; font-family: monospace; margin-top: -5px;'>LATENCY: {_latency}</div>", unsafe_allow_html=True)
         
         st.markdown("---")

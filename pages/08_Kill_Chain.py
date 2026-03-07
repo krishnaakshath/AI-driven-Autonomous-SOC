@@ -11,6 +11,8 @@ from ui.theme import CYBERPUNK_CSS
 from services.database import db
 
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+from ui.theme import MOBILE_CSS
+st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 
 # Session state for manual/auto refresh
 if 'kill_chain_refresh' not in st.session_state:

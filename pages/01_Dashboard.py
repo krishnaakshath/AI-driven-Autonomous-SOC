@@ -32,8 +32,9 @@ if st.session_state.get('login_warning'):
 # ═══════════════════════════════════════════════════════════════════════════════
 # IMPORT THEME (same cyberpunk as all other pages)
 # ═══════════════════════════════════════════════════════════════════════════════
-from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card, COLORS, MOBILE_CSS, empty_state
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 
 # Extra spacing overrides for dashboard only
 st.markdown("""

@@ -15,6 +15,8 @@ except st.errors.StreamlitAPIError:
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+from ui.theme import MOBILE_CSS
+st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()
 
 st.markdown(page_header("RL Adaptive Classifier", "Deep Q-Network Agent — Autonomously learns what is dangerous vs safe"), unsafe_allow_html=True)

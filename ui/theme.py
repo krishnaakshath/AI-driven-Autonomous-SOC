@@ -938,3 +938,89 @@ def status_indicator(status="online"):
 # Alias for older pages that still use PREMIUM_CSS
 PREMIUM_CSS = CYBERPUNK_CSS
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# STANDARDIZED COLOR PALETTE (use these everywhere for consistency)
+# ═══════════════════════════════════════════════════════════════════════════════
+COLORS = {
+    "CRITICAL": "#FF003C",
+    "HIGH": "#FF8C00",
+    "MEDIUM": "#FFD700",
+    "LOW": "#8B95A5",
+    "SUCCESS": "#00C853",
+    "INFO": "#00D4FF",
+    "WARN": "#FF8C00",
+    "PURPLE": "#8B5CF6",
+    "ACCENT": "#bc13fe",
+}
+
+SEV_COLORS = {
+    "CRITICAL": "#FF003C",
+    "HIGH": "#FF8C00",
+    "MEDIUM": "#FFD700",
+    "LOW": "#8B95A5",
+}
+
+
+def loading_skeleton(rows=3, height="1.2rem"):
+    """Renders animated loading skeleton placeholder cards."""
+    skeleton_html = ""
+    for i in range(rows):
+        width = f"{80 - i * 15}%"
+        skeleton_html += f"""
+        <div style="
+            height: {height};
+            width: {width};
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+            margin-bottom: 0.6rem;
+        "></div>
+        """
+    return f"""
+    <div style="padding: 1rem;">
+        {skeleton_html}
+        <style>
+            @keyframes shimmer {{
+                0% {{ background-position: 200% 0; }}
+                100% {{ background-position: -200% 0; }}
+            }}
+        </style>
+    </div>
+    """
+
+
+def empty_state(title, message, icon="📭"):
+    """Renders a styled empty state with guidance text."""
+    return f"""
+    <div style="
+        text-align: center;
+        padding: 3rem 2rem;
+        background: rgba(10, 10, 20, 0.5);
+        border: 1px dashed rgba(0, 243, 255, 0.15);
+        border-radius: 12px;
+        margin: 1rem 0;
+    ">
+        <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">{icon}</div>
+        <h3 style="color: #FAFAFA; margin: 0 0 0.5rem 0; font-family: 'Rajdhani', sans-serif;">{title}</h3>
+        <p style="color: #8B95A5; margin: 0; font-size: 0.9rem; line-height: 1.6;">{message}</p>
+    </div>
+    """
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MOBILE RESPONSIVE OVERRIDES
+# ═══════════════════════════════════════════════════════════════════════════════
+MOBILE_CSS = """
+<style>
+    @media (max-width: 768px) {
+        .glass-card { padding: 0.8rem !important; }
+        [data-testid="stMetricValue"] { font-size: 1.2rem !important; }
+        h1 { font-size: 1.3rem !important; }
+        h2 { font-size: 1.1rem !important; }
+        .stPlotlyChart { min-height: 200px !important; }
+    }
+</style>
+"""
+
+

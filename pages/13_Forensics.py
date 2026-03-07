@@ -16,8 +16,9 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, empty_state, MOBILE_CSS
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()
 
 st.markdown(page_header("Digital Forensics", "Deep analysis and incident investigation"), unsafe_allow_html=True)
@@ -50,7 +51,11 @@ events = load_siem_events()
 if incidents:
     st.success(f" Connected to SIEM — {len(incidents)} active incidents | {len(events)} events")
 else:
-    st.warning(" No incidents from SIEM")
+    st.markdown(empty_state(
+        "No Incidents from SIEM",
+        "The SIEM service is actively ingesting events from AlienVault OTX. Incidents are auto-generated from high-severity events. Check back shortly.",
+        "🔎"
+    ), unsafe_allow_html=True)
 
 # Tabs
 tab1, tab2, tab3 = st.tabs(["Incident Analysis", "Attack Timeline", "Evidence"])

@@ -15,8 +15,9 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, alert_card, section_title
+from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, alert_card, section_title, empty_state, COLORS, MOBILE_CSS
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()
 
 h_col1, h_col2 = st.columns([4, 1])
@@ -122,7 +123,11 @@ alerts_df = get_alerts()
 otx_data = get_otx_enrichment()
 
 if alerts_df.empty:
-    st.error("No alert data available. SIEM service may be down.")
+    st.markdown(empty_state(
+        "No Alerts Detected",
+        "The SIEM is actively monitoring your environment. New alerts will appear here automatically as events are ingested from AlienVault OTX every 30 seconds.",
+        "🔍"
+    ), unsafe_allow_html=True)
     st.stop()
 
 # Stats
@@ -133,7 +138,7 @@ resolved = (alerts_df["status"] == "Resolved").sum()
 
 c1, c2, c3, c4, c5 = st.columns(5)
 with c1:
-    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF4444;">{critical}</p><p class="metric-label">Critical</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: {COLORS["CRITICAL"]};">{critical}</p><p class="metric-label">Critical</p></div>', unsafe_allow_html=True)
 with c2:
     st.markdown(f'<div class="metric-card"><p class="metric-value" style="color: #FF8C00;">{high}</p><p class="metric-label">High</p></div>', unsafe_allow_html=True)
 with c3:
