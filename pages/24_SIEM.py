@@ -22,14 +22,20 @@ inject_particles()
 
 st.markdown(page_header("SIEM Dashboard", "Security Information and Event Management — Live Event Stream & Correlation"), unsafe_allow_html=True)
 
-# Import Services (backed by SQLite)
+# Import Services (Robust Error Handling)
 try:
     from services.siem_service import get_siem_events, get_siem_stats
     from services.threat_intel import threat_intel
     HAS_REAL_API = True
-except ImportError as e:
-    st.error(f"Failed to import services: {e}")
+except Exception as e:
+    st.error(f"⚠️ Backend Service Error: {e}")
     HAS_REAL_API = False
+    # Define stubs to prevent NameError
+    def get_siem_events(count=0): return []
+    def get_siem_stats(): return {}
+    class ThreatIntelStub:
+        def get_recent_indicators(self, limit=0): return []
+    threat_intel = ThreatIntelStub()
 
 # ===== Dynamic Event Engine =====
 
@@ -63,96 +69,103 @@ def get_correlation_matches(events):
     return rules
 
 
-# 2. Fetch latest events from DB (Persistence!)
-# Auto-refresh logic
-if 'last_siem_refresh' not in st.session_state:
+# Main Page Execution Wrap
+try:
+    # 2. Fetch latest events from DB (Persistence!)
+    # Auto-refresh logic
+    if 'last_siem_refresh' not in st.session_state:
+        st.session_state.last_siem_refresh = time.time()
+
+    if time.time() - st.session_state.last_siem_refresh > 30:
+        st.rerun()
+
     st.session_state.last_siem_refresh = time.time()
 
-if time.time() - st.session_state.last_siem_refresh > 30:
-    st.rerun()
+    events = get_siem_events(count=200) # Get last 200 events
 
-st.session_state.last_siem_refresh = time.time()
+    # Update session counters
+    st.session_state.siem_refresh_count += 1
+    session_duration = (datetime.now() - st.session_state.siem_start_time).total_seconds()
 
-events = get_siem_events(count=200) # Get last 200 events
+    # Convert to DataFrame for analytics
+    df_events = pd.DataFrame(events)
 
-# Update session counters
-st.session_state.siem_refresh_count += 1
-session_duration = (datetime.now() - st.session_state.siem_start_time).total_seconds()
+    # ===== Top Metrics =====
+    st.markdown("<br>", unsafe_allow_html=True)
 
-# Convert to DataFrame for analytics
-df_events = pd.DataFrame(events)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
-# ===== Top Metrics =====
-st.markdown("<br>", unsafe_allow_html=True)
+    # Use DB stats if available, or calculate from fetched events
+    db_stats = get_siem_stats()
+    total_events = db_stats.get("total_events_24h", len(events))
+    critical_events = db_stats.get("critical_count", len([e for e in events if e.get("severity") == "CRITICAL"]))
+    high_events = db_stats.get("high_count", len([e for e in events if e.get("severity") == "HIGH"]))
+    sources_active = db_stats.get("active_sources", len(set(e.get("source") for e in events)))
 
-col1, col2, col3, col4, col5 = st.columns(5)
+    # EPS (Session based)
+    eps = round(len(events) / max(session_duration, 1), 1) if session_duration < 60 else db_stats.get("events_per_minute", 0) / 60
 
-# Use DB stats if available, or calculate from fetched events
-db_stats = get_siem_stats()
-total_events = db_stats.get("total_events_24h", len(events))
-critical_events = db_stats.get("critical_count", len([e for e in events if e.get("severity") == "CRITICAL"]))
-high_events = db_stats.get("high_count", len([e for e in events if e.get("severity") == "HIGH"]))
-sources_active = db_stats.get("active_sources", len(set(e.get("source") for e in events)))
+    metrics = [
+        ("Total Events (DB)", f"{total_events:,}", "#00D4FF"),
+        ("Critical", str(critical_events), "#FF0066"),
+        ("High Severity", str(high_events), "#FF4444"),
+        ("Active Sources", str(sources_active), "#8B5CF6"),
+        ("Events/Sec", str(eps), "#00C853")
+    ]
 
-# EPS (Session based)
-eps = round(len(events) / max(session_duration, 1), 1) if session_duration < 60 else db_stats.get("events_per_minute", 0) / 60
+    for col, (label, value, color) in zip([col1, col2, col3, col4, col5], metrics):
+        with col:
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, rgba(26,31,46,0.8), rgba(26,31,46,0.6));
+                border: 1px solid {color}40;
+                border-radius: 16px;
+                padding: 1.2rem;
+                text-align: center;
+            ">
+                <div style="font-size: 2rem; font-weight: 800; color: {color};">{value}</div>
+                <div style="color: #8B95A5; font-size: 0.85rem;">{label}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-metrics = [
-    ("Total Events (DB)", f"{total_events:,}", "#00D4FF"),
-    ("Critical", str(critical_events), "#FF0066"),
-    ("High Severity", str(high_events), "#FF4444"),
-    ("Active Sources", str(sources_active), "#8B5CF6"),
-    ("Events/Sec", str(eps), "#00C853")
-]
+    # Session info bar
+    st.markdown(f"""
+    <div style="
+        background: rgba(0,200,83,0.08);
+        border: 1px solid rgba(0,200,83,0.2);
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        margin: 0.5rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+    ">
+        <span style="color: #00C853;">LIVE — Connected to Persistent Cloud Storage</span>
+        <span style="color: #8B95A5;">Refresh #{st.session_state.siem_refresh_count} | Session: {int(session_duration)}s</span>
+    </div>
+    """, unsafe_allow_html=True)
 
-for col, (label, value, color) in zip([col1, col2, col3, col4, col5], metrics):
-    with col:
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, rgba(26,31,46,0.8), rgba(26,31,46,0.6));
-            border: 1px solid {color}40;
-            border-radius: 16px;
-            padding: 1.2rem;
-            text-align: center;
-        ">
-            <div style="font-size: 2rem; font-weight: 800; color: {color};">{value}</div>
-            <div style="color: #8B95A5; font-size: 0.85rem;">{label}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-# Session info bar
-st.markdown(f"""
-<div style="
-    background: rgba(0,200,83,0.08);
-    border: 1px solid rgba(0,200,83,0.2);
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    margin: 0.5rem 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.85rem;
-">
-    <span style="color: #00C853;">LIVE — Connected to Persistent Cloud Storage</span>
-    <span style="color: #8B95A5;">Refresh #{st.session_state.siem_refresh_count} | Session: {int(session_duration)}s</span>
-</div>
-""", unsafe_allow_html=True)
+    # Auto-refresh control
+    refresh_col1, refresh_col2, refresh_col3 = st.columns([1, 1, 4])
+    with refresh_col1:
+        auto_refresh = st.toggle("Auto-refresh", value=False, key="siem_auto_refresh")
+    with refresh_col2:
+        refresh_interval = st.selectbox("Interval", [5, 10, 15, 30], index=1, key="siem_interval")
 
-st.markdown("<br>", unsafe_allow_html=True)
+    if auto_refresh:
+        time.sleep(refresh_interval)
+        st.rerun()
 
-# Auto-refresh control
-refresh_col1, refresh_col2, refresh_col3 = st.columns([1, 1, 4])
-with refresh_col1:
-    auto_refresh = st.toggle("Auto-refresh", value=False, key="siem_auto_refresh")
-with refresh_col2:
-    refresh_interval = st.selectbox("Interval", [5, 10, 15, 30], index=1, key="siem_interval")
-
-if auto_refresh:
-    time.sleep(refresh_interval)
-    st.rerun()
-
-# Tabs
-tab1, tab2, tab3, tab4 = st.tabs(["Event Stream", "Analytics", "Correlation Rules", "Log Sources"])
+    # Tabs
+    tab1, tab2, tab3, tab4 = st.tabs(["Event Stream", "Analytics", "Correlation Rules", "Log Sources"])
+except Exception as e:
+    st.error(f"❌ Critical SIEM UI Error: {e}")
+    st.exception(e)
+    # Stop further execution to prevent cascading errors
+    st.stop()
 
 # ===== TAB 1: Event Stream =====
 with tab1:
