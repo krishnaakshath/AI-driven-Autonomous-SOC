@@ -330,19 +330,19 @@ with col1:
 
         st.markdown(f"""
 <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color}; display: inline-block;"></span>
-            <span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{country}</span>
-            {rl_badge}
-        </div>
-        <span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{data['real_count']:,}</span>
-    </div>
-    <div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; margin-top: 0.5rem; overflow: hidden;">
-        <div style="background: linear-gradient(90deg, {color}, {color}80); width: {pct}%; height: 100%; box-shadow: 0 0 10px {color};"></div>
-    </div>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color}; display: inline-block;"></span>
+<span style="color: #FAFAFA; font-weight: 600; font-family: 'Rajdhani', sans-serif;">{country}</span>
+{rl_badge}
 </div>
-        """, unsafe_allow_html=True)
+<span style="color: {color}; font-weight: 700; font-family: 'Orbitron', sans-serif;">{data['real_count']:,}</span>
+</div>
+<div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; margin-top: 0.5rem; overflow: hidden;">
+<div style="background: linear-gradient(90deg, {color}, {color}80); width: {pct}%; height: 100%; box-shadow: 0 0 10px {color};"></div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
 with col2:
     st.markdown(section_title("Attack Vectors"), unsafe_allow_html=True)
