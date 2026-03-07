@@ -354,17 +354,14 @@ with chart1:
                 df_t = df_t.set_index('date').reindex(pd.date_range(mn, mx, freq='D'), fill_value=0).reset_index().rename(columns={'index': 'date'})
 
             fig = go.Figure()
-            # Glow
-            fig.add_trace(go.Scatter(
-                x=df_t["date"], y=df_t["count"], mode="lines",
-                line=dict(color="rgba(0, 243, 255, 0.1)", width=10, shape='spline'),
-                hoverinfo='skip', showlegend=False
-            ))
-            # Main
-            fig.add_trace(go.Scatter(
-                x=df_t["date"], y=df_t["count"], mode="lines", fill="tozeroy",
-                line=dict(color="#00f3ff", width=2, shape='spline'),
-                fillcolor="rgba(0, 243, 255, 0.05)",
+            # Bar chart — clear daily breakdown
+            fig.add_trace(go.Bar(
+                x=df_t["date"], y=df_t["count"],
+                marker=dict(
+                    color=df_t["count"],
+                    colorscale=[[0, "#00f3ff"], [0.5, "#8B5CF6"], [1, "#ff003c"]],
+                    line=dict(width=0),
+                ),
                 hovertemplate="<b>%{x|%b %d}</b><br>%{y:,} events<extra></extra>",
                 showlegend=False
             ))
@@ -372,6 +369,7 @@ with chart1:
                 **DARK_LAYOUT, height=320, hovermode="x unified",
                 xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)"),
                 yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.03)"),
+                bargap=0.15,
             )
             selection = st.plotly_chart(fig, use_container_width=True, on_select="rerun", selection_mode="points")
 
