@@ -122,16 +122,17 @@ st.markdown("""
 # --- HERO SECTION ---
 c1, c2, c3 = st.columns([1, 2, 1])
 with c2:
-    st.markdown(f"""
-        <div style="text-align: center; padding: 2.5rem 0;">
-            <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px rgba(0,243,255,0.3));">🧠</div>
-            <h1 style="font-family: 'Orbitron', sans-serif; letter-spacing: 12px; margin: 0; background: linear-gradient(90deg, #00f3ff, #bc13fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CORTEX</h1>
-            <p style="font-family: 'Share Tech Mono', monospace; color: #666; letter-spacing: 4px; text-transform: uppercase;">// NEURAL-LINK INTERFACE V2.4.9 //</p>
-            <div style="display: flex; justify-content: center; margin-top: 1rem;">
-                {status_indicator('online')}
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    html_content = f"""
+<div style="text-align: center; padding: 2.5rem 0;">
+    <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px rgba(0,243,255,0.3));">🧠</div>
+    <h1 style="font-family: 'Orbitron', sans-serif; letter-spacing: 12px; margin: 0; background: linear-gradient(90deg, #00f3ff, #bc13fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CORTEX</h1>
+    <p style="font-family: 'Share Tech Mono', monospace; color: #666; letter-spacing: 4px; text-transform: uppercase;">// NEURAL-LINK INTERFACE V2.4.9 //</p>
+    <div style="display: flex; justify-content: center; margin-top: 1rem;">
+        {status_indicator('online')}
+    </div>
+</div>
+"""
+    st.markdown(html_content, unsafe_allow_html=True)
 
 st.markdown("---")
 
