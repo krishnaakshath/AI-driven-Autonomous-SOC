@@ -381,16 +381,13 @@ PROTOCOL:
             text = response.choices[0].message.content.strip()
             self.messages.append({"role": "assistant", "content": text})
             
-            # Check for JSON tool call
-            if text.startswith("{") and "tool" in text:
+            # Check for JSON tool call using regex to catch it even if not at the start
+            import re
+            tool_match = re.search(r'\{[^{]*"tool"\s*:[^}]*\}', text)
+            
+            if tool_match:
                 try:
-                    # Handle potential markdown code blocks
-                    clean_text = text
-                    if "```json" in text:
-                        clean_text = text.split("```json")[1].split("```")[0].strip()
-                    elif "```" in text:
-                        clean_text = text.split("```")[1].split("```")[0].strip()
-                    
+                    clean_text = tool_match.group(0)
                     tool_call = json.loads(clean_text)
                     tool_name = tool_call.get("tool")
                     
@@ -398,7 +395,7 @@ PROTOCOL:
                     tool_output = self.execute_tool(tool_name, tool_call)
                     
                     # Feed tool output back to AI
-                    self.messages.append({"role": "user", "content": f"Tool Output:\n{tool_output}\n\nProvide a brief analysis and recommendations."})
+                    self.messages.append({"role": "user", "content": f"System Tool Output:\n{tool_output}\n\nPlease analyze this output and answer the original command naturally."})
                     
                     final_response = self._retry_api_call(
                         self.client.chat.completions.create,
@@ -411,8 +408,9 @@ PROTOCOL:
                     self.messages.append({"role": "assistant", "content": final_text})
                     return final_text
                     
-                except json.JSONDecodeError:
-                    return text 
+                except Exception:
+                    # Fallback to returning the raw text if parsing fails
+                    return text
             
             return text
             
