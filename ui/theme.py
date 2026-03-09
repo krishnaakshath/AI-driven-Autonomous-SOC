@@ -909,28 +909,7 @@ def status_indicator(status="online"):
     }
     color = colors.get(status.lower(), "#00f3ff")
     
-    return f"""
-    <span style="
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    ">
-        <span style="
-            width: 8px;
-            height: 8px;
-            background: {color};
-            border-radius: 50%;
-            box-shadow: 0 0 10px {color};
-            animation: dotPulse 1s ease-in-out infinite;
-        "></span>
-        <span style="
-            color: {color};
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        ">{status}</span>
-    </span>
-    """
+    return f"""<span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;background:{color};border-radius:50%;box-shadow:0 0 10px {color};animation:dotPulse 1s ease-in-out infinite;"></span><span style="color:{color};font-family:'Share Tech Mono', monospace;font-size:0.8rem;text-transform:uppercase;">{status}</span></span>"""
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # BACKWARD COMPATIBILITY
