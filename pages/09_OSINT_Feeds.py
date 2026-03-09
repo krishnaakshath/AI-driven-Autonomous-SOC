@@ -234,7 +234,7 @@ with feed_tab2:
                 border-left: 4px solid {status_color};
                 padding: 12px 15px;
                 border-radius: 0 8px 8px 0;
-                margin: 6px 0;
+                margin: 6px 0 0 0;
                 font-size: 0.9rem;
             ">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -248,6 +248,13 @@ with feed_tab2:
                 </div>
             </div>
             ''', unsafe_allow_html=True)
+            with st.expander(f"🤖 AI NLP Summary"):
+                st.markdown(f"""
+                **Automated Context Analysis:**
+                * Likely delivery mechanism for the **{threat}** payload family.
+                * The malicious web infrastructure is currently **{status}**, requiring immediate perimeter observation.
+                * **Triage Recommendation:** Add domain to network sinkhole and evaluate egress firewall logs for matching patterns.
+                """)
     else:
         st.info("Unable to reach URLhaus API. Try again in a moment.")
 
@@ -269,7 +276,7 @@ with feed_tab3:
                 border: 1px solid rgba(255,255,255,0.1);
                 padding: 12px 15px;
                 border-radius: 8px;
-                margin: 6px 0;
+                margin: 6px 0 0 0;
             ">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
@@ -282,6 +289,13 @@ with feed_tab3:
                 </div>
             </div>
             ''', unsafe_allow_html=True)
+            with st.expander(f"🤖 AI NLP Summary"):
+                st.markdown(f"""
+                **Automated Context Analysis:**
+                * High-confidence Indicator of Compromise ({confidence}%) mapped to **{malware}** campaign activities.
+                * The indicator type (**{ioc_type}**) suggests automated scanning or endpoint pivoting techniques.
+                * **Triage Recommendation:** Ingest into SIEM blocklists and run a retrospective 30-day index search.
+                """)
     else:
         st.info("Unable to reach ThreatFox API. Try again in a moment.")
 

@@ -362,11 +362,19 @@ with tab2:
         sev_color = severity_colors.get(threat['severity'], '#888')
         is_sim = threat.get("is_simulated", False)
         
+        advanced_stage_idx = max(threat['stages']) if threat['stages'] else -1
+        advanced_stage_name = KILL_CHAIN_STAGES[advanced_stage_idx]['name'] if advanced_stage_idx >= 0 else "Unknown"
+        is_severed = st.session_state.get(f"severed_{threat['name']}", False)
+        
         # Build stage progress bar
         stage_indicators = ""
         for i in range(len(KILL_CHAIN_STAGES)):
-            stage_color = sev_color if i in threat['stages'] else "#1a1f2e"
-            border_color = sev_color if i in threat['stages'] else "#333"
+            if is_severed and i >= advanced_stage_idx:
+                stage_color = "#333"
+                border_color = "#555"
+            else:
+                stage_color = sev_color if i in threat['stages'] else "#1a1f2e"
+                border_color = sev_color if i in threat['stages'] else "#333"
             stage_indicators += f'<div style="width: 15px; height: 15px; border-radius: 3px; background: {stage_color}; border: 1px solid {border_color}; margin: 0 2px; display: inline-block;" title="{KILL_CHAIN_STAGES[i]["name"]}"></div>'
         
         badge_html = f'<span style="background: #FF8C00; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 10px;">SIMULATED</span>' if is_sim else f'<span style="background: #00C853; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 10px;">REAL THREAT</span>'
@@ -377,7 +385,7 @@ with tab2:
             border: 1px solid {sev_color}40;
             border-radius: 12px;
             padding: 20px;
-            margin: 15px 0;
+            margin: 15px 0 5px 0;
         ">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <div>
@@ -401,9 +409,16 @@ with tab2:
             </div>
             <div style="margin-top: 10px; color: #8B95A5; font-size: 0.8rem;">
                 <strong>Current Footprint:</strong> {', '.join([KILL_CHAIN_STAGES[s]['name'] for s in threat['stages']])}
+                {'<span style="color:#00f3ff; font-weight:bold; margin-left:10px;">[ THREAT INTERDICTED ]</span>' if is_severed else ''}
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        if not is_severed and advanced_stage_idx >= 0:
+            if st.button(f"⚡ Interdict Sequence at {advanced_stage_name}", key=f"sever_{threat['name']}", type="primary"):
+                st.session_state[f"severed_{threat['name']}"] = True
+                st.toast(f"Connection Severed at {advanced_stage_name}", icon="⚡")
+                st.rerun()
 with tab3:
     st.markdown("### Kill Chain Statistics (SIEM-Powered)")
     

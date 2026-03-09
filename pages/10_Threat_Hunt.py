@@ -284,13 +284,30 @@ with tab3:
                                    ["EDR Logs", "Firewall Logs", "DNS Logs", "Proxy Logs", "Windows Event Logs", "Authentication Logs"],
                                    default=["EDR Logs", "Windows Event Logs"])
     
-    if st.button(" Start Hunt", type="primary"):
+    hb_c1, hb_c2 = st.columns(2)
+    with hb_c1:
+        run_btn = st.button(" Start Hunt", type="primary", use_container_width=True)
+    with hb_c2:
+        save_btn = st.button("💾 Save Hunt to Workspace", use_container_width=True)
+
+    if save_btn:
+        if hypothesis and len(hypothesis) > 5:
+            if 'saved_custom_hunts' not in st.session_state:
+                st.session_state.saved_custom_hunts = []
+            hunt_id = f"Hunt-{random.randint(1000, 9999)}"
+            st.session_state.saved_custom_hunts.append({
+                "id": hunt_id, "hypothesis": hypothesis, "technique": mitre_technique, "sources": data_sources, "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+            st.success(f"✅ Hunt '{hunt_id}' saved successfully to workspace!")
+        else:
+            st.warning("Please enter a valid hunting hypothesis before saving.")
+
+    if run_btn:
         if hypothesis:
             with st.spinner("Executing hypothesis-driven hunt..."):
                 import time
                 from services.database import db
                 
-                # Map technique to search keywords
                 tech_keywords = {
                     "PowerShell": "powershell",
                     "Credential Dumping": "mimikatz",
@@ -320,6 +337,24 @@ with tab3:
 with tab4:
     st.markdown(section_title("Hunt Results & History"), unsafe_allow_html=True)
     
+    st.markdown("### 💾 Workspace: Saved Hunts")
+    if 'saved_custom_hunts' in st.session_state and st.session_state.saved_custom_hunts:
+        for saved in reversed(st.session_state.saved_custom_hunts):
+            st.markdown(f"""
+            <div style="background: rgba(0,0,0,0.2); border-left: 3px solid #00f3ff; padding: 10px; margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <strong>{saved['id']}</strong>
+                    <span style="color: #666; font-size: 0.8rem;">{saved['date']}</span>
+                </div>
+                <div style="color: #8B95A5; font-size: 0.9rem; margin: 4px 0;">{saved['hypothesis']}</div>
+                <span style="background: rgba(188,19,254,0.1); color: #bc13fe; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">{saved['technique']}</span>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("No saved hypothesis hunts in the workspace yet. Go to the Hypothesis Hunt tab to create one.")
+        
+    st.markdown("---")
+    st.markdown("###  Historical Execution Log")
     # Sample hunt history
     history = [
         {"date": "2024-02-05 14:30", "query": "Suspicious PowerShell", "results": 12, "status": "Reviewed"},

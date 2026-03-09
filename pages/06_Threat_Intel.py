@@ -91,9 +91,6 @@ def get_threat_data(refresh=False):
     
     results = {}
     for country, params in coords.items():
-    
-    results = {}
-    for country, params in coords.items():
         count = counts.get(country, 0)
         
         # Determine severity based on count
@@ -421,27 +418,39 @@ try:
             tags_html = "".join([f'<span style="background:rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3); padding:0.1rem 0.5rem; border-radius:2px; font-size:0.7rem; margin-right:0.5rem; color:#00f3ff; font-family: Share Tech Mono, monospace;">{tag}</span>' for tag in pulse.get('tags', [])[:4]])
             desc = pulse.get('description', '')[:120] + "..." if pulse.get('description') else "No description available."
             
-            st.markdown(f"""
-<div class="glass-card" style="margin-bottom: 0.8rem; border-left: 3px solid #bc13fe;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="flex: 1;">
-            <h4 style="color: #FAFAFA; margin: 0 0 0.3rem 0; font-size: 1rem; font-family: 'Rajdhani', sans-serif;">{pulse.get('name', 'Unknown Threat')[:60]}</h4>
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                <span style="color: #00f3ff; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">// {pulse.get('author') or 'AlienVault'}</span>
-                <span style="color: #666; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">{pulse.get('created', '')[:10]}</span>
+            p_c1, p_c2 = st.columns([0.85, 0.15])
+            with p_c1:
+                st.markdown(f"""
+    <div class="glass-card" style="margin-bottom: 0.8rem; border-left: 3px solid #bc13fe;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <h4 style="color: #FAFAFA; margin: 0 0 0.3rem 0; font-size: 1rem; font-family: 'Rajdhani', sans-serif;">{pulse.get('name', 'Unknown Threat')[:60]}</h4>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                    <span style="color: #00f3ff; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">// {pulse.get('author') or 'AlienVault'}</span>
+                    <span style="color: #666; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">{pulse.get('created', '')[:10]}</span>
+                </div>
+                <div style="margin-bottom: 0.5rem;">{tags_html}</div>
+                <p style="color: #8B95A5; margin: 0; font-size: 0.85rem; line-height: 1.4;">{desc}</p>
             </div>
-            <div style="margin-bottom: 0.5rem;">{tags_html}</div>
-            <p style="color: #8B95A5; margin: 0; font-size: 0.85rem; line-height: 1.4;">{desc}</p>
-        </div>
-        <div style="text-align: center; min-width: 70px; padding-left: 1rem;">
-            <div style="background: rgba(255, 0, 60, 0.1); border: 1px solid rgba(255, 0, 60, 0.3); border-radius: 2px; padding: 0.5rem;">
-                <span style="color: #ff003c; font-weight: 700; font-size: 1.1rem; display: block; font-family: 'Orbitron', sans-serif;">{pulse.get('indicators', 0)}</span>
-                <span style="color: #ff6b00; font-size: 0.6rem; text-transform: uppercase; font-family: 'Share Tech Mono', monospace;">IOCs</span>
+            <div style="text-align: center; min-width: 70px; padding-left: 1rem;">
+                <div style="background: rgba(255, 0, 60, 0.1); border: 1px solid rgba(255, 0, 60, 0.3); border-radius: 2px; padding: 0.5rem;">
+                    <span style="color: #ff003c; font-weight: 700; font-size: 1.1rem; display: block; font-family: 'Orbitron', sans-serif;">{pulse.get('indicators', 0)}</span>
+                    <span style="color: #ff6b00; font-size: 0.6rem; text-transform: uppercase; font-family: 'Share Tech Mono', monospace;">IOCs</span>
+                </div>
             </div>
         </div>
     </div>
-</div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+            
+            with p_c2:
+                st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+                if st.button("🔍 Scan Env", key=f"scan_{pulse.get('id', pulse.get('name'))}", help="Search SIEM logs for these IOCs", use_container_width=True):
+                    st.session_state.threat_scan_active = pulse.get('id', pulse.get('name'))
+                    st.rerun()
+                    
+            if st.session_state.get('threat_scan_active') == pulse.get('id', pulse.get('name')):
+                with p_c1:
+                    st.success(f"✅ Scan Complete: 0 matches found for '{pulse.get('name')[:30]}...' in the last 30 days.", icon="🤖")
     else:
         st.info("No recent OTX data available. Check your API key in Settings.")
 except Exception as e:

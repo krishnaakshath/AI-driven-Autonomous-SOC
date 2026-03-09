@@ -25,7 +25,7 @@ inject_particles()
 
 st.markdown(page_header("Security Scanners", "File, URL, and network analysis tools"), unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["File Scanner", "URL Scanner", "Network Monitor"])
+tab1, tab2, tab3, tab4 = st.tabs(["File Scanner", "URL Scanner", "Network Monitor", "Vulnerability Scanner"])
 
 with tab1:
     st.markdown(section_title("PDF File Scanner"), unsafe_allow_html=True)
@@ -209,6 +209,53 @@ with tab3:
                         st.success("No threats detected in this capture.")
                 except Exception as e:
                     st.error(f"Analysis error: {e}")
+
+with tab4:
+    st.markdown(section_title("Vulnerability Scanner"), unsafe_allow_html=True)
+    st.markdown('<p style="color: #8B95A5;">Scan endpoints and servers for known CVEs and deploy automated patches.</p>', unsafe_allow_html=True)
+    
+    # Mock CVE data for automated patching demonstration
+    cves = [
+        {"id": "CVE-2024-3094", "name": "XZ Utils Backdoor", "severity": "CRITICAL", "host": "srv-prod-db01"},
+        {"id": "CVE-2023-44487", "name": "HTTP/2 Rapid Reset", "severity": "HIGH", "host": "srv-web-ext"},
+        {"id": "CVE-2021-44228", "name": "Log4Shell", "severity": "CRITICAL", "host": "app-legacy-22"},
+        {"id": "CVE-2023-38545", "name": "curl SOCKS5 Heap Buffer Overflow", "severity": "HIGH", "host": "api-gateway-01"}
+    ]
+    
+    st.markdown("###  Detected Vulnerabilities")
+    
+    for i, cve in enumerate(cves):
+        cve_id = cve["id"]
+        status_key = f"patch_status_{cve_id}"
+        
+        if status_key not in st.session_state:
+            st.session_state[status_key] = "Open"
+            
+        sev_color = "#FF4444" if cve["severity"] == "CRITICAL" else "#FF8C00"
+        status_color = "#00C853" if st.session_state[status_key] == "Patched" else ("#00D4FF" if st.session_state[status_key] == "Patching in Progress..." else "#FF4444")
+        
+        st.markdown(f"""
+            <div class="glass-card" style="margin-bottom: 0.8rem; border-left: 3px solid {sev_color};">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <strong style="color: #FAFAFA; font-size: 1.1rem;">{cve['id']}</strong> - <span style="color: #8B95A5;">{cve['name']}</span><br>
+                        <span style="font-size: 0.85rem; color: {sev_color}; font-weight: 600;">{cve['severity']}</span> | <span style="font-size: 0.85rem; color: #8B95A5;">Target OS: {cve['host']}</span>
+                    </div>
+                    <div style="text-align: right; margin-right: 1.5rem;">
+                        <span style="font-size: 0.95rem; font-weight: bold; color: {status_color};">{st.session_state[status_key]}</span>
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        if st.session_state[status_key] == "Open":
+            btn_col_1, btn_col_2 = st.columns([4, 1])
+            with btn_col_2:
+                if st.button(f"⚙️ Deploy Patch", key=f"btn_{cve_id}", use_container_width=True):
+                    st.session_state[status_key] = "Patching in Progress..."
+                    st.toast(f"Automated playbook triggered to patch {cve_id} on {cve['host']}", icon="🚀")
+                    st.rerun()
+        st.markdown("<br>", unsafe_allow_html=True)
 
 st.markdown("---")
 st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Scanners</p></div>', unsafe_allow_html=True)

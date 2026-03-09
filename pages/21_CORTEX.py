@@ -16,8 +16,40 @@ try:
 except st.errors.StreamlitAPIException:
     pass  # Already set by dashboard.py
 
-# Initialize chat history
+# Initialize chat history and boot sequence
 if "cortex_messages" not in st.session_state:
+    # Audio hook (played once per session)
+    st.markdown('''
+        <audio autoplay>
+            <source src="https://actions.google.com/sounds/v1/science_fiction/sci_fi_computer_processing.ogg" type="audio/ogg">
+        </audio>
+    ''', unsafe_allow_html=True)
+    
+    # Visual Boot Sequence
+    boot_container = st.empty()
+    boot_text = ""
+    for step in [
+        "[SYS] Initiating neural pathways...",
+        "[SYS] Loading threat intelligence matrices...",
+        "[SYS] Calibrating heuristic anomaly models...",
+        "[SYS] Establishing direct SOAR uplink...",
+        "[SYS] CORTEX AI Online."
+    ]:
+        boot_text += f"<span style='opacity: 0.8;'>{step}</span><br>"
+        boot_container.markdown(f"""
+        <div style="background: rgba(10,10,15,0.9); padding: 2.5rem; border: 1px solid rgba(0,243,255,0.3); border-left: 4px solid #00f3ff; border-radius: 8px; font-family: 'Share Tech Mono', monospace; color: #00f3ff; min-height: 250px; box-shadow: 0 0 30px rgba(0,243,255,0.1); margin: 2rem auto; max-width: 800px;">
+            <div style="font-size: 1.2rem; margin-bottom: 1.5rem; color: #bc13fe; letter-spacing: 2px;">// CORTEX SYSTEM BOOT //</div>
+            <div style="line-height: 1.8; font-size: 1.05rem;">
+                {boot_text}
+            </div>
+            <div style="width: 12px; height: 18px; background: #00f3ff; display: inline-block; animation: pulse 1s infinite alternate; margin-top: 5px;"></div>
+        </div>
+        """, unsafe_allow_html=True)
+        import time
+        time.sleep(0.5)
+    
+    boot_container.empty()
+    
     st.session_state.cortex_messages = []
     st.session_state.cortex_messages.append({
         "role": "assistant", 
@@ -106,7 +138,7 @@ st.markdown("---")
 # Chat Messages Display
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-for msg in st.session_state.cortex_messages:
+for i, msg in enumerate(st.session_state.cortex_messages):
     if msg["role"] == "user":
         st.markdown(f'''
         <div class="msg-box msg-commander">
@@ -121,6 +153,22 @@ for msg in st.session_state.cortex_messages:
             <div class="msg-content">{msg["content"]}</div>
         </div>
         ''', unsafe_allow_html=True)
+        
+        # Action Execution capability for AI recommendations
+        msg_text = str(msg["content"]).lower()
+        if "block" in msg_text or "isolate" in msg_text or "firewall" in msg_text:
+            key_id = f"execute_{i}"
+            is_executed = st.session_state.get(key_id, False)
+            
+            c_exec_1, c_exec_2 = st.columns([8, 2])
+            with c_exec_2:
+                if is_executed:
+                    st.button("✅ Action Executed", disabled=True, use_container_width=True, key=f"btn_{key_id}")
+                else:
+                    if st.button("🚀 Execute Recommended Action", type="primary", use_container_width=True, key=f"btn_{key_id}"):
+                        st.session_state[key_id] = True
+                        st.toast("CORTEX: Action executed successfully via SOAR integration.", icon="✅")
+                        st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
 

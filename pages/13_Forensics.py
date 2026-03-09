@@ -141,11 +141,27 @@ with tab1:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("""
-            <div class="glass-card">
-                <h4 style="color: #00D4FF; margin: 0 0 1rem 0;"> Memory Analysis</h4>
-                <p style="color: #8B95A5; margin: 0;">Analyze memory dumps for malware artifacts, injected code, and rootkits.</p>
+            <div class="glass-card" style="margin-bottom: 1rem;">
+                <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;"> Memory Analysis</h4>
+                <p style="color: #8B95A5; margin: 0; font-size: 0.85rem;">Upload .mem or .raw dumps for automated extraction (simulated Volatility).</p>
             </div>
         """, unsafe_allow_html=True)
+        
+        uploaded_mem = st.file_uploader("Upload Memory Image", type=["mem", "raw", "bin", "vmem"], key="mem_upload")
+        if uploaded_mem:
+            with st.spinner(f"Parsing memory structures in {uploaded_mem.name}..."):
+                import time
+                import random
+                time.sleep(1.5)
+                st.success("Analysis Complete")
+                st.markdown(f"**Discovered Artifacts:**")
+                # Simulated volatility output
+                st.code(f"""[+] Found Hidden Process: svchost.exe (PID: {random.randint(2000, 9999)})
+[+] Recovered 3 Mutexes associated with known C2 frameworks
+[+] Extracted Network Strings:
+    -> 'http://185.220.101.1:443/api/v1/auth'
+    -> 'powershell.exe -nop -w hidden -ep bypass -c...'
+[!] Warning: Suspicious inline API hooks detected in ntdll.dll""", language="bash")
     with col2:
         st.markdown("""
             <div class="glass-card">

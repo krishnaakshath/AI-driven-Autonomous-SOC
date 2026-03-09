@@ -150,6 +150,63 @@ with col_exec:
         st.info("No active incidents requiring SOAR intervention.")
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# VISUAL PLAYBOOK BUILDER
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown("---")
+st.markdown(section_title("Visual Playbook Builder"), unsafe_allow_html=True)
+
+if 'pb_nodes' not in st.session_state:
+    st.session_state.pb_nodes = []
+
+c_builder1, c_builder2 = st.columns([1, 2])
+with c_builder1:
+    st.markdown("""
+        <div class="glass-card" style="padding: 1rem;">
+            <p style="color: #8B95A5; font-size: 0.85rem; margin-top: 0;">Construct automated response logic through sequential nodes.</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    node_type = st.selectbox("Node Type", ["Trigger", "Condition", "Action"])
+    
+    if node_type == "Trigger":
+        node_val = st.selectbox("Select Trigger", ["New Critical Alert", "Failed Login Spike", "C2 Traffic Detected", "Malware Hash Blocked", "Geographic Anomaly"])
+    elif node_type == "Condition":
+        node_val = st.selectbox("Select Condition", ["Severity == CRITICAL", "Asset == Domain Controller", "Confidence > 90%", "Outside Business Hours"])
+    else:
+        node_val = st.selectbox("Select Action", ["Block IP at Edge Firewall", "Isolate Endpoint (EDR)", "Disable User Account", "Send Slack Alert", "Initiate Memory Dump"])
+        
+    if st.button("➕ Add Node to Playbook", use_container_width=True):
+        st.session_state.pb_nodes.append({"type": node_type, "value": node_val})
+        st.rerun()
+
+with c_builder2:
+    if not st.session_state.pb_nodes:
+        st.info("Playbook canvas is empty. Start by adding a Trigger node.")
+    else:
+        for i, node in enumerate(st.session_state.pb_nodes):
+            color = {"Trigger": "#00f3ff", "Condition": "#f0ff00", "Action": "#ff003c"}.get(node["type"], "#FAFAFA")
+            icon = {"Trigger": "⚡", "Condition": "❓", "Action": "🚀"}.get(node["type"], "⚙️")
+            st.markdown(f"""
+            <div style="background: rgba(26,31,46,0.8); border: 1px solid rgba(255,255,255,0.05); border-left: 4px solid {color}; padding: 12px 15px; border-radius: 4px;">
+                <span style="color: #8B95A5; font-size: 0.7rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;">{node['type'].upper()}</span><br>
+                <strong style="color: #FAFAFA; font-size: 1.1rem;">{icon} {node['value']}</strong>
+            </div>
+            """, unsafe_allow_html=True)
+            if i < len(st.session_state.pb_nodes) - 1:
+                st.markdown("<div style='text-align: center; color: #8B95A5; margin: 4px 0; font-size: 1.2rem;'>↓</div>", unsafe_allow_html=True)
+                
+        c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 2])
+        with c_btn1:
+            if st.button("🗑️ Clear Canvas", use_container_width=True):
+                st.session_state.pb_nodes = []
+                st.rerun()
+        with c_btn2:
+            if st.button("💾 Compile & Save", type="primary", use_container_width=True):
+                st.toast("Custom Playbook compiled and deployed to SOAR engine.", icon="💾")
+                st.session_state.pb_nodes = []
+                st.rerun()
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # AUTOMATION ROI CHART (deterministic seed)
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("---")

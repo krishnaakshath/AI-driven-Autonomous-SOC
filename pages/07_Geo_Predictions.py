@@ -93,7 +93,16 @@ if GEO_LOADED:
     """, unsafe_allow_html=True)
     
     # Top 5 targets
-    st.markdown("###  Top 5 Most Likely Targets")
+    t_col1, t_col2 = st.columns([3, 1])
+    with t_col1:
+        st.markdown("###  Top 5 Most Likely Targets")
+    with t_col2:
+        if st.button("🛡️ Pre-empt Block Top 3", type="primary", use_container_width=True):
+            st.session_state.geo_blocks_active = True
+            st.toast("Simulated Firewall Update: Top 3 high-risk regions blocked at edge.", icon="🛡️")
+            
+    if st.session_state.get('geo_blocks_active'):
+        st.success("✅ Preventive block active for top 3 predicted origin regions. (Simulated)")
     
     cols = st.columns(5)
     for i, (country, data) in enumerate(top_targets):

@@ -184,9 +184,22 @@ tabs = st.tabs(["Active Alerts", "Advanced Filter", "Trends"])
 with tabs[0]:
     st.markdown(section_title(f"Operational Workbench ({len(filtered)})"), unsafe_allow_html=True)
     
+    # Bulk Actions
+    b_col1, b_col2, b_col3 = st.columns([1, 1, 2])
+    with b_col1:
+        if st.button("✅ Resolve Selected", use_container_width=True):
+            st.toast("Simulated: Selected alerts marked as Resolved.", icon="✅")
+    with b_col2:
+        if st.button("🤖 AI Auto-Triage", use_container_width=True, type="primary"):
+            st.toast("RL Agent automatically suppressed 3 False Positives.", icon="🤖")
+            
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     # Custom Table Header
     st.markdown("""
-        <div style="display: grid; grid-template-columns: 80px 1.5fr 1fr 1fr 100px 100px; gap: 10px; padding: 0.8rem 1.5rem; background: rgba(0, 243, 255, 0.05); border-bottom: 2px solid rgba(0, 243, 255, 0.2); font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px;">
+        <div style="display: grid; grid-template-columns: 40px 60px 80px 1.5fr 1fr 1fr 80px 100px; gap: 10px; padding: 0.8rem 1.5rem; background: rgba(0, 243, 255, 0.05); border-bottom: 2px solid rgba(0, 243, 255, 0.2); font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px;">
+            <div>Sel</div>
+            <div>SLA</div>
             <div>Time</div>
             <div>Alert Title / ID</div>
             <div>Source / Target</div>
@@ -196,7 +209,6 @@ with tabs[0]:
         </div>
     """, unsafe_allow_html=True)
     
-    # Display alerts in high-density rows
     # Load RL Alert Prioritizer
     try:
         from ml_engine.rl_agents import alert_prioritizer as rl_ap
@@ -204,7 +216,25 @@ with tabs[0]:
     except Exception:
         RL_ALERTS = False
 
-    for _, alert in filtered.head(40).iterrows():
+    for idx, alert in filtered.head(40).iterrows():
+        # SLA Calculation (Assuming 4hr SLA)
+        try:
+            alert_time = pd.to_datetime(alert["time"])
+            if alert_time.tzinfo is None:
+                alert_time = alert_time.replace(tzinfo=datetime.now().astimezone().tzinfo)
+            deadline = alert_time + timedelta(hours=4)
+            rem = (deadline - datetime.now().astimezone()).total_seconds()
+            if status == "resolved":
+                sla_str = '<span style="color:#00C853;">Met</span>'
+            elif rem < 0:
+                sla_str = '<span style="color:#ff003c; font-weight:bold;">Breach</span>'
+            else:
+                h = int(rem // 3600)
+                m = int((rem % 3600) // 60)
+                sla_str = f'<span style="color:#FF8C00;">{h}h {m}m</span>'
+        except Exception:
+            sla_str = f'<span style="color:#888;">N/A</span>'
+            
         time_str = alert["time"].strftime("%H:%M") if hasattr(alert["time"], "strftime") else str(alert["time"])[:5]
         
         sev = alert["severity"].lower()
@@ -227,24 +257,31 @@ with tabs[0]:
             except Exception:
                 pass
 
-        st.markdown(f"""
-            <div class="glass-card" style="margin: 2px 0; padding: 0.6rem 1.5rem; display: grid; grid-template-columns: 80px 1.5fr 1fr 1fr 100px 100px; gap: 10px; align-items: center; border-left: 2px solid {sev_color}; border-radius: 0; background: rgba(5, 5, 10, 0.4);">
-                <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: #666;">{time_str}</div>
-                <div>
-                    <div style="color: #fff; font-weight: 500; font-size: 0.95rem;">{alert['type']}{rl_badge}</div>
-                    <div style="color: #555; font-size: 0.7rem; font-family: 'Share Tech Mono', monospace;">{alert['id']}</div>
+        # Use Streamlit columns to mix an interactive checkbox with the HTML row
+        row_c1, row_c2 = st.columns([0.03, 0.97])
+        with row_c1:
+            st.markdown('<div style="margin-top: 15px;"></div>', unsafe_allow_html=True)
+            st.checkbox("", key=f"sel_{alert['id']}_{idx}", label_visibility="collapsed")
+        with row_c2:
+            st.markdown(f"""
+                <div class="glass-card" style="margin: 2px 0; padding: 0.6rem 1.5rem; display: grid; grid-template-columns: 60px 80px 1.5fr 1fr 1fr 80px 100px; gap: 10px; align-items: center; border-left: 2px solid {sev_color}; border-radius: 0; background: rgba(5, 5, 10, 0.4);">
+                    <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.8rem;">{sla_str}</div>
+                    <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: #666;">{time_str}</div>
+                    <div>
+                        <div style="color: #fff; font-weight: 500; font-size: 0.95rem;">{alert['type']}{rl_badge}</div>
+                        <div style="color: #555; font-size: 0.7rem; font-family: 'Share Tech Mono', monospace;">{alert['id']}</div>
+                    </div>
+                    <div style="color: #888; font-size: 0.85rem;">
+                        <span style="color: {sev_color}70;">{alert['source_ip']}</span>
+                        <div style="font-size: 0.7rem; color: #444;">{alert['hostname']}</div>
+                    </div>
+                    <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: #FAFAFA;">{alert.get('attack_type', 'N/A')}</div>
+                    <div style="font-family: 'Orbitron', sans-serif; color: {sev_color}; font-weight: 700;">{alert['risk_score']}</div>
+                    <div style="text-align: right;">
+                        <span style="padding: 2px 8px; border: 1px solid {status_color}; color: {status_color}; font-size: 0.65rem; text-transform: uppercase; border-radius: 2px; background: {status_color}10;">{alert['status']}</span>
+                    </div>
                 </div>
-                <div style="color: #888; font-size: 0.85rem;">
-                    <span style="color: {sev_color}70;">{alert['source_ip']}</span>
-                    <div style="font-size: 0.7rem; color: #444;">{alert['hostname']}</div>
-                </div>
-                <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: #FAFAFA;">{alert.get('attack_type', 'N/A')}</div>
-                <div style="font-family: 'Orbitron', sans-serif; color: {sev_color}; font-weight: 700;">{alert['risk_score']}</div>
-                <div style="text-align: right;">
-                    <span style="padding: 2px 8px; border: 1px solid {status_color}; color: {status_color}; font-size: 0.65rem; text-transform: uppercase; border-radius: 2px; background: {status_color}10;">{alert['status']}</span>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
 with tabs[1]:
     st.markdown(section_title("Advanced Investigation"), unsafe_allow_html=True)

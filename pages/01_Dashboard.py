@@ -263,26 +263,60 @@ except Exception:
     pass
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# KPI CARDS — using theme's metric_card (same as other pages)
+# KPI CARDS & INTERACTIVE DRILL-DOWNS
 # ═══════════════════════════════════════════════════════════════════════════════
 def fmt(v):
     return f"{v:,}" if isinstance(v, (int, np.integer)) else v
 
+if 'dashboard_drilldown' not in st.session_state:
+    st.session_state.dashboard_drilldown = None
+
 m1, m2, m3, m4, m5, m6 = st.columns(6)
 with m1:
     st.markdown(metric_card("Total Events", fmt(total), "#00f3ff"), unsafe_allow_html=True)
+    if st.button("View All", key="btn_all", use_container_width=True): st.session_state.dashboard_drilldown = "ALL"
 with m2:
     st.markdown(metric_card("Critical", fmt(critical), "#ff003c"), unsafe_allow_html=True)
+    if st.button("View Critical", key="btn_crit", use_container_width=True): st.session_state.dashboard_drilldown = "CRITICAL"
 with m3:
     st.markdown(metric_card("Blocked", fmt(blocked), "#bc13fe"), unsafe_allow_html=True)
+    if st.button("View Blocked", key="btn_blk", use_container_width=True): st.session_state.dashboard_drilldown = "BLOCKED"
 with m4:
     st.markdown(metric_card("Restricted", fmt(restricted), "#ff6b00"), unsafe_allow_html=True)
+    if st.button("View Restrict", key="btn_rst", use_container_width=True): st.session_state.dashboard_drilldown = "RESTRICTED"
 with m5:
     st.markdown(metric_card("Allowed", fmt(allowed), "#00C853"), unsafe_allow_html=True)
+    if st.button("View Allowed", key="btn_alw", use_container_width=True): st.session_state.dashboard_drilldown = "ALLOWED"
 with m6:
     st.markdown(metric_card("Avg Risk", f"{avg_risk:.1f}", "#8B5CF6"), unsafe_allow_html=True)
+    if st.button("Clear View", key="btn_clr", use_container_width=True): st.session_state.dashboard_drilldown = None
 
-st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+# Show Drill-Down Data Table if active
+if st.session_state.dashboard_drilldown and not df.empty:
+    st.markdown(f"### 🔍 Drill-Down View: **{st.session_state.dashboard_drilldown}**")
+    drill_df = df.copy()
+    
+    if st.session_state.dashboard_drilldown == "CRITICAL":
+        drill_df = drill_df[drill_df.get("risk_score", 0) >= 80]
+    elif st.session_state.dashboard_drilldown == "BLOCKED":
+        drill_df = drill_df[drill_df.get("access_decision", "") == "BLOCK"]
+    elif st.session_state.dashboard_drilldown == "RESTRICTED":
+        drill_df = drill_df[drill_df.get("access_decision", "") == "RESTRICT"]
+    elif st.session_state.dashboard_drilldown == "ALLOWED":
+        drill_df = drill_df[drill_df.get("access_decision", "") == "ALLOW"]
+        
+    st.dataframe(
+        drill_df.head(100), 
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "risk_score": st.column_config.ProgressColumn("Risk Score", format="%.1f", min_value=0, max_value=100)
+        }
+    )
+    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+else:
+    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # GLOBAL THREAT MAP

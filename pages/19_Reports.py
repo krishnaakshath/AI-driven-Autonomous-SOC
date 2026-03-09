@@ -80,9 +80,25 @@ with tab1:
         executive_summary = st.checkbox("Executive Summary", value=True)
         confidence = st.slider("Statistical Confidence Interval", min_value=80, max_value=99, value=95, step=1, help="Adjust the strictness of the Poisson threat forecasting model.")
     
+    st.markdown("---")
+    st.markdown("#### 📅 Scheduled Delivery")
+    st.markdown('<p style="color: #8B95A5; font-size: 0.85rem; margin-top: -10px;">Automate the delivery of this report configuration to stakeholders.</p>', unsafe_allow_html=True)
+    
+    sched_col1, sched_col2 = st.columns([1, 2])
+    with sched_col1:
+        schedule_freq = st.selectbox("Frequency", ["Daily", "Weekly", "Monthly", "Quarterly"])
+        schedule_time = st.time_input("Delivery Time", value=datetime.strptime("08:00", "%H:%M").time())
+    with sched_col2:
+        schedule_email = st.text_area("Recipient Email(s)", placeholder="ciso@company.com\nsoc-team@company.com", height=110)
+        if st.button("Configure Schedule", use_container_width=True):
+            if schedule_email:
+                st.toast(f"Report scheduled for {schedule_freq} delivery to {len(schedule_email.split(','))} recipient(s)", icon="✅")
+            else:
+                st.warning("Please enter recipient emails to save the schedule.")
+                
     st.markdown("<br>", unsafe_allow_html=True)
     
-    if st.button("Generate Report", type="primary", use_container_width=True):
+    if st.button("Generate Report Immediately", type="primary", use_container_width=True):
         progress = st.progress(0)
         status = st.empty()
         

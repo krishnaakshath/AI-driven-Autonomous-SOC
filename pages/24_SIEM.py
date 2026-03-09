@@ -314,6 +314,55 @@ with tab3:
         </div>
     """, unsafe_allow_html=True)
     
+    # ── Interactive Correlation Graph ──
+    try:
+        import math
+        import random
+        st.markdown("###  Threat Correlation Map", unsafe_allow_html=True)
+        
+        edge_x, edge_y, node_x, node_y, text, colors = [], [], [], [], [], []
+        
+        # Central SIEM Core
+        node_x.append(0.5); node_y.append(0.5); text.append("SIEM Core"); colors.append("#bc13fe")
+        
+        # Generate dynamic nodes (Assets vs Threat IPs)
+        for i in range(8):
+            angle = i * (math.pi * 2 / 8)
+            nx = 0.5 + 0.4 * math.cos(angle)
+            ny = 0.5 + 0.4 * math.sin(angle)
+            node_x.append(nx); node_y.append(ny)
+            
+            is_malicious = i % 2 != 0
+            text.append(f"Ext IP: 185.{random.randint(10,200)}.{i}.{random.randint(1,255)}" if is_malicious else f"Asset-{random.randint(100,999)}")
+            colors.append("#FF4444" if is_malicious else "#00D4FF")
+            
+            # Connect to core
+            edge_x.extend([0.5, nx, None])
+            edge_y.extend([0.5, ny, None])
+            
+            # Cross-connect attacker to adjacent asset
+            if is_malicious:
+                nx_prev = 0.5 + 0.4 * math.cos((i-1) * (math.pi * 2 / 8))
+                ny_prev = 0.5 + 0.4 * math.sin((i-1) * (math.pi * 2 / 8))
+                edge_x.extend([nx, nx_prev, None])
+                edge_y.extend([ny, ny_prev, None])
+                
+        fig_graph = go.Figure()
+        fig_graph.add_trace(go.Scatter(x=edge_x, y=edge_y, line=dict(width=1, color='rgba(0, 243, 255, 0.3)'), hoverinfo='none', mode='lines'))
+        fig_graph.add_trace(go.Scatter(x=node_x, y=node_y, mode='markers+text', text=text, textposition="bottom center", hoverinfo='text', marker=dict(color=colors, size=16, line=dict(color="#1A1F2E", width=2))))
+        
+        fig_graph.update_layout(
+            showlegend=False, hovermode='closest', margin=dict(b=20,l=5,r=5,t=20),
+            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            height=350
+        )
+        st.plotly_chart(fig_graph, use_container_width=True)
+        st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 1.5rem 0;'>", unsafe_allow_html=True)
+    except Exception as e:
+        st.warning(f"Graph visualization error: {e}")
+    
     rules = get_correlation_matches(events)
     
     try:

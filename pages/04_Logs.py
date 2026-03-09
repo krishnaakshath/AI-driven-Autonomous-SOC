@@ -76,7 +76,7 @@ def generate_log_entry():
 
 # Filters
 st.markdown("<br>", unsafe_allow_html=True)
-col1, col2, col3, col4 = st.columns([2, 1, 2, 1])
+col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 1])
 
 with col1:
     selected_sources = st.multiselect("Sources", LOG_SOURCES, default=LOG_SOURCES)
@@ -88,6 +88,11 @@ with col3:
     search_query = st.text_input("Deep Search", placeholder="Filter by IP, user, or threat pattern...")
 
 with col4:
+    st.markdown("<br>", unsafe_allow_html=True)
+    use_regex = st.toggle("RegEx", value=False, help="Enable Regular Expression searching")
+
+with col5:
+    st.markdown("<br>", unsafe_allow_html=True)
     auto_refresh = st.toggle("Auto-Live", value=False, help="Automatically refreshes every 30 seconds")
 
 # Function to generate logs or fetch from SIEM
@@ -119,12 +124,26 @@ def fetch_logs(refresh_id=0):
 st.session_state.log_entries = fetch_logs(st.session_state.log_refresh_counter)
 
 # Filter logs
-filtered_logs = [
-    log for log in st.session_state.log_entries
-    if log['source'] in selected_sources
-    and log['severity'] in selected_severity
-    and (not search_query or search_query.lower() in str(log).lower())
-]
+import re
+
+filtered_logs = []
+for log in st.session_state.log_entries:
+    if log['source'] not in selected_sources or log['severity'] not in selected_severity:
+        continue
+        
+    if search_query:
+        if use_regex:
+            try:
+                if not re.search(search_query, str(log), re.IGNORECASE):
+                    continue
+            except re.error:
+                # Invalid regex, fallback to nothing or normal search
+                pass
+        else:
+            if search_query.lower() not in str(log).lower():
+                continue
+                
+    filtered_logs.append(log)
 
 # Display live indicator
 st.markdown(f"""
@@ -151,20 +170,29 @@ st.markdown("""
 ">
 """, unsafe_allow_html=True)
 
+import json
 for log in filtered_logs[:100]:
     color = SEVERITY_COLORS.get(log['severity'], "#FFFFFF")
+    log_json = json.dumps(log, indent=2).replace("<", "&lt;").replace(">", "&gt;")
+    
     st.markdown(f"""
     <div style="
         padding: 6px 10px;
         border-bottom: 1px solid rgba(255,255,255,0.03);
         display: flex;
-        gap: 12px;
-        align-items: baseline;
+        flex-direction: column;
+        gap: 4px;
     ">
-        <span style="color: #475569; min-width: 100px;">{log['timestamp']}</span>
-        <span style="color: #38BDF8; min-width: 110px;">[{log['source']}]</span>
-        <span style="color: {color}; min-width: 70px; font-weight: bold;">{log['severity']}</span>
-        <span style="color: #CBD5E1; word-break: break-all;">{log['message']}</span>
+        <div style="display: flex; gap: 12px; align-items: baseline;">
+            <span style="color: #475569; min-width: 100px;">{log['timestamp']}</span>
+            <span style="color: #38BDF8; min-width: 110px;">[{log['source']}]</span>
+            <span style="color: {color}; min-width: 70px; font-weight: bold;">{log['severity']}</span>
+            <span style="color: #CBD5E1; word-break: break-all;">{log['message']}</span>
+        </div>
+        <details style="cursor: pointer; margin-left: 232px;">
+            <summary style="color: #8B95A5; font-size: 0.70rem; outline: none;">View JSON</summary>
+            <pre style="background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; color: #A78BFA; margin-top: 5px; overflow-x: auto; font-size: 0.75rem; border: 1px solid rgba(139,92,246,0.2);">{log_json}</pre>
+        </details>
     </div>
     """, unsafe_allow_html=True)
 

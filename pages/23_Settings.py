@@ -69,7 +69,7 @@ def logout():
 
 # Create tabs based on admin status
 if IS_ADMIN:
-    tab1, tab_sec, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([" Account", " Security", " CORTEX AI", " API Keys", " OAuth", " Notifications", " Thresholds", " About"])
+    tab1, tab_sec, tab2, tab3, tab4, tab5, tab6, tab_rbac, tab7 = st.tabs([" Account", " Security", " CORTEX AI", " API Keys", " OAuth", " Notifications", " Thresholds", " RBAC", " About"])
 else:
     tab1, tab_sec, tab2, tab7 = st.tabs([" Account", " Security", " CORTEX AI", " About"])
 
@@ -620,6 +620,30 @@ if IS_ADMIN:
                 st.warning(f"Settings saved, but service reload failed: {e}")
             time.sleep(1)
             st.rerun()
+
+    with tab_rbac:
+        st.markdown(section_title("Role-Based Access Control (RBAC)"), unsafe_allow_html=True)
+        st.markdown("""
+            <div class="glass-card" style="margin-bottom: 1.5rem;">
+                <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">Permission Configuration</h4>
+                <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">Configure access parameters for Junior SOC Analysts.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("### Junior Analyst Constraints")
+        rbac_fw = st.checkbox("Allow Firewall Rule Modifications", value=config.get("rbac_jr_firewall", False))
+        rbac_soar = st.checkbox("Allow Manual SOAR Playbook Execution", value=config.get("rbac_jr_soar", True))
+        rbac_delete = st.checkbox("Allow Alert/Incident Deletion", value=config.get("rbac_jr_delete", False))
+        rbac_export = st.checkbox("Allow Extraneous Data Export", value=config.get("rbac_jr_export", True))
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("💾 Save RBAC Policy", type="primary", use_container_width=True):
+            config['rbac_jr_firewall'] = rbac_fw
+            config['rbac_jr_soar'] = rbac_soar
+            config['rbac_jr_delete'] = rbac_delete
+            config['rbac_jr_export'] = rbac_export
+            save_config(config)
+            st.toast("RBAC permissions updated. Changes take effect on next login.", icon="✅")
 
 with tab7:
     st.markdown(section_title("About This Platform"), unsafe_allow_html=True)

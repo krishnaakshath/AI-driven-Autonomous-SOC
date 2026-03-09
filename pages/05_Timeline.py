@@ -166,7 +166,26 @@ st.markdown(f"""
 # Timeline visualization
 st.markdown(section_title("Attack Timeline"), unsafe_allow_html=True)
 
-for i, event in enumerate(incident.get("timeline", [])):
+if 'playback_incident' not in st.session_state:
+    st.session_state.playback_incident = None
+if 'playback_step' not in st.session_state:
+    st.session_state.playback_step = 999
+
+col_play, _ = st.columns([1, 5])
+with col_play:
+    if st.button("▶️ Play Animation", use_container_width=True):
+        st.session_state.playback_incident = incident['id']
+        st.session_state.playback_step = 0
+        st.rerun()
+
+is_playing = (st.session_state.playback_incident == incident['id'] and 
+              st.session_state.playback_step < len(incident.get("timeline", [])))
+
+visible_timeline = incident.get("timeline", [])
+if st.session_state.playback_incident == incident['id']:
+    visible_timeline = incident.get("timeline", [])[:st.session_state.playback_step + 1]
+
+for i, event in enumerate(visible_timeline):
     event_time = incident.get("start_time", datetime.now()) + timedelta(hours=event.get("time", 0) + 36)
     
     # Color based on phase type
@@ -214,7 +233,19 @@ for i, event in enumerate(incident.get("timeline", [])):
 </div>
 </div>
 </div>
+</div>
 """, unsafe_allow_html=True)
+
+if is_playing:
+    import time
+    time.sleep(1.0)
+    st.session_state.playback_step += 1
+    st.rerun()
+elif st.session_state.playback_incident == incident['id']:
+    if st.button("Reset Timeline", key="reset_tl"):
+        st.session_state.playback_step = 999
+        st.session_state.playback_incident = None
+        st.rerun()
 
 # MITRE ATT&CK Mapping
 st.markdown("<br>", unsafe_allow_html=True)

@@ -312,6 +312,58 @@ with roi3:
     </div>
     """, unsafe_allow_html=True)
 
+# Peer Benchmarking Section
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(section_title("Sector Benchmarking (Finance & Tech)"), unsafe_allow_html=True)
+
+bench1, bench2 = st.columns([1, 2])
+with bench1:
+    my_risk = max(0, 100 - metrics['compliance_score'])
+    ind_risk = 42.5  # Simulated industry average risk score
+    diff = ind_risk - my_risk
+    
+    st.markdown(f"""
+    <div class="glass-card" style="padding: 1.5rem; height: 100%;">
+        <div style="font-size: 1.1rem; color: #FAFAFA; font-weight: 600; margin-bottom: 1rem;">Sector Risk Comparison</div>
+        <div style="font-size: 3rem; color: {'#00C853' if diff > 0 else '#FF003C'}; font-weight: 800; line-height: 1;">
+            {'+' if diff > 0 else ''}{diff:.1f}%
+        </div>
+        <div style="color: #8B95A5; margin-top: 0.5rem;">vs Industry Average</div>
+        <div style="margin-top: 1.5rem; font-size: 0.85rem; color: #A78BFA;">
+            <b>Your Risk:</b> {my_risk:.1f}%<br>
+            <b>Sector Risk:</b> {ind_risk}%
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with bench2:
+    # Bar chart for comparative metrics
+    cats = ["MTTR (Hours)", "MTTD (Hours)", "Zero-Day Catch Rate (%)", "Automated Triage (%)"]
+    my_vals = [metrics['mttr'], metrics['mttd'], 85.0, 92.5]
+    ind_vals = [14.5, 4.2, 60.0, 45.0]
+    
+    fig_bench = go.Figure()
+    fig_bench.add_trace(go.Bar(
+        y=cats, x=my_vals, name="Your SOC", orientation='h', 
+        marker_color="#00f3ff"
+    ))
+    fig_bench.add_trace(go.Bar(
+        y=cats, x=ind_vals, name="Industry Avg", orientation='h', 
+        marker_color="rgba(139, 92, 246, 0.4)"
+    ))
+    
+    fig_bench.update_layout(
+        barmode='group',
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="#FAFAFA",
+        margin=dict(l=20, r=20, t=10, b=10),
+        height=220,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    st.plotly_chart(fig_bench, use_container_width=True)
+
+
 # Export Section
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(section_title("Intelligence Reports"), unsafe_allow_html=True)

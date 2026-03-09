@@ -69,9 +69,26 @@ try:
                 st.toggle("Active", value=p['Enabled'], key=p['Rule'])
                 
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Manual IP Block"):
-            st.text_input("Enter IP Address")
-            st.button("Confirm Block", type="primary")
+        st.markdown("### Add Custom Block Rule")
+        
+        block_ip = st.text_input("Enter IP Address, CIDR, or Keyword to calculate impact", key="fw_block_ip")
+        
+        if block_ip:
+            import random
+            # Simulate a higher impact if it's an internal-looking IP
+            impact_pct = round(random.uniform(0.1, 5.0), 1) if not block_ip.startswith("10.") and not block_ip.startswith("192.") else round(random.uniform(40.0, 95.0), 1)
+            impact_color = "#FF4444" if impact_pct > 10 else "#FF8C00" if impact_pct > 2 else "#00C853"
+            
+            st.markdown(f"""
+            <div style="background: rgba(255,255,255,0.05); border-left: 3px solid {impact_color}; padding: 12px; border-radius: 4px;">
+                <span style="color: {impact_color}; font-weight: 600;">⚠️ Impact Analysis Preview:</span>
+                <span style="color: #FAFAFA; margin-left: 10px;">This rule corresponds to approx. <strong>{impact_pct}%</strong> of weekly baseline traffic.</span>
+            </div>
+            <br>
+            """, unsafe_allow_html=True)
+            
+            if st.button("Confirm & Deploy Rule", type="primary", use_container_width=True):
+                st.toast(f"Rule deployed successfully. Dropping traffic matching {block_ip}.", icon="🛡️")
 
     # ── RL FIREWALL RECOMMENDATIONS ──
     try:
