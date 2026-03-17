@@ -1,28 +1,34 @@
 version: '3.8'
 
 services:
-  # Main Web Application
-  web:
-    build: .
-    container_name: soc_dashboard
+  soc-platform:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: autonomous-soc-platform
     ports:
       - "8501:8501"
+    volumes:
+      # Mount the local codebase for hot-reloading during subsequent development
+      # (Remove or comment out this line in true immutable production)
+      - .:/app
     environment:
+      # These environment variables will be pulled from your host or a local .env file
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
       - GROQ_API_KEY=${GROQ_API_KEY}
-      - SMTP_SERVER=${SMTP_SERVER}
-      - SMTP_PORT=${SMTP_PORT}
-      - SENDER_EMAIL=${SENDER_EMAIL}
-      - SENDER_PASSWORD=${SENDER_PASSWORD}
-    restart: always
+      - VIRUSTOTAL_KEY=${VIRUSTOTAL_KEY}
+      - ABUSEIPDB_KEY=${ABUSEIPDB_KEY}
+      - OTX_API_KEY=${OTX_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - soc_network
 
-  # Background Threat Monitor (The "Watcher")
-  monitor:
-    build: .
-    container_name: soc_monitor
-    entrypoint: ["python", "services/background_monitor.py"]
-    environment:
-      - SMTP_SERVER=${SMTP_SERVER}
-      - SMTP_PORT=${SMTP_PORT}
-      - SENDER_EMAIL=${SENDER_EMAIL}
-      - SENDER_PASSWORD=${SENDER_PASSWORD}
-    restart: always
+networks:
+  soc_network:
+    driver: bridge
