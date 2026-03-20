@@ -845,50 +845,68 @@ with col_center:
         """, unsafe_allow_html=True)
         try:
             from services.database import db
-            alerts = db.get_alerts(limit=5000)
-            from collections import defaultdict
-            alert_counts = defaultdict(int)
+            # Fetch recent SIEM events for the timeline
+            events = db.get_recent_events(limit=2000)
             
-            # Aggregate local or fallback to mock
-            if alerts:
-                for a in alerts:
-                    ts = a.get("timestamp")
-                    if ts:
-                        d_str = ts[:10]
-                        alert_counts[d_str] += 1
-                        
-            dates = sorted(alert_counts.keys())
-            counts = [alert_counts[d] for d in dates]
+            # Build an empty base dataframe covering the last 7 days to ensure empty days exist
+            today = datetime.now().date()
+            date_range = pd.date_range(end=today, periods=7)
+            base_df = pd.DataFrame({"date": date_range})
             
-            # Fill missing days if needed or if DB empty
-            if len(dates) < 7:
-                counts_map = dict(zip(dates, counts))
-                dates = []
-                counts = []
-                for i in range(6, -1, -1):
-                    d = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
-                    dates.append(d)
-                    # Random realistic data fallback if no DB data
-                    fallback = int(np.random.normal(50, 15)) if not alerts else 0
-                    counts.append(counts_map.get(d, max(0, fallback)))
+            if events:
+                df_hist = pd.DataFrame(events)
+                df_hist["date"] = pd.to_datetime(df_hist["timestamp"]).dt.date
+                df_hist["date"] = pd.to_datetime(df_hist["date"])
+                
+                # Assign default severity if missing, and normalize to title case
+                if "severity" not in df_hist.columns:
+                    df_hist["severity"] = "Medium"
+                df_hist["severity"] = df_hist["severity"].astype(str).str.capitalize()
+                
+                # Group by date and severity
+                daily_counts = df_hist.groupby(["date", "severity"]).size().reset_index(name="count")
+                
+                # Merge with base_df to ensure all 7 days are represented
+                merged_df = pd.merge(base_df, daily_counts, on="date", how="left").fillna(0)
+            else:
+                # If DB is empty, generate realistic demo distributions for the UI
+                demo_data = []
+                for d in date_range:
+                    for sev in ["Critical", "High", "Medium", "Low"]:
+                        val = int(abs(np.random.normal(30, 20))) if sev == "Low" else int(abs(np.random.normal(5, 5)))
+                        demo_data.append({"date": d, "severity": sev, "count": val})
+                merged_df = pd.DataFrame(demo_data)
 
-            fig_bar = go.Figure(go.Bar(
-                x=dates, y=counts,
-                marker_color="#F59E0B",
-                opacity=0.8,
-                hovertemplate="<b>%{x}</b><br>%{y} Alerts Recorded<extra></extra>"
-            ))
+            # Format dates for x-axis
+            merged_df["date_str"] = merged_df["date"].dt.strftime("%Y-%m-%d")
+            
+            fig_bar = go.Figure()
+            colors = {"Critical": "#EF4444", "High": "#F97316", "Medium": "#EAB308", "Low": "#6B7280"}
+            
+            for sev in ["Critical", "High", "Medium", "Low"]:
+                sev_df = merged_df[merged_df["severity"] == sev].groupby("date_str")["count"].sum().reset_index()
+                if not sev_df.empty:
+                    fig_bar.add_trace(go.Bar(
+                        x=sev_df["date_str"], y=sev_df["count"],
+                        name=sev, marker_color=colors.get(sev, "#888"),
+                        hovertemplate="<b>%{x}</b><br>%{y} " + sev + " Incidents<extra></extra>"
+                    ))
+
             fig_bar.update_layout(
                 **DARK_LAYOUT, height=260,
-                title=dict(text="Historical Alert Volume (Past 7 Days)", font=dict(size=13, color="#E8E8EF"), x=0),
+                barmode="stack",
+                title=dict(text="Historical Incident Timeline (Past 7 Days)", font=dict(size=13, color="#E8E8EF"), x=0),
+                legend=dict(orientation="h", y=-0.2, font=dict(size=10, color="#888")),
                 xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending"),
-                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Alerts Count"),
+                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Incident Count"),
                 margin=dict(l=40, r=20, t=40, b=40),
             )
             st.plotly_chart(fig_bar, use_container_width=True)
         except Exception as e:
-            logger.debug(f"Failed to load daily alerts: {e}")
-            st.info("Historical alert data unavailable.")
+            import traceback
+            logger.debug(f"Failed to render incident timeline: {e}")
+            st.error(f"Incident Timeline unavailable. Engine Error: {e}")
+            st.code(traceback.format_exc())
 
         st.markdown("</div>", unsafe_allow_html=True)
 
