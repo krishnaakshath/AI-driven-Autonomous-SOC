@@ -896,12 +896,69 @@ with col_center:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # Render Custom Add-On Widgets
+    current_widgets = st.session_state.get("custom_widgets", [])
+    for widget_id in current_widgets:
+        st.markdown("<br>", unsafe_allow_html=True)
+        cols = st.columns([0.85, 0.15])
+        with cols[0]:
+            if widget_id == "recent_logins":
+                st.markdown("""
+                <div class="dash-card">
+                    <div class="card-header"><span class="card-title">Recent Login Activity</span></div>
+                    <div style="color:#bbb; font-size:0.8rem; padding:0 0 1rem 0; font-family:'Share Tech Mono', monospace;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;"><span>admin@soc.org</span><span style="color:#22C55E;">SUCCESS</span></div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;"><span>unknown@104.28.x.x</span><span style="color:#EF4444;">FAILED</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>analyst@soc.org</span><span style="color:#22C55E;">SUCCESS</span></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            elif widget_id == "system_health":
+                st.markdown("""
+                <div class="dash-card">
+                    <div class="card-header"><span class="card-title">System Health Metrics</span></div>
+                    <div style="color:#bbb; font-size:0.8rem; padding:0 0 1rem 0;">
+                        CPU Usage: <strong>42%</strong><br>
+                        Memory: <strong>16GB / 64GB</strong><br>
+                        Ingestion Lag: <strong>45ms</strong>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            elif widget_id == "threat_actors":
+                st.markdown("""
+                <div class="dash-card">
+                    <div class="card-header"><span class="card-title">Top Threat Actors</span></div>
+                    <div style="color:#bbb; font-size:0.8rem; padding:0 0 1rem 0;">
+                        1. APT29 (Russia) - 34%<br>
+                        2. Lazarus Group (DPRK) - 21%<br>
+                        3. Unknown Scanners - 45%
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        with cols[1]:
+            if st.button("✖", key=f"rm_{widget_id}"):
+                current_widgets.remove(widget_id)
+                st.session_state.custom_widgets = current_widgets
+                st.rerun()
+
     # Add Widget button
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("➕ Add Custom Widget", use_container_width=True):
-        st.toast("Widget configuration library will be available in the next release.", icon="🧩")
-
-
+    with st.expander("➕ Add Custom Widget", expanded=False):
+        available_widgets = {
+            "recent_logins": "Recent Login Activity",
+            "system_health": "System Health Metrics",
+            "threat_actors": "Top Threat Actors"
+        }
+        options = {k: v for k, v in available_widgets.items() if k not in current_widgets}
+        
+        if options:
+            selected_widget = st.selectbox("Select Widget:", options=list(options.keys()), format_func=lambda x: options[x], label_visibility="collapsed")
+            if st.button("Add to Dashboard", use_container_width=True, type="secondary"):
+                current_widgets.append(selected_widget)
+                st.session_state.custom_widgets = current_widgets
+                st.rerun()
+        else:
+            st.info("All available widgets have been added.")
 # ── RIGHT: Risk by Application + Event Types ─────────────────────────────────
 with col_right:
     # Risk by Application donut
