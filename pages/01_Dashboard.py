@@ -871,56 +871,46 @@ with col_center:
                     start_date = today_ts.date() - pd.Timedelta(days=6)
                 
                 date_range = pd.date_range(start=start_date, end=today_ts.date())
-                base_df = pd.DataFrame({"date": date_range})
-                # Force strictly to string for bulletproof merge
-                base_df["date"] = pd.to_datetime(base_df["date"]).dt.strftime("%Y-%m-%d")
+                base_dates = [d.strftime("%Y-%m-%d") for d in date_range]
                 
-                # Merge with base_df to ensure all days are represented consistently
-                merged_df = pd.merge(base_df, daily_counts, on="date", how="left").fillna(0)
             else:
                 # If DB is empty, generate realistic demo distributions for the UI
                 start_date = pd.to_datetime("2025-12-30").date()
                 date_range = pd.date_range(start=start_date, end=today_ts.date())
+                base_dates = [d.strftime("%Y-%m-%d") for d in date_range]
                 demo_data = []
-                for d in date_range:
+                for d in base_dates:
                     for sev in ["Critical", "High", "Medium", "Low"]:
                         val = int(abs(np.random.normal(30, 20))) if sev == "Low" else int(abs(np.random.normal(5, 5)))
                         demo_data.append({"date": d, "severity": sev, "count": val})
-                merged_df = pd.DataFrame(demo_data)
+                daily_counts = pd.DataFrame(demo_data)
 
-            # Format dates for x-axis
-            merged_df["date"] = pd.to_datetime(merged_df["date"])
-            merged_df["date_str"] = merged_df["date"].dt.strftime("%Y-%m-%d")
-            
             fig_bar = go.Figure()
             colors = {"Critical": "#EF4444", "High": "#F97316", "Medium": "#EAB308", "Low": "#6B7280"}
             
             added_traces = 0
             for sev in ["Critical", "High", "Medium", "Low"]:
-                sev_df = merged_df[merged_df["severity"] == sev].groupby("date_str")["count"].sum().reset_index()
-                if not sev_df.empty and sev_df["count"].sum() > 0:
+                sev_counts = daily_counts[daily_counts["severity"] == sev] if not daily_counts.empty else pd.DataFrame()
+                count_map = dict(zip(sev_counts["date"], sev_counts["count"])) if not sev_counts.empty else {}
+                
+                y_vals = [count_map.get(d, 0) for d in base_dates]
+                
+                if sum(y_vals) > 0 or added_traces == 0:
                     fig_bar.add_trace(go.Bar(
-                        x=sev_df["date_str"], y=sev_df["count"],
+                        x=base_dates, y=y_vals,
                         name=sev, marker_color=colors.get(sev, "#888"),
                         hovertemplate="<b>%{x}</b><br>%{y} " + sev + " Incidents<extra></extra>"
                     ))
                     added_traces += 1
-            
-            # Failsafe if the database somehow has zero severity counts matched
-            if added_traces == 0:
-                fig_bar.add_trace(go.Bar(
-                    x=merged_df["date_str"].unique(), y=[0]*len(merged_df["date_str"].unique()),
-                    showlegend=False, marker_color="rgba(0,0,0,0)"
-                ))
 
             fig_bar.update_layout(
                 **DARK_LAYOUT, height=270,
-                barmode="stack",
-                title=dict(text="Historical Incident Timeline (Dec 30, 2025 - Present)", font=dict(size=13, color="#E8E8EF"), x=0),
-                legend=dict(orientation="h", y=-0.2, font=dict(size=10, color="#888")),
+                barmode="stack", bargap=0.3,
+                title=dict(text="Historical Incident Timeline (Dec 30, 2025 - Present)", font=dict(size=13, color="#E8E8EF"), x=0, y=0.95),
+                legend=dict(orientation="h", y=1.15, x=0.5, xanchor="center", font=dict(size=10, color="#888")),
                 xaxis=dict(
                     showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending",
-                    tickformat="%b %d, %Y", tickangle=-45
+                    tickformat="%b %d, %Y"
                 ),
                 yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Incident Count", rangemode="tozero")
             )
