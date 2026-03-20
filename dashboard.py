@@ -107,9 +107,9 @@ user_is_admin = is_admin() if logged_in else False
 if not logged_in:
     # ── Not logged in: only show Login & Register ──
     pg = st.navigation({
-        "Account": [
-            st.Page("pages/_Login.py", title="Login"),
-            st.Page("pages/_Register.py", title="Register"),
+        "Authentication": [
+            st.Page("pages/_Login.py", title="Login", icon="🔒"),
+            st.Page("pages/_Register.py", title="Register", icon="📝"),
         ],
     }, position="sidebar")
 
@@ -117,36 +117,36 @@ elif user_is_admin:
     # ── Admin: full access to all pages ──
     pg = st.navigation({
         "🚨 CORE INVESTIGATION WORKFLOW 🚨": [
-            st.Page("pages/01_Dashboard.py", title="SOC Dashboard", default=True),
-            st.Page("pages/02_Alert_Triage.py", title="Alert Triage"),
-            st.Page("pages/03_Investigation.py", title="Investigation"),
-            st.Page("pages/04_SOAR_Response.py", title="SOAR Response"),
-            st.Page("pages/05_Executive_Report.py", title="Executive Report"),
+            st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon="🌍", default=True),
+            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon="🚨"),
+            st.Page("pages/03_Investigation.py", title="Investigation", icon="🔎"),
+            st.Page("pages/04_SOAR_Response.py", title="SOAR Response", icon="⚡"),
+            st.Page("pages/05_Executive_Report.py", title="Executive Report", icon="📉"),
         ],
         "Dashboards & Monitoring": [
-            st.Page("pages/00_User_Guide.py", title="User Guide"),
-            st.Page("pages/02_Executive.py", title="Executive Overview"),
-            st.Page("pages/04_Logs.py", title="Logs"),
-            st.Page("pages/05_Timeline.py", title="Timeline"),
-            st.Page("pages/24_SIEM.py", title="SIEM"),
+            st.Page("pages/00_User_Guide.py", title="User Guide", icon="📖"),
+            st.Page("pages/02_Executive.py", title="Executive Overview", icon="👔"),
+            st.Page("pages/04_Logs.py", title="Raw Logs", icon="📜"),
+            st.Page("pages/05_Timeline.py", title="Global Timeline", icon="⏱️"),
+            st.Page("pages/24_SIEM.py", title="SIEM Console", icon="🛡️"),
         ],
         "Threat Intelligence": [
-            st.Page("pages/06_Threat_Intel.py", title="Threat Intel"),
-            st.Page("pages/07_Geo_Predictions.py", title="Geo Predictions"),
-            st.Page("pages/08_Kill_Chain.py", title="Kill Chain"),
-            st.Page("pages/09_OSINT_Feeds.py", title="OSINT Feeds"),
-            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt"),
+            st.Page("pages/06_Threat_Intel.py", title="Threat Intel Feed", icon="🦠"),
+            st.Page("pages/07_Geo_Predictions.py", title="Geo Predictions", icon="🗺️"),
+            st.Page("pages/08_Kill_Chain.py", title="MITRE Kill Chain", icon="⛓️"),
+            st.Page("pages/09_OSINT_Feeds.py", title="OSINT Sources", icon="📡"),
+            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunting", icon="🎯"),
         ],
         "Advanced AI Analysis": [
-            st.Page("pages/11_Analysis.py", title="ML Insights"),
-            st.Page("pages/26_RL_Adaptive.py", title="RL Adaptive"),
-            st.Page("pages/27_Federated_Learning.py", title="Federated Learning"),
+            st.Page("pages/11_Analysis.py", title="ML Insights", icon="🧠"),
+            st.Page("pages/26_RL_Adaptive.py", title="RL Adaptive Defense", icon="🤖"),
+            st.Page("pages/27_Federated_Learning.py", title="Federated Learning", icon="🌐"),
         ],
         "Operations & Settings": [
-            st.Page("pages/15_Scanners.py", title="Scanners"),
-            st.Page("pages/21_CORTEX.py", title="CORTEX AI"),
-            st.Page("pages/25_Firewall_Control.py", title="Firewall Control"),
-            st.Page("pages/06_Settings.py", title="Platform Settings"),
+            st.Page("pages/15_Scanners.py", title="Network Scanners", icon="🔭"),
+            st.Page("pages/21_CORTEX.py", title="CORTEX Assistant", icon="👁️‍🗨️"),
+            st.Page("pages/25_Firewall_Control.py", title="Firewall Control", icon="🧱"),
+            st.Page("pages/06_Settings.py", title="Platform Settings", icon="⚙️"),
         ],
     }, position="sidebar")
 
@@ -154,16 +154,16 @@ else:
     # ── Regular user: clean, limited sidebar ──
     pg = st.navigation({
         "🚨 CORE INVESTIGATION WORKFLOW 🚨": [
-            st.Page("pages/01_Dashboard.py", title="SOC Dashboard", default=True),
-            st.Page("pages/02_Alert_Triage.py", title="Alert Triage"),
-            st.Page("pages/03_Investigation.py", title="Investigation"),
-            st.Page("pages/04_SOAR_Response.py", title="SOAR Response"),
+            st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon="🌍", default=True),
+            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon="🚨"),
+            st.Page("pages/03_Investigation.py", title="Investigation", icon="🔎"),
+            st.Page("pages/04_SOAR_Response.py", title="SOAR Response", icon="⚡"),
         ],
         "Additional Context": [
-            st.Page("pages/00_User_Guide.py", title="User Guide"),
-            st.Page("pages/04_Logs.py", title="Logs"),
-            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunt"),
-            st.Page("pages/11_Analysis.py", title="ML Insights"),
+            st.Page("pages/00_User_Guide.py", title="User Guide", icon="📖"),
+            st.Page("pages/04_Logs.py", title="Raw Logs", icon="📜"),
+            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunting", icon="🎯"),
+            st.Page("pages/11_Analysis.py", title="ML Insights", icon="🧠"),
         ],
     }, position="sidebar")
 
