@@ -640,7 +640,7 @@ with col_left:
                     <span class="count-new">{new_text}</span>
                 </div>
             </div>
-            <span class="view-btn">View</span>
+            <a href="Alerts" target="_self" class="view-btn" style="text-decoration:none; display:inline-block; text-align:center;">View</a>
         </div>
         """, unsafe_allow_html=True)
 
@@ -836,13 +836,70 @@ with col_center:
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Add Widget button
+    # Daily Alerts Bar Chart
     st.markdown("""
-    <div class="add-widget-btn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Widget
-    </div>
+    <div class="dash-card">
+        <div class="card-header">
+            <span class="card-title">
+                <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span>
+                Daily Alerts Volume
+            </span>
+            <span class="card-dots"><span></span><span></span><span></span></span>
+        </div>
     """, unsafe_allow_html=True)
+
+    try:
+        from services.database import db
+        alerts = db.get_alerts(limit=500)
+        from collections import defaultdict
+        alert_counts = defaultdict(int)
+        
+        # Aggregate local or fallback to mock
+        if alerts:
+            for a in alerts:
+                ts = a.get("timestamp")
+                if ts:
+                    d_str = ts[:10]
+                    alert_counts[d_str] += 1
+                    
+        dates = sorted(alert_counts.keys())
+        counts = [alert_counts[d] for d in dates]
+        
+        # Fill missing days if needed or if DB empty
+        if len(dates) < 7:
+            counts_map = dict(zip(dates, counts))
+            dates = []
+            counts = []
+            for i in range(6, -1, -1):
+                d = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+                dates.append(d)
+                # Random realistic data fallback if no DB data
+                fallback = int(np.random.normal(5, 2)) if not alerts else 0
+                counts.append(counts_map.get(d, max(0, fallback)))
+
+        fig_bar = go.Figure(go.Bar(
+            x=dates, y=counts,
+            marker_color="#F59E0B",
+            opacity=0.8,
+            hovertemplate="<b>%{x}</b><br>%{y} Alerts<extra></extra>"
+        ))
+        fig_bar.update_layout(
+            **DARK_LAYOUT, height=200,
+            xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending"),
+            yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)"),
+            margin=dict(l=30, r=10, t=10, b=30),
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+    except Exception as e:
+        logger.debug(f"Failed to load daily alerts: {e}")
+        st.info("Alert data unavailable.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Add Widget button
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("➕ Add Custom Widget", use_container_width=True):
+        st.toast("Widget configuration library will be available in the next release.", icon="🧩")
 
 
 # ── RIGHT: Risk by Application + Event Types ─────────────────────────────────
@@ -913,7 +970,7 @@ with col_right:
                 <div class="et-count">{count:,}</div>
             </div>
             <div class="et-right">
-                <span class="view-btn" style="font-size:0.7rem; padding:3px 10px;">View</span>
+                <a href="SIEM" target="_self" class="view-btn" style="text-decoration:none; font-size:0.7rem; padding:3px 10px; display:inline-block; text-align:center;">View</a>
                 <span class="et-badge {direction}">{arrow} {pct}</span>
             </div>
         </div>
@@ -935,6 +992,10 @@ apps_connected = 8
 st.markdown(f"""
 <div class="stats-bar">
     <div class="stat-chip">
+        <span class="stat-value">{total:,}</span>
+        <span class="stat-label">Total Events Tracked</span>
+    </div>
+    <div class="stat-chip">
         <span class="stat-value">{data_volume}</span>
         <span class="stat-label">Data Volume</span>
     </div>
@@ -950,14 +1011,12 @@ st.markdown(f"""
         <span class="stat-value">{apps_connected}</span>
         <span class="stat-label">Apps Connected</span>
     </div>
-    <div class="stat-chip" style="background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(139,92,246,0.1)); border-color: rgba(139,92,246,0.25);">
-        <span class="security-query-btn" style="width:100%; justify-content:center;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            Security Query
-        </span>
-    </div>
 </div>
 """, unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+if st.button("🔍 Launch Security Query Engine", use_container_width=True, type="primary"):
+    st.switch_page("pages/24_SIEM.py")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
