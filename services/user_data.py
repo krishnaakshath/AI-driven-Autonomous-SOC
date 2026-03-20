@@ -9,6 +9,9 @@ import json
 import hashlib
 from datetime import datetime
 from typing import Dict, List, Optional, Any
+from services.logger import get_logger
+logger = get_logger("user_data")
+
 
 # Data directory
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
@@ -402,7 +405,8 @@ def check_suspicious_login(user_email: str, current_ip: str = "127.0.0.1") -> Di
             if (now - ts).total_seconds() < 1800 and not h.get('success'):
                 recent_fails += 1
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
     
     if recent_fails >= 3:
         risk_score += 30
@@ -420,7 +424,8 @@ def check_suspicious_login(user_email: str, current_ip: str = "127.0.0.1") -> Di
             if (now - ts).total_seconds() < 3600:
                 recent_ips.add(h.get('ip_address', ''))
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
     
     if len(recent_ips) > 3:
         risk_score += 15

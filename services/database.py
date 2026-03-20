@@ -10,6 +10,9 @@ import os
 import requests
 from datetime import datetime
 from typing import Dict, List, Optional
+from services.logger import get_logger
+logger = get_logger("database")
+
 
 # Load .env file if present (supports python-dotenv or manual parsing)
 try:
@@ -38,7 +41,8 @@ try:
     SUPABASE_URL = st.secrets.get("SUPABASE_URL")
     SUPABASE_KEY = st.secrets.get("SUPABASE_KEY")
 except Exception:
-    pass
+
+    logger.debug("Suppressed exception", exc_info=True)
 
 if not SUPABASE_URL:
     SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -53,7 +57,8 @@ if not SUPABASE_URL:
             SUPABASE_URL = config.get("SUPABASE_URL")
             SUPABASE_KEY = config.get("SUPABASE_KEY")
     except Exception:
-        pass
+
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 class SupabaseClient:
@@ -102,7 +107,7 @@ class SupabaseClient:
             )
             return r.status_code in (200, 201, 204, 409)
         except Exception as e:
-            print(f"[DB] Supabase insert error: {e}")
+            logger.warning("[DB] Supabase insert: %s", e)
             return False
     
     def select(self, table, params=None, limit=100, order="timestamp.desc"):
@@ -123,7 +128,7 @@ class SupabaseClient:
                 return r.json()
             return []
         except Exception as e:
-            print(f"[DB] Supabase select error: {e}")
+            logger.warning("[DB] Supabase select: %s", e)
             return []
     
     def count(self, table, filters=None):
@@ -146,7 +151,7 @@ class SupabaseClient:
                     return int(content_range.split("/")[-1])
             return 0
         except Exception as e:
-            print(f"[DB] Supabase count error: {e}")
+            logger.warning("[DB] Supabase count: %s", e)
             return 0
     
     def search(self, table, query, columns, limit=50):
@@ -170,7 +175,7 @@ class SupabaseClient:
                 return r.json()
             return []
         except Exception as e:
-            print(f"[DB] Supabase search error: {e}")
+            logger.warning("[DB] Supabase search: %s", e)
             return []
     
     def rpc(self, function_name, params=None):
@@ -455,13 +460,13 @@ class DatabaseService:
                 if self.bulk_insert_events(events):
                     print(f"[DB] Mass seed: Inserted {i + batch_size}/{needed} events")
                 else:
-                    print(f"[DB] Mass seed failed at {i + batch_size}/{needed}")
+                    logger.warning("[DB] Mass seed failed: %s", needed)
                     return False
             
             print("[DB] Mass seed complete.")
             return True
         except Exception as e:
-            print(f"[DB] Mass seed error: {e}")
+            logger.warning("[DB] Mass seed: %s", e)
             return False
 
 # Singleton instance

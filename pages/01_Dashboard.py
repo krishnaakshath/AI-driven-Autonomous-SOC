@@ -19,7 +19,7 @@ try:
     from services.cloud_background import start_cloud_background_service
     start_cloud_background_service()
 except Exception as e:
-    print(f"Failed to start background service: {e}")
+    logger.warning(" failed: %s", e)
 
 # ── Login warning ──
 if st.session_state.get('login_warning'):
@@ -29,12 +29,13 @@ if st.session_state.get('login_warning'):
         + "\n".join(f"- {r}" for r in sus.get('reasons', []))
     )
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# IMPORT THEME (same cyberpunk as all other pages)
-# ═══════════════════════════════════════════════════════════════════════════════
-from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card, COLORS, MOBILE_CSS, empty_state
-st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
-st.markdown(MOBILE_CSS, unsafe_allow_html=True)
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error, COLORS
+from ui.theme import metric_card, section_title
+from services.logger import get_logger
+logger = get_logger("dashboard")
+
+
+init_page("Security Operations Center", "Autonomous threat detection & response platform", particles=False)
 
 # Extra spacing overrides for dashboard only
 st.markdown("""
@@ -207,14 +208,11 @@ try:
     else:
         security_score = 100.0
 except Exception as e:
-    print(f"Stats Engine Error: {e}")
+    logger.warning("Stats Engine: %s", e)
     security_score = max(0, min(100, 100 - avg_risk))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# HEADER — uses same page_header as other pages
-# ═══════════════════════════════════════════════════════════════════════════════
-st.markdown(page_header("Security Operations Center", "Autonomous threat detection & response platform"), unsafe_allow_html=True)
+
 
 # Status + Controls — spread out
 st.markdown('<div style="height: 0.5rem;"></div>', unsafe_allow_html=True)
@@ -260,7 +258,8 @@ try:
 </div>
     """, unsafe_allow_html=True)
 except Exception:
-    pass
+
+    logger.debug("Suppressed exception", exc_info=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # KPI CARDS & INTERACTIVE DRILL-DOWNS
@@ -588,22 +587,8 @@ with gc:
     )
     st.plotly_chart(fig_g, use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # FOOTER
-# ═══════════════════════════════════════════════════════════════════════════════
-st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-st.markdown("---")
-st.markdown("""
-<div style="text-align:center; color:#555; padding:0.5rem; font-family:'Share Tech Mono',monospace; font-size:0.8rem;">
-    // AI-DRIVEN AUTONOMOUS SOC // ZERO TRUST PLATFORM // RL-POWERED INTELLIGENCE //
-</div>
-""", unsafe_allow_html=True)
-
-try:
-    from ui.chat_interface import inject_floating_cortex_link
-    inject_floating_cortex_link()
-except Exception:
-    pass
+page_footer("Dashboard")
 
 if auto_refresh:
     time.sleep(30)

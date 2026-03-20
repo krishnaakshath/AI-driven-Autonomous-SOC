@@ -7,6 +7,9 @@ import os
 from datetime import datetime
 from typing import List, Dict, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from services.logger import get_logger
+logger = get_logger("scanner")
+
 
 
 class SecurityScanner:
@@ -91,7 +94,8 @@ class SecurityScanner:
                 result["alive"] = True
                 result["response_time"] = round((end - start) * 1000, 2)
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
         
         return result
     

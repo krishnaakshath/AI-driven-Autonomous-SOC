@@ -9,6 +9,9 @@ import os
 import json
 from datetime import datetime
 from typing import List, Dict, Optional
+from services.logger import get_logger
+logger = get_logger("firewall_shim")
+
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 BLOCKLIST_FILE = os.path.join(DATA_DIR, "firewall_blocklist.json")
@@ -67,7 +70,8 @@ class FirewallShim:
                 "status": "Resolved",
             })
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
         return True
 
     def unblock_ip(self, ip: str) -> bool:

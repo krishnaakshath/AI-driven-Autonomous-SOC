@@ -3,6 +3,9 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import List, Dict, Tuple, Optional
 import math
+from services.logger import get_logger
+logger = get_logger("stats_engine")
+
 
 class StatisticalEngine:
     """

@@ -15,6 +15,7 @@ except st.errors.StreamlitAPIException:
     pass  # Already set by dashboard.py
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 from ui.theme import MOBILE_CSS
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
@@ -27,6 +28,9 @@ st.markdown(page_header("Security Reports", "Generate comprehensive IEEE-format 
 
 # Get real report stats
 import glob
+from services.logger import get_logger
+logger = get_logger("reports_page")
+
 report_files = glob.glob("reports/*.pdf") + glob.glob("reports/*.txt")
 total_reports = len(report_files)
 # Count reports from last 7 days
@@ -37,7 +41,8 @@ for rf in report_files:
         if mtime > datetime.now() - timedelta(days=7):
             recent_reports += 1
     except Exception:
-        pass
+
+        logger.debug("Suppressed exception", exc_info=True)
 
 c1, c2, c3, c4 = st.columns(4)
 with c1:
@@ -283,8 +288,4 @@ with tab3:
     except ImportError:
         st.warning("Weekly reporter module not available.")
 
-st.markdown("---")
-st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Reports</p></div>', unsafe_allow_html=True)
-from ui.chat_interface import inject_floating_cortex_link
-inject_floating_cortex_link()
-
+page_footer("Reports")

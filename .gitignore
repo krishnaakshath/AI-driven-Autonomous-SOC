@@ -46,3 +46,4 @@ logs/
 
 # Reports
 reports/
+ui/__pycache__/

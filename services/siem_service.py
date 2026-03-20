@@ -11,6 +11,9 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from services.database import db
+from services.logger import get_logger
+logger = get_logger("siem")
+
 
 class SIEMService:
     """Centralized SIEM service for log aggregation and event correlation."""
@@ -41,14 +44,16 @@ class SIEMService:
             try:
                 self.ingest_live_threats(limit=50)
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
             
         # Periodically pull fresh OSINT threat intelligence (20% chance)
         if random.random() < 0.2:
             try:
                 self.ingest_live_threats(limit=10)
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
                 
         return db.get_recent_events(limit=count)
 
@@ -99,7 +104,8 @@ class SIEMService:
                     if ml_result:
                         event["ml_anomaly_score"] = ml_result[0].get("anomaly_score", 0)
                 except Exception:
-                    pass
+
+                    logger.debug("Suppressed exception", exc_info=True)
                 
                 try:
                     from ml_engine.fuzzy_clustering import fuzzy_clustering
@@ -107,13 +113,15 @@ class SIEMService:
                     if ml_class:
                         event["ml_classification"] = ml_class[0].get("predicted_label", "Unknown")
                 except Exception:
-                    pass
+
+                    logger.debug("Suppressed exception", exc_info=True)
                 
                 try:
                     from ml_engine.neural_predictor import add_security_event
                     add_security_event("firewall_block", severity="high")
                 except Exception:
-                    pass
+
+                    logger.debug("Suppressed exception", exc_info=True)
                 
                 # ── RL ADAPTIVE CLASSIFICATION ──
                 try:
@@ -124,7 +132,8 @@ class SIEMService:
                     # Auto-reward using IF anomaly score as ground truth
                     rl_classifier.auto_reward(event, rl_result)
                 except Exception:
-                    pass
+
+                    logger.debug("Suppressed exception", exc_info=True)
                 
                 events_to_insert.append(event)
                 
@@ -200,7 +209,8 @@ class SIEMService:
                     if hour < 6 or hour > 20:
                         users[user]["after_hours"] += 1
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
         
         # Convert to list with risk scores from ML or Fallback
         result = []

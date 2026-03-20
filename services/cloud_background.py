@@ -4,6 +4,9 @@ import time
 import streamlit as st
 from services.siem_service import siem_service
 from datetime import datetime
+from services.logger import get_logger
+logger = get_logger("cloud_bg")
+
 
 # Global flag to control the thread
 _STOP_FLAG = False
@@ -42,7 +45,7 @@ def _run_ml_retrain():
         else:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] Not enough live data for retrain ({len(live_events) if live_events else 0} events)")
     except Exception as e:
-        print(f"[CLOUD-BG] ML retrain error: {e}")
+        logger.warning("[CLOUD-BG] ML retrain: %s", e)
 
 def _run_weekly_report():
     """Check if weekly report is due and generate if so."""
@@ -57,7 +60,7 @@ def _run_weekly_report():
             else:
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] Weekly report generation returned None")
     except Exception as e:
-        print(f"[CLOUD-BG] Weekly report error: {e}")
+        logger.warning("[CLOUD-BG] Weekly report: %s", e)
 
 def _run_rl_training():
     """Run autonomous RL self-learning cycle on recent events — all 6 agents."""
@@ -98,10 +101,10 @@ def _run_rl_training():
             print(f"[{datetime.now().strftime('%H:%M:%S')}] [CLOUD-BG] RL domain agents: "
                   f"5 agents trained on {min(15, len(recent_events))} events each")
         except Exception as e:
-            print(f"[CLOUD-BG] RL domain agents error: {e}")
+            logger.warning("[CLOUD-BG] RL domain agents: %s", e)
 
     except Exception as e:
-        print(f"[CLOUD-BG] RL training error: {e}")
+        logger.warning("[CLOUD-BG] RL training: %s", e)
 
 def _run_continuous_ingestion():
     """
@@ -113,7 +116,7 @@ def _run_continuous_ingestion():
     try:
         siem_service.ingest_live_threats(limit=20)
     except Exception as e:
-        print(f"[CLOUD-BG] Initial seed failed: {e}")
+        logger.warning("[CLOUD-BG] Initial seed failed: %s", e)
 
     cycle_count = 0
     while not _STOP_FLAG:

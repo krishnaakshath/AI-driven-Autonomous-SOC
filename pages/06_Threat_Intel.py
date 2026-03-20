@@ -15,6 +15,7 @@ except st.errors.StreamlitAPIException:
     pass  # Already set by dashboard.py
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 from ui.theme import MOBILE_CSS
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
@@ -340,7 +341,8 @@ with col1:
                 rl_c = {"MONITOR": "#00C853", "ELEVATED": "#FF8C00", "CRITICAL": "#FF0040"}.get(rl_action, "#888")
                 rl_badge = f'<span style="border:1px solid {rl_c}; color:{rl_c}; padding:1px 6px; border-radius:3px; font-size:0.6rem; font-weight:700; margin-left:6px;">RL:{rl_action}</span>'
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
 
         st.markdown(f"""
 <div class="glass-card" style="margin: 0.5rem 0; padding: 1rem; border-left: 3px solid {color};">
@@ -379,7 +381,8 @@ with col2:
                 if any(kw in evt_text for kw in keywords):
                     siem_attack_counts[attack] = siem_attack_counts.get(attack, 0) + 1
     except Exception:
-        pass
+
+        logger.debug("Suppressed exception", exc_info=True)
     
     attack_types = [
         ("Port Scanning", "#00f3ff", siem_attack_counts.get("Port Scanning", 0)),
@@ -456,7 +459,9 @@ try:
 except Exception as e:
     st.error(f"Error connecting to AlienVault OTX: {e}")
 
-st.markdown("---")
-st.markdown('<div style="text-align: center; color: #666; font-family: Share Tech Mono, monospace; font-size: 0.8rem;">// AI-DRIVEN AUTONOMOUS SOC // THREAT INTELLIGENCE MODULE //</div>', unsafe_allow_html=True)
+page_footer("Threat Intelligence")
 from ui.chat_interface import inject_floating_cortex_link
+from services.logger import get_logger
+logger = get_logger("ti_page")
+
 inject_floating_cortex_link()

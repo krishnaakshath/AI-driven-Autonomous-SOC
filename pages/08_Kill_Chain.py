@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ui.theme import CYBERPUNK_CSS
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 from services.database import db
 
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)

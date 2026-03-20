@@ -3,6 +3,9 @@ import json
 from datetime import datetime
 import uuid
 from typing import Dict, List, Optional, Tuple
+from services.logger import get_logger
+logger = get_logger("firewall")
+
 
 class FirewallService:
     """
@@ -88,7 +91,7 @@ class FirewallService:
             db.insert_alert(alert)
             
         except Exception as e:
-            print(f"Firewall logging error: {e}")
+            logger.warning("Firewall logging: %s", e)
 
     def check_request(self, params: Dict, source_ip: str = "127.0.0.1") -> bool:
         """
@@ -104,7 +107,8 @@ class FirewallService:
             if source_ip in shunned_ips:
                 return False
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
 
         # 2. Scan payloads
         for key, value in params.items():

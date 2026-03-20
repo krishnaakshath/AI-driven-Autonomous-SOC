@@ -9,6 +9,9 @@ import os
 import json
 from datetime import datetime
 from typing import Optional, Dict, List
+from services.logger import get_logger
+logger = get_logger("audit")
+
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 AUDIT_FILE = os.path.join(DATA_DIR, "audit_log.json")
@@ -78,7 +81,7 @@ class AuditLogger:
             with open(AUDIT_FILE, "w") as f:
                 json.dump(entries, f, indent=2)
         except Exception as e:
-            print(f"Audit file write error: {e}")
+            logger.warning("Audit file write: %s", e)
 
     def _write_to_db(self, entry: Dict):
         try:
@@ -96,7 +99,8 @@ class AuditLogger:
                 "status": "Logged",
             })
         except Exception:
-            pass  # DB logging is best-effort
+
+            logger.debug("Suppressed exception", exc_info=True)  # DB logging is best-effort
 
     def _load_file(self) -> List[Dict]:
         if not os.path.exists(AUDIT_FILE):

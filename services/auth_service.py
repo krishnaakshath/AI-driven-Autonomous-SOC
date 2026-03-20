@@ -20,6 +20,9 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 import streamlit as st
+from services.logger import get_logger
+logger = get_logger("auth")
+
 
 # Data file path
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
@@ -76,7 +79,8 @@ class AuthService:
                         with open(backup, 'r') as f:
                             return json.load(f)
                     except Exception:
-                        pass
+
+                        logger.debug("Suppressed exception", exc_info=True)
                 print(f"[AUTH] Warning: corrupted users.json: {e}")
         return {}
     
@@ -98,7 +102,8 @@ class AuthService:
                     import shutil
                     shutil.copy2(USERS_FILE, backup)
                 except Exception:
-                    pass
+
+                    logger.debug("Suppressed exception", exc_info=True)
             # Atomic rename
             os.replace(tmp_path, USERS_FILE)
         except Exception as e:
@@ -291,7 +296,8 @@ class AuthService:
                 with open(SESSIONS_FILE, 'r') as f:
                     return json.load(f)
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
         return {}
     
     def _save_sessions(self, sessions: Dict):
@@ -453,7 +459,8 @@ class AuthService:
                     gmail_user = st.secrets.get('GMAIL_USER')
                     gmail_password = st.secrets.get('GMAIL_APP_PASSWORD')
                 except Exception:
-                    pass
+
+                    logger.debug("Suppressed exception", exc_info=True)
             
             # 3. Check .soc_config.json file (multiple paths for different deployment scenarios)
             if not gmail_user or not gmail_password:
@@ -515,7 +522,7 @@ class AuthService:
             return 'sent'  # Email was actually delivered
             
         except Exception as e:
-            print(f"Email error: {e}")
+            logger.warning("Email: %s", e)
             print(f"[FALLBACK] OTP for {email}: {otp}")
             return 'fallback'  # Signal that email was NOT sent
     
@@ -567,7 +574,7 @@ class AuthService:
             print("[ERROR] Twilio library not installed. Run: pip install twilio")
             return False
         except Exception as e:
-            print(f"SMS error: {e}")
+            logger.warning("SMS: %s", e)
             return False
     
     def _send_otp_whatsapp(self, phone: str, otp: str) -> bool:
@@ -594,7 +601,7 @@ class AuthService:
             return True
             
         except Exception as e:
-            print(f"WhatsApp error: {e}")
+            logger.warning("WhatsApp: %s", e)
             return False
     
     def get_user(self, email: str) -> Optional[Dict]:
@@ -794,7 +801,8 @@ def check_persistent_session():
     try:
         token = st.query_params.get('session_token')
     except Exception:
-        pass
+
+        logger.debug("Suppressed exception", exc_info=True)
     
     # 2. Fall back to local token file (works locally)
     if not token:
@@ -804,7 +812,8 @@ def check_persistent_session():
                 with open(token_file, 'r') as f:
                     token = f.read().strip()
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
     
     if token:
         email = auth_service.validate_session(token)
@@ -834,7 +843,8 @@ def login_user(email: str, remember: bool = False):
     try:
         st.query_params['session_token'] = token
     except Exception:
-        pass
+
+        logger.debug("Suppressed exception", exc_info=True)
     
     # Also save to local file for persistence across restarts
     try:
@@ -842,7 +852,8 @@ def login_user(email: str, remember: bool = False):
         with open(token_file, 'w') as f:
             f.write(token)
     except Exception:
-        pass  # May fail on read-only filesystems (Cloud)
+
+        logger.debug("Suppressed exception", exc_info=True)  # May fail on read-only filesystems (Cloud)
 
 
 def get_user_preferences() -> Dict:
@@ -899,7 +910,8 @@ def logout():
         if 'session_token' in st.query_params:
             del st.query_params['session_token']
     except Exception:
-        pass
+
+        logger.debug("Suppressed exception", exc_info=True)
         
     # Clear local token file
     token_file = os.path.join(DATA_DIR, '.session_token')
@@ -907,7 +919,8 @@ def logout():
         try:
             os.remove(token_file)
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def require_auth():

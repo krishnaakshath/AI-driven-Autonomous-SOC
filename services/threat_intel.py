@@ -5,6 +5,9 @@ import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import time
+from services.logger import get_logger
+logger = get_logger("threat_intel")
+
 
 CACHE_FILE = ".threat_intel_cache.json"
 CACHE_DURATION = 300  # 5 minutes — keep data fresh
@@ -46,7 +49,8 @@ def load_config():
             with open(CONFIG_FILE, 'r') as f:
                 return json.load(f)
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
     return {}
 
 
@@ -72,7 +76,8 @@ class ThreatIntelligence:
                 with open(CACHE_FILE, 'r') as f:
                     return json.load(f)
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
         return {}
     
     def _save_cache(self):
@@ -339,7 +344,8 @@ class ThreatIntelligence:
                 self._save_cache()
                 return result
         except Exception as e:
-            pass
+
+            logger.debug("Suppressed: %s", e)
         
         return self._get_public_otx_pulses()
 
@@ -362,7 +368,8 @@ class ThreatIntelligence:
                     'indicators': len(p.get('indicators', []))
                 } for p in pulses]
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
         return []
 
     def get_recent_indicators(self, limit: int = 50) -> List[Dict]:
@@ -445,7 +452,8 @@ class ThreatIntelligence:
                 self._save_cache()
                 return result
         except Exception as e:
-            pass
+
+            logger.debug("Suppressed: %s", e)
         
         return {
             'last_updated': datetime.now().isoformat(),

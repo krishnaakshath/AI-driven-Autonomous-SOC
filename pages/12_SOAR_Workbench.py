@@ -11,6 +11,10 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, metric_card, MOBILE_CSS, empty_state
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
+from services.logger import get_logger
+logger = get_logger("soar_page")
+
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()
@@ -51,7 +55,8 @@ for a in all_alerts:
             t2 = datetime.fromisoformat(str(resolved_at).replace("Z", "+00:00"))
             response_times.append((t2 - t1).total_seconds() / 60)
         except Exception:
-            pass
+
+            logger.debug("Suppressed exception", exc_info=True)
 
 avg_response = f"{round(np.mean(response_times), 1)}m" if response_times else f"{round(3.5 + resolved_count * 0.01, 1)}m"
 
@@ -122,7 +127,8 @@ with col_exec:
                     rl_c = act_colors.get(rl_action, "#00D4FF")
                     rl_html = f'<div style="margin-top:0.4rem;"><span style="border:1px solid {rl_c}; color:{rl_c}; padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:700;">RL: {rl_action} ({rl_conf}%)</span></div>'
                 except Exception:
-                    pass
+
+                    logger.debug("Suppressed exception", exc_info=True)
 
             details_text = str(inc.get('details') or 'No details')[:80]
             st.markdown(f"""
@@ -237,4 +243,5 @@ try:
     from ui.chat_interface import inject_floating_cortex_link
     inject_floating_cortex_link()
 except Exception:
-    pass
+
+    logger.debug("Suppressed exception", exc_info=True)

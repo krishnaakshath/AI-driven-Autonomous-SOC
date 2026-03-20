@@ -13,6 +13,7 @@ except st.errors.StreamlitAPIException:
     pass  # Already set by dashboard.py
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 from ui.theme import MOBILE_CSS
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
@@ -370,5 +371,4 @@ with tab4:
     csv = df.to_csv(index=False)
     st.download_button(" Export Hunt History", csv, "hunt_history.csv", "text/csv")
 
-st.markdown("---")
-st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Threat Hunting</p></div>', unsafe_allow_html=True)
+page_footer("Threat Hunt")

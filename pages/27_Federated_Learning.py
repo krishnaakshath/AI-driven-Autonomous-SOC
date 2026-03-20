@@ -9,6 +9,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
+
 # Import FL engine
 FL_LOADED = False
 try:

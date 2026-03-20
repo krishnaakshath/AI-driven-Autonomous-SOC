@@ -7,6 +7,7 @@ import plotly.express as px
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 from ui.theme import MOBILE_CSS
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)

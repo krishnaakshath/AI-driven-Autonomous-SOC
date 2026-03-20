@@ -16,6 +16,10 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, alert_card, section_title, empty_state, COLORS, MOBILE_CSS
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
+from services.logger import get_logger
+logger = get_logger("alerts_page")
+
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()
@@ -65,7 +69,8 @@ def get_alerts():
                     details = json.loads(alert_dict['details'])
                     alert_dict.update(details)  # Merge details into main dict
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
             
             # Ensure required columns exist with defaults
             defaults = {
@@ -255,7 +260,8 @@ with tabs[0]:
                 rl_label = rl_action.split("-")[0]
                 rl_badge = f'<span style="border:1px solid {rl_color}; color:{rl_color}; padding:1px 6px; border-radius:3px; font-size:0.65rem; font-weight:700; margin-left:6px;" title="RL Confidence: {rl_conf}%">RL:{rl_label}</span>'
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Use Streamlit columns to mix an interactive checkbox with the HTML row
         row_c1, row_c2 = st.columns([0.03, 0.97])
@@ -296,7 +302,4 @@ with tabs[2]:
         fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FAFAFA")
         st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("---")
-st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | SIEM-Powered Alerts</p></div>', unsafe_allow_html=True)
-from ui.chat_interface import inject_floating_cortex_link
-inject_floating_cortex_link()
+page_footer("Alerts")

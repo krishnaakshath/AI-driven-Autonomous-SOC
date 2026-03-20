@@ -17,6 +17,7 @@ import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title, empty_state, MOBILE_CSS
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()

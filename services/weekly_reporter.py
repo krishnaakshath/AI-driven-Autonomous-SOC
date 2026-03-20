@@ -11,6 +11,9 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 import logging
+from services.logger import get_logger
+logger = get_logger("reporter")
+
 
 logger = logging.getLogger(__name__)
 

@@ -7,6 +7,9 @@ import threading
 from datetime import datetime
 from typing import List, Dict, Optional
 import sys
+from services.logger import get_logger
+logger = get_logger("live_monitor")
+
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

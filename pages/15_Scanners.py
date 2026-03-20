@@ -15,8 +15,12 @@ except st.errors.StreamlitAPIException:
     pass  # Already set by dashboard.py
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 from ui.theme import MOBILE_CSS
+from services.logger import get_logger
+logger = get_logger("scanners_page")
+
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 inject_particles()
 
@@ -95,7 +99,8 @@ with tab2:
             try:
                 VT_KEY = st.secrets.get('virustotal_api_key', '')
             except Exception:
-                pass
+
+                logger.debug("Suppressed exception", exc_info=True)
         
         # Hardcoded fallback for deployment (your API key)
         if not VT_KEY:
@@ -257,7 +262,4 @@ with tab4:
                     st.rerun()
         st.markdown("<br>", unsafe_allow_html=True)
 
-st.markdown("---")
-st.markdown('<div style="text-align: center; color: #8B95A5;"><p>AI-Driven Autonomous SOC | Scanners</p></div>', unsafe_allow_html=True)
-from ui.chat_interface import inject_floating_cortex_link
-inject_floating_cortex_link()
+page_footer("Scanners")

@@ -12,6 +12,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from ui.theme import CYBERPUNK_CSS
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 
 # Session state for manual/auto refresh
 if 'geo_refresh' not in st.session_state:

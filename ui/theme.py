@@ -38,35 +38,11 @@ CYBERPUNK_CSS = """
     }
     
     /* ═══════════════════════════════════════════════════════════════════════════
-       HIDE LOGIN/REGISTER FROM SIDEBAR GLOBALLY
+       HIDE LOGIN/REGISTER FROM SIDEBAR
+       Note: Nav control is also enforced at app logic level via require_auth()
     ═══════════════════════════════════════════════════════════════════════════ */
-    /* Hide Login and Register pages from sidebar navigation - multiple selectors for Streamlit versions */
-    
-    /* Target by href containing Login or Register */
     [data-testid="stSidebarNav"] a[href*="Login"],
-    [data-testid="stSidebarNav"] a[href*="Register"],
-    [data-testid="stSidebarNav"] a[href*="_Login"],
-    [data-testid="stSidebarNav"] a[href*="_Register"] {
-        display: none !important;
-    }
-    
-    /* Target parent li elements */
-    [data-testid="stSidebarNav"] li:has(a[href*="Login"]),
-    [data-testid="stSidebarNav"] li:has(a[href*="Register"]) {
-        display: none !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* Target by span text content for newer Streamlit versions */
-    [data-testid="stSidebarNav"] span:where(:is([class*="css"])):has(+ :is(*)):not(:empty) {
-        /* This targets the structure dynamically */
-    }
-    
-    /* Fallback: hide any element containing LOGIN or REGISTER text via attribute */
-    a[href$="Login"], a[href$="Register"],
-    a[href$="_Login"], a[href$="_Register"] {
+    [data-testid="stSidebarNav"] a[href*="Register"] {
         display: none !important;
     }
 

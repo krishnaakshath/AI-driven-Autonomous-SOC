@@ -59,6 +59,7 @@ if "cortex_messages" not in st.session_state:
 # Premium Full-Page Styling
 # --- PREMIUM THEME INJECTION ---
 from ui.theme import CYBERPUNK_CSS, inject_particles, status_indicator
+from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
 st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
 inject_particles()
 
