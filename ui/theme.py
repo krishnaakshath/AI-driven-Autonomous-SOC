@@ -71,18 +71,91 @@ CYBERPUNK_CSS = """
         text-transform: uppercase;
     }
     
-    /* Sidebar navigation - exclude toggle button */
-    section[data-testid="stSidebar"] *:not(button):not(button *) {
-        font-family: 'Rajdhani', sans-serif !important;
-    }
+    /* Custom Minimal Sidebar (Icon-Only Nightfall Theme) */
     
-    section[data-testid="stSidebar"] .stMarkdown p,
-    section[data-testid="stSidebar"] a {
-        font-family: 'Orbitron', sans-serif !important;
-        font-size: 0.85rem !important;
-        letter-spacing: 1px;
-        text-transform: uppercase;
+    /* Lock sidebar width */
+    [data-testid="stSidebar"] {
+        min-width: 68px !important;
+        max-width: 68px !important;
+        background-color: #12121A !important;
+        border-right: 1px solid rgba(255,255,255,0.05);
+        overflow-x: hidden !important;
     }
+
+    /* Hide the top header & sidebar toggle button */
+    header[data-testid="stHeader"] {
+        display: none !important;
+    }
+    [data-testid="stSidebarCollapseButton"] {
+        display: none !important;
+    }
+
+    /* Hide text from links */
+    [data-testid="stSidebarNavItems"] [data-testid="stSidebarNavLink"] span {
+        display: none !important;
+    }
+
+    /* Link container styling */
+    [data-testid="stSidebarNavLink"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        height: 48px !important;
+        padding: 0 !important;
+        margin-bottom: 12px !important;
+        color: #888 !important;
+        background-color: transparent !important;
+        border-radius: 0 !important;
+        position: relative;
+        text-decoration: none !important;
+    }
+
+    [data-testid="stSidebarNavLink"]:hover {
+        color: #fff !important;
+        background-color: rgba(255,255,255,0.03) !important;
+    }
+
+    /* Active State (Purple line on left + colored icon) */
+    [aria-selected="true"] {
+        color: #A78BFA !important;
+        background-color: rgba(167, 139, 250, 0.05) !important;
+    }
+
+    [aria-selected="true"]::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 20%;
+        bottom: 20%;
+        width: 3px;
+        background-color: #A78BFA;
+        border-radius: 0 4px 4px 0;
+    }
+
+    /* Inject Material Icons for pages */
+    [data-testid="stSidebarNavLink"]::after {
+        font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+        font-size: 24px;
+        content: 'folder_open'; /* default icon */
+        color: inherit;
+        display: block;
+        text-align: center;
+        width: 100%;
+    }
+
+    /* Map Specific Pages to Icons */
+    a[href$="Dashboard"]::after { content: 'grid_view'; }
+    a[href$="Alerts"]::after { content: 'notifications_active'; }
+    a[href$="Threat_Intel"]::after { content: 'travel_explore'; }
+    a[href$="SIEM"]::after { content: 'table_chart'; }
+    a[href$="Network"]::after { content: 'lan'; }
+    a[href$="Endpoint"]::after { content: 'important_devices'; }
+    a[href$="Users"]::after { content: 'group'; }
+    a[href$="Policies"]::after { content: 'policy'; }
+    a[href$="Reports"]::after { content: 'insert_chart'; }
+    a[href$="Settings"]::after { content: 'settings'; }
+    a[href$="Federated_Learning"]::after { content: 'hub'; }
+    a[href$="RL_Adaptive"]::after { content: 'psychology'; }
     
     /* All text inputs and labels */
     .stTextInput label, .stSelectbox label, .stNumberInput label,
