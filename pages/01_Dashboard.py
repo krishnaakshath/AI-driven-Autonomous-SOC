@@ -898,8 +898,7 @@ with col_center:
                 title=dict(text="Historical Incident Timeline (Past 7 Days)", font=dict(size=13, color="#E8E8EF"), x=0),
                 legend=dict(orientation="h", y=-0.2, font=dict(size=10, color="#888")),
                 xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending"),
-                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Incident Count"),
-                margin=dict(l=40, r=20, t=40, b=40),
+                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Incident Count")
             )
             st.plotly_chart(fig_bar, use_container_width=True)
         except Exception as e:
