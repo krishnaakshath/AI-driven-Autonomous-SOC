@@ -147,7 +147,7 @@ elif user_is_admin:
         "Operations & Settings": [
             st.Page("pages/15_Scanners.py", title="Network Scanners", icon=":material/wifi_find:"),
             st.Page("pages/21_CORTEX.py", title="CORTEX Assistant", icon=":material/forum:"),
-            st.Page("pages/25_Firewall_Control.py", title="Firewall Control", icon=":material/gitea:"),
+            st.Page("pages/25_Firewall_Control.py", title="Firewall Control", icon=":material/admin_panel_settings:"),
             st.Page("pages/06_Settings.py", title="Platform Settings", icon=":material/settings:"),
         ],
     }, position="sidebar")
