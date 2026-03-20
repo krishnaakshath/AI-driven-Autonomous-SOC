@@ -263,13 +263,38 @@ class AuthService:
         
         user = current_users[email]
         
+        # Check if account is locked
+        locked_until_str = user.get("locked_until")
+        if locked_until_str:
+            locked_until = datetime.fromisoformat(locked_until_str)
+            if datetime.now() < locked_until:
+                log_auth_event("Login Failure - Account Locked", "HIGH", email)
+                return False, "Account locked. Try again later.", False
+            else:
+                user["locked_until"] = None
+                user["failed_attempts"] = 0
+        
         if not self._verify_password(password, user["password_hash"], user["password_salt"]):
-            log_auth_event("Login Failure - Bad Password", "HIGH", email)
-            return False, "Invalid email or password", False
+            failed_attempts = user.get("failed_attempts", 0) + 1
+            user["failed_attempts"] = failed_attempts
+            if failed_attempts >= 5:
+                # Lock account for 15 minutes
+                user["locked_until"] = (datetime.now() + timedelta(minutes=15)).isoformat()
+                log_auth_event("Account Locked - Bruteforce Protection", "CRITICAL", email)
+                msg = "Account locked due to too many failed attempts. Try again in 15 minutes."
+            else:
+                log_auth_event("Login Failure - Bad Password", "HIGH", email)
+                msg = "Invalid email or password"
+            self._save_users_data(current_users)
+            return False, msg, False
+        
+        # Reset failed attempts on success
+        user["failed_attempts"] = 0
+        user["locked_until"] = None
         
         # ADMIN/OWNER BYPASS: Admins skip 2FA entirely
         if email in [e.lower() for e in ADMIN_EMAILS]:
-            current_users[email]["last_login"] = datetime.now().isoformat()
+            user["last_login"] = datetime.now().isoformat()
             self._save_users_data(current_users)
             log_auth_event("Login Success (Admin Bypass)", "LOW", email)
             return True, "Admin login successful!", False
@@ -277,10 +302,11 @@ class AuthService:
         # Check if 2FA is enabled for regular users
         if user.get("two_factor_enabled", True):
             log_auth_event("Login Success - Pending 2FA", "LOW", email)
+            self._save_users_data(current_users)
             return True, "Password verified. 2FA required.", True
         
         # Update last login
-        current_users[email]["last_login"] = datetime.now().isoformat()
+        user["last_login"] = datetime.now().isoformat()
         self._save_users_data(current_users)
         
         log_auth_event("Login Success", "LOW", email)
@@ -289,6 +315,35 @@ class AuthService:
     
     # ── Session Management ───────────────────────────────────────────────────
     
+    def _create_db_session(self, token: str, email: str, expiry: str):
+        """Store session in Supabase if available."""
+        from services.database import db
+        if db._use_supabase:
+            try:
+                # Attempt to use a sessions table if it exists
+                db._supabase.insert("sessions", {
+                    "token": token,
+                    "email": email,
+                    "expires": expiry,
+                    "created_at": datetime.now().isoformat()
+                })
+            except Exception:
+                pass
+                
+    def _delete_db_session(self, token: str):
+        """Delete session from Supabase if available."""
+        from services.database import db
+        if db._use_supabase:
+            try:
+                import requests
+                requests.delete(
+                    f"{db._supabase.url}/rest/v1/sessions?token=eq.{token}",
+                    headers=db._supabase.headers,
+                    timeout=5
+                )
+            except Exception:
+                pass
+
     def _load_sessions(self) -> Dict:
         """Load active sessions from disk."""
         if os.path.exists(SESSIONS_FILE):
@@ -296,7 +351,6 @@ class AuthService:
                 with open(SESSIONS_FILE, 'r') as f:
                     return json.load(f)
             except Exception:
-
                 logger.debug("Suppressed exception", exc_info=True)
         return {}
     
@@ -321,11 +375,12 @@ class AuthService:
             "created": datetime.now().isoformat()
         }
         
-        # Clean up expired sessions while we're at it
+        # Clean up expired sessions locally
         now = datetime.now().isoformat()
         sessions = {k: v for k, v in sessions.items() if v['expires'] > now}
         
         self._save_sessions(sessions)
+        self._create_db_session(token, email, expiry)
         return token
     
     def validate_session(self, token: str) -> Optional[str]:
@@ -334,13 +389,32 @@ class AuthService:
             return None
             
         sessions = self._load_sessions()
+        # Fallback to Supabase if not in local cache but Supabase is connected
         if token not in sessions:
+            from services.database import db
+            if db._use_supabase:
+                try:
+                    res = db._supabase.select("sessions", limit=1, params={"token": f"eq.{token}"})
+                    if res and len(res) > 0:
+                        session = res[0]
+                        if datetime.now().isoformat() <= session['expires']:
+                            # Cache it locally
+                            sessions[token] = {
+                                "email": session['email'],
+                                "expires": session['expires'],
+                                "created": session.get('created_at', datetime.now().isoformat())
+                            }
+                            self._save_sessions(sessions)
+                            return session['email']
+                except Exception:
+                    pass
             return None
             
         session = sessions[token]
         if datetime.now().isoformat() > session['expires']:
             del sessions[token]
             self._save_sessions(sessions)
+            self._delete_db_session(token)
             return None
             
         return session['email']
@@ -353,6 +427,7 @@ class AuthService:
         if token in sessions:
             del sessions[token]
             self._save_sessions(sessions)
+        self._delete_db_session(token)
 
     def generate_otp(self, email: str) -> Tuple[bool, str]:
         """

@@ -50,7 +50,7 @@ class TestAuthService(unittest.TestCase):
         self.assertFalse(success)
         self.assertIn("8 characters", msg)
 
-    @patch('services.auth_service.AuthService._save_users')
+    @patch('services.auth_service.AuthService._save_users_data')
     def test_register_success(self, mock_save):
         """Test successful registration."""
         success, msg = self.auth.register("new@user.com", "password123", "New User")
@@ -59,7 +59,7 @@ class TestAuthService(unittest.TestCase):
         mock_save.assert_called_once()
 
     @patch('services.auth_service.AuthService._verify_password')
-    @patch('services.auth_service.AuthService._save_users')
+    @patch('services.auth_service.AuthService._save_users_data')
     def test_login_success(self, mock_save, mock_verify):
         """Test successful login."""
         mock_verify.return_value = True
