@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 try:
     st.set_page_config(
         page_title="Login | SOC",
-        page_icon="🛡️",
+        page_icon="■",
         layout="centered",
         initial_sidebar_state="collapsed"
     )
@@ -34,7 +34,7 @@ try:
         create_oauth_user(oauth_user['email'], oauth_user['name'])
         login_user(oauth_user['email'], remember=True)
         st.session_state.session_start = _time.time()
-        st.success(f"✅ Welcome {oauth_user['name']}")
+        st.success(f"ACCESS GRANTED: Welcome {oauth_user['name']}")
         _time.sleep(0.5)
         st.rerun()
 except (ImportError, ModuleNotFoundError):
@@ -206,9 +206,15 @@ st.markdown("""
     }
 
     .shield-icon {
-        font-size: 3.2rem;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto;
         animation: shieldPulse 3s ease-in-out infinite;
         display: inline-block;
+    }
+    
+    .shield-icon svg {
+        filter: drop-shadow(0 0 10px rgba(0,243,255,0.5));
     }
 
     /* ── Title Styling ── */
@@ -414,7 +420,19 @@ if 'pending_email' not in st.session_state:
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
 <div style="text-align: center; padding: 20px 0 10px 0;" class="float-title">
-    <div class="shield-icon">🛡️</div>
+    <div class="shield-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="#00f3ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="url(#shield_grad)" fill-opacity="0.3"/>
+            <defs>
+                <linearGradient id="shield_grad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00f3ff" />
+                    <stop offset="1" stop-color="#bc13fe" />
+                </linearGradient>
+            </defs>
+            <path d="M9 12L11 14L15 10" stroke="#00f3ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </div>
     <h1 style="
         font-family: 'Orbitron', sans-serif !important;
         font-size: 2.8rem;
@@ -465,7 +483,7 @@ if st.session_state.login_step == 'credentials':
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button("🔐  AUTHENTICATE", type="primary", key="login_btn"):
+    if st.button("AUTHENTICATE", type="primary", key="login_btn"):
         if email and password:
             success, message, requires_2fa = auth_service.login(email, password)
 
@@ -496,9 +514,9 @@ if st.session_state.login_step == 'credentials':
                     log_login_attempt(email, success=False, ip_address="127.0.0.1")
                 except Exception:
                     pass
-                st.error("🚫 " + message)
+                st.error("ACCESS DENIED: " + message)
         else:
-            st.warning("⚠️ Enter credentials")
+            st.warning("Enter credentials")
 
     # ── Google Sign-In Divider & Button ──
     st.markdown("""
@@ -545,11 +563,11 @@ if st.session_state.login_step == 'credentials':
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("✨  CREATE ACCOUNT", key="create_account_btn"):
+    if st.button("CREATE ACCOUNT", key="create_account_btn"):
         st.switch_page("pages/_Register.py")
 
 elif st.session_state.login_step == '2fa_select':
-    st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px; text-align: center;'>🔒 2FA VERIFICATION</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px; text-align: center;'>2FA VERIFICATION</h3>", unsafe_allow_html=True)
     st.markdown("<p style='color: #5a6a7f; text-align: center; font-family: Rajdhani, sans-serif;'>Select your verification method:</p>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
@@ -557,7 +575,9 @@ elif st.session_state.login_step == '2fa_select':
     with col1:
         st.markdown("""
         <div style="text-align: center; padding: 24px 12px; background: rgba(0,243,255,0.06); border-radius: 16px; border: 1px solid rgba(0,243,255,0.15);">
-            <div style="font-size: 2.5rem;">📱</div>
+            <div style="font-size: 2rem; color: #00f3ff; margin-bottom: 8px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+            </div>
             <div style="color: #00f3ff; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; margin-top: 10px; letter-spacing: 1px;">AUTHENTICATOR</div>
         </div>
         """, unsafe_allow_html=True)
@@ -570,12 +590,14 @@ elif st.session_state.login_step == '2fa_select':
                 st.session_state.otp_method = 'totp'
                 st.rerun()
             else:
-                st.warning("⚠️ Authenticator not set up. Please use email then configure in Settings.")
+                st.warning("Authenticator not set up. Please use email then configure in Settings.")
 
     with col2:
         st.markdown("""
         <div style="text-align: center; padding: 24px 12px; background: rgba(188,19,254,0.06); border-radius: 16px; border: 1px solid rgba(188,19,254,0.15);">
-            <div style="font-size: 2.5rem;">✉️</div>
+            <div style="font-size: 2rem; color: #bc13fe; margin-bottom: 8px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            </div>
             <div style="color: #bc13fe; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; margin-top: 10px; letter-spacing: 1px;">EMAIL</div>
         </div>
         """, unsafe_allow_html=True)
@@ -595,7 +617,9 @@ elif st.session_state.login_step == '2fa_select':
     with col3:
         st.markdown("""
         <div style="text-align: center; padding: 24px 12px; background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 2.5rem; opacity: 0.4;">💬</div>
+            <div style="font-size: 2rem; color: #444; margin-bottom: 8px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            </div>
             <div style="color: #444; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; margin-top: 10px; letter-spacing: 1px;">SMS</div>
         </div>
         """, unsafe_allow_html=True)
@@ -608,7 +632,7 @@ elif st.session_state.login_step == '2fa_select':
         st.rerun()
 
 elif st.session_state.login_step == '2fa_verify':
-    st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px; text-align: center;'>🔢 ENTER CODE</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-family: Orbitron, sans-serif; color: #00f3ff; letter-spacing: 2px; text-align: center;'>ENTER CODE</h3>", unsafe_allow_html=True)
 
     # Show OTP fallback if email delivery failed
     fallback_code = st.session_state.get('_otp_fallback_code')
@@ -627,7 +651,7 @@ elif st.session_state.login_step == '2fa_verify':
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("✅ VERIFY", type="primary", use_container_width=True):
+        if st.button("VERIFY", type="primary", use_container_width=True):
             if otp and len(otp) == 6:
                 method = st.session_state.get('otp_method', 'email')
 
@@ -654,15 +678,15 @@ elif st.session_state.login_step == '2fa_verify':
                         pass
 
                     st.session_state.pending_email = None
-                    st.success("✅ ACCESS GRANTED")
+                    st.success("ACCESS GRANTED")
                     st.rerun()
                 else:
-                    st.error("🚫 " + message)
+                    st.error("INVALID CODE: " + message)
             else:
-                st.warning("⚠️ Enter 6-digit code")
+                st.warning("Enter 6-digit code")
 
     with col2:
-        if st.button("🔄 RESEND", use_container_width=True):
+        if st.button("RESEND", use_container_width=True):
             success, message = auth_service.generate_otp(st.session_state.pending_email)
             if success:
                 fallback_code = getattr(auth_service, '_last_otp_fallback', None)
@@ -683,7 +707,7 @@ elif st.session_state.login_step == '2fa_verify':
 # Footer
 st.markdown("""
 <div style="text-align: center; margin-top: 40px; color: #2a3444; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace;">
-    <p>🛡️ AI-DRIVEN AUTONOMOUS SOC v2.0</p>
+    <p>AI-DRIVEN AUTONOMOUS SOC v2.0</p>
     <p style="font-size: 0.6rem; color: #1e2838; margin-top: 4px;">SECURED • ENCRYPTED • MONITORED</p>
 </div>
 """, unsafe_allow_html=True)
