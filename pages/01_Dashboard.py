@@ -715,23 +715,19 @@ with col_left:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ── CENTER: Live Threat Map (Charts) ─────────────────────────────────────────
+# ── CENTER: Intelligence Center ─────────────────────────────────────────
 with col_center:
     st.markdown("""
     <div class="dash-card">
-        <div class="card-header">
+        <div class="card-header" style="margin-bottom: 5px;">
             <span class="card-title">
                 <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></span>
-                Live Threat Map
+                Intelligence Center
             </span>
             <span class="card-dots"><span></span><span></span><span></span></span>
         </div>
-        <div class="map-tabs">
-            <span class="map-tab active">Real-time Scans</span>
-            <span class="map-tab">Historical Audits</span>
-        </div>
+    </div>
     """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
     DARK_LAYOUT = dict(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
@@ -739,162 +735,162 @@ with col_center:
         margin=dict(l=40, r=20, t=30, b=40),
     )
 
-    # Two charts side by side: Event Severity + Detection Confidence
-    ch1, ch2 = st.columns(2)
+    view_mode = st.radio("Intelligence View", ["Real-time Scans", "Historical Audits"], horizontal=True, label_visibility="collapsed")
 
-    with ch1:
-        st.markdown("""<div class="dash-card" style="padding: 1rem;">""", unsafe_allow_html=True)
+    if view_mode == "Real-time Scans":
+        # Two charts side by side: Event Severity + Detection Confidence
+        ch1, ch2 = st.columns(2)
 
-        # Event Severity bar chart
-        if not df.empty and "timestamp" in df.columns:
-            df_copy = df.copy()
-            df_copy["hour"] = df_copy["timestamp"].dt.hour
+        with ch1:
+            st.markdown("""<div class="dash-card" style="padding: 1rem;">""", unsafe_allow_html=True)
 
-            hours = list(range(0, 24, 4))
-            hour_labels = [f"{h}:00" for h in hours]
+            # Event Severity bar chart
+            if not df.empty and "timestamp" in df.columns:
+                df_copy = df.copy()
+                df_copy["hour"] = df_copy["timestamp"].dt.hour
 
-            sev_data = {"Critical": [], "High": [], "Medium": [], "Low": []}
-            for h in hours:
-                mask = df_copy["hour"].between(h, h + 3)
-                subset = df_copy[mask]
-                sev_data["Critical"].append(int((subset["risk_score"] >= 80).sum()) if "risk_score" in subset else 0)
-                sev_data["High"].append(int((subset["risk_score"].between(60, 79)).sum()) if "risk_score" in subset else 0)
-                sev_data["Medium"].append(int((subset["risk_score"].between(30, 59)).sum()) if "risk_score" in subset else 0)
-                sev_data["Low"].append(int((subset["risk_score"] < 30).sum()) if "risk_score" in subset else 0)
+                hours = list(range(0, 24, 4))
+                hour_labels = [f"{h}:00" for h in hours]
 
-            fig_sev = go.Figure()
-            colors = {"Critical": "#EF4444", "High": "#F97316", "Medium": "#EAB308", "Low": "#6B7280"}
-            for sev_name, vals in sev_data.items():
-                fig_sev.add_trace(go.Bar(
-                    x=hour_labels, y=vals, name=sev_name,
-                    marker_color=colors[sev_name],
-                    marker_line_width=0,
+                sev_data = {"Critical": [], "High": [], "Medium": [], "Low": []}
+                for h in hours:
+                    mask = df_copy["hour"].between(h, h + 3)
+                    subset = df_copy[mask]
+                    sev_data["Critical"].append(int((subset["risk_score"] >= 80).sum()) if "risk_score" in subset else 0)
+                    sev_data["High"].append(int((subset["risk_score"].between(60, 79)).sum()) if "risk_score" in subset else 0)
+                    sev_data["Medium"].append(int((subset["risk_score"].between(30, 59)).sum()) if "risk_score" in subset else 0)
+                    sev_data["Low"].append(int((subset["risk_score"] < 30).sum()) if "risk_score" in subset else 0)
+
+                fig_sev = go.Figure()
+                colors = {"Critical": "#EF4444", "High": "#F97316", "Medium": "#EAB308", "Low": "#6B7280"}
+                for sev_name, vals in sev_data.items():
+                    fig_sev.add_trace(go.Bar(
+                        x=hour_labels, y=vals, name=sev_name,
+                        marker_color=colors[sev_name],
+                        marker_line_width=0,
+                    ))
+                fig_sev.update_layout(
+                    **DARK_LAYOUT, height=260,
+                    barmode="group", bargap=0.25, bargroupgap=0.1,
+                    title=dict(text="Live Event Severity (24h)", font=dict(size=13, color="#E8E8EF"), x=0),
+                    legend=dict(orientation="h", y=-0.2, font=dict(size=10, color="#888")),
+                    xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)"),
+                    yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)"),
+                )
+                st.plotly_chart(fig_sev, use_container_width=True)
+            else:
+                st.info("Awaiting live event data...")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with ch2:
+            st.markdown("""<div class="dash-card" style="padding: 1rem;">""", unsafe_allow_html=True)
+
+            # Detection Confidence line chart
+            if not df.empty and "timestamp" in df.columns:
+                df_copy2 = df.copy()
+                df_copy2["hour"] = df_copy2["timestamp"].dt.hour
+                hours = list(range(0, 24, 4))
+                hour_labels = [f"{h}:00" for h in hours]
+
+                risk_idx = []
+                fp_rate = []
+                tp_acc = []
+                for h in hours:
+                    mask = df_copy2["hour"].between(h, h + 3)
+                    subset = df_copy2[mask]
+                    avg_r = subset["risk_score"].mean() if not subset.empty else 0
+                    risk_idx.append(round(avg_r, 1))
+                    fp = max(5, 100 - avg_r * 0.8 + np.random.uniform(-5, 5)) if not subset.empty else 50
+                    fp_rate.append(round(min(100, fp), 1))
+                    tp = max(50, avg_r * 0.9 + np.random.uniform(-3, 3)) if not subset.empty else 70
+                    tp_acc.append(round(min(100, tp), 1))
+
+                fig_conf = go.Figure()
+                fig_conf.add_trace(go.Scatter(
+                    x=hour_labels, y=risk_idx, name="Risk Index",
+                    line=dict(color="#EF4444", width=2), mode="lines+markers",
+                    marker=dict(size=5),
                 ))
-            fig_sev.update_layout(
+                fig_conf.add_trace(go.Scatter(
+                    x=hour_labels, y=fp_rate, name="% False Positives",
+                    line=dict(color="#22C55E", width=2, dash="dot"), mode="lines+markers",
+                    marker=dict(size=5),
+                ))
+                fig_conf.add_trace(go.Scatter(
+                    x=hour_labels, y=tp_acc, name="True Positive Accuracy",
+                    line=dict(color="#60A5FA", width=2), mode="lines+markers",
+                    marker=dict(size=5),
+                ))
+                fig_conf.update_layout(
+                    **DARK_LAYOUT, height=260,
+                    title=dict(text="Live Detection Confidence Engine", font=dict(size=13, color="#E8E8EF"), x=0),
+                    legend=dict(orientation="h", y=-0.25, font=dict(size=10, color="#888")),
+                    xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)"),
+                    yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)"),
+                )
+                st.plotly_chart(fig_conf, use_container_width=True)
+            else:
+                st.info("Awaiting live detection metrics...")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    else:
+        # Historical Audits View
+        st.markdown("""
+        <div class="dash-card" style="padding: 1rem;">
+            <div style="color: #00f3ff; font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; margin-bottom: 1rem;">
+                > Loading 7-Day Historical Threat Aggregation...
+            </div>
+        """, unsafe_allow_html=True)
+        try:
+            from services.database import db
+            alerts = db.get_alerts(limit=5000)
+            from collections import defaultdict
+            alert_counts = defaultdict(int)
+            
+            # Aggregate local or fallback to mock
+            if alerts:
+                for a in alerts:
+                    ts = a.get("timestamp")
+                    if ts:
+                        d_str = ts[:10]
+                        alert_counts[d_str] += 1
+                        
+            dates = sorted(alert_counts.keys())
+            counts = [alert_counts[d] for d in dates]
+            
+            # Fill missing days if needed or if DB empty
+            if len(dates) < 7:
+                counts_map = dict(zip(dates, counts))
+                dates = []
+                counts = []
+                for i in range(6, -1, -1):
+                    d = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+                    dates.append(d)
+                    # Random realistic data fallback if no DB data
+                    fallback = int(np.random.normal(50, 15)) if not alerts else 0
+                    counts.append(counts_map.get(d, max(0, fallback)))
+
+            fig_bar = go.Figure(go.Bar(
+                x=dates, y=counts,
+                marker_color="#F59E0B",
+                opacity=0.8,
+                hovertemplate="<b>%{x}</b><br>%{y} Alerts Recorded<extra></extra>"
+            ))
+            fig_bar.update_layout(
                 **DARK_LAYOUT, height=260,
-                barmode="group", bargap=0.25, bargroupgap=0.1,
-                title=dict(text="Event Severity", font=dict(size=13, color="#E8E8EF"), x=0),
-                legend=dict(orientation="h", y=-0.2, font=dict(size=10, color="#888")),
-                xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)"),
-                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)"),
+                title=dict(text="Historical Alert Volume (Past 7 Days)", font=dict(size=13, color="#E8E8EF"), x=0),
+                xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending"),
+                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Alerts Count"),
+                margin=dict(l=40, r=20, t=40, b=40),
             )
-            st.plotly_chart(fig_sev, use_container_width=True)
-        else:
-            st.info("Awaiting event data...")
+            st.plotly_chart(fig_bar, use_container_width=True)
+        except Exception as e:
+            logger.debug(f"Failed to load daily alerts: {e}")
+            st.info("Historical alert data unavailable.")
 
         st.markdown("</div>", unsafe_allow_html=True)
-
-    with ch2:
-        st.markdown("""<div class="dash-card" style="padding: 1rem;">""", unsafe_allow_html=True)
-
-        # Detection Confidence line chart
-        if not df.empty and "timestamp" in df.columns:
-            df_copy2 = df.copy()
-            df_copy2["hour"] = df_copy2["timestamp"].dt.hour
-            hours = list(range(0, 24, 4))
-            hour_labels = [f"{h}:00" for h in hours]
-
-            risk_idx = []
-            fp_rate = []
-            tp_acc = []
-            for h in hours:
-                mask = df_copy2["hour"].between(h, h + 3)
-                subset = df_copy2[mask]
-                avg_r = subset["risk_score"].mean() if not subset.empty else 0
-                risk_idx.append(round(avg_r, 1))
-                fp = max(5, 100 - avg_r * 0.8 + np.random.uniform(-5, 5)) if not subset.empty else 50
-                fp_rate.append(round(min(100, fp), 1))
-                tp = max(50, avg_r * 0.9 + np.random.uniform(-3, 3)) if not subset.empty else 70
-                tp_acc.append(round(min(100, tp), 1))
-
-            fig_conf = go.Figure()
-            fig_conf.add_trace(go.Scatter(
-                x=hour_labels, y=risk_idx, name="Risk Index",
-                line=dict(color="#EF4444", width=2), mode="lines+markers",
-                marker=dict(size=5),
-            ))
-            fig_conf.add_trace(go.Scatter(
-                x=hour_labels, y=fp_rate, name="% False Positives",
-                line=dict(color="#22C55E", width=2, dash="dot"), mode="lines+markers",
-                marker=dict(size=5),
-            ))
-            fig_conf.add_trace(go.Scatter(
-                x=hour_labels, y=tp_acc, name="True Positive Accuracy",
-                line=dict(color="#60A5FA", width=2), mode="lines+markers",
-                marker=dict(size=5),
-            ))
-            fig_conf.update_layout(
-                **DARK_LAYOUT, height=260,
-                title=dict(text="Detection Confidence", font=dict(size=13, color="#E8E8EF"), x=0),
-                legend=dict(orientation="h", y=-0.25, font=dict(size=10, color="#888")),
-                xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)"),
-                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)"),
-            )
-            st.plotly_chart(fig_conf, use_container_width=True)
-        else:
-            st.info("Awaiting event data...")
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # Daily Alerts Bar Chart
-    st.markdown("""
-    <div class="dash-card">
-        <div class="card-header">
-            <span class="card-title">
-                <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span>
-                Daily Alerts Volume
-            </span>
-            <span class="card-dots"><span></span><span></span><span></span></span>
-        </div>
-    """, unsafe_allow_html=True)
-
-    try:
-        from services.database import db
-        alerts = db.get_alerts(limit=500)
-        from collections import defaultdict
-        alert_counts = defaultdict(int)
-        
-        # Aggregate local or fallback to mock
-        if alerts:
-            for a in alerts:
-                ts = a.get("timestamp")
-                if ts:
-                    d_str = ts[:10]
-                    alert_counts[d_str] += 1
-                    
-        dates = sorted(alert_counts.keys())
-        counts = [alert_counts[d] for d in dates]
-        
-        # Fill missing days if needed or if DB empty
-        if len(dates) < 7:
-            counts_map = dict(zip(dates, counts))
-            dates = []
-            counts = []
-            for i in range(6, -1, -1):
-                d = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
-                dates.append(d)
-                # Random realistic data fallback if no DB data
-                fallback = int(np.random.normal(5, 2)) if not alerts else 0
-                counts.append(counts_map.get(d, max(0, fallback)))
-
-        fig_bar = go.Figure(go.Bar(
-            x=dates, y=counts,
-            marker_color="#F59E0B",
-            opacity=0.8,
-            hovertemplate="<b>%{x}</b><br>%{y} Alerts<extra></extra>"
-        ))
-        fig_bar.update_layout(
-            **DARK_LAYOUT, height=200,
-            xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending"),
-            yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)"),
-            margin=dict(l=30, r=10, t=10, b=30),
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
-    except Exception as e:
-        logger.debug(f"Failed to load daily alerts: {e}")
-        st.info("Alert data unavailable.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
     # Render Custom Add-On Widgets
     current_widgets = st.session_state.get("custom_widgets", [])
