@@ -164,7 +164,7 @@ CYBERPUNK_CSS = """
     [data-testid="stSidebarNavLink"][href$="CORTEX"]::after { content: 'smart_toy'; }
     [data-testid="stSidebarNavLink"][href$="Settings"]::after { content: 'settings'; }
     [data-testid="stSidebarNavLink"][href$="SIEM"]::after { content: 'table_chart'; }
-    [data-testid="stSidebarNavLink"][href$="Firewall_Control"]::after { content: 'local_firewall'; }
+    [data-testid="stSidebarNavLink"][href$="Firewall_Control"]::after { content: 'shield'; }
     [data-testid="stSidebarNavLink"][href$="RL_Adaptive"]::after { content: 'psychology'; }
     [data-testid="stSidebarNavLink"][href$="Federated_Learning"]::after { content: 'hub'; }
     
