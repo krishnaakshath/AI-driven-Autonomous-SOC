@@ -115,7 +115,6 @@ if not logged_in:
 
 else:
     # ── Authenticated User Streamlined Hero Workflow ──
-    # Irrespective of Admin/User, the product is now hyper-focused on the unified pipeline.
     workspace_pages = [
         st.Page("pages/01_Dashboard.py", title="SOC Dashboard", default=True),
         st.Page("pages/02_Alert_Triage.py", title="Alert Triage"),
@@ -123,17 +122,13 @@ else:
         st.Page("pages/04_SOAR_Response.py", title="SOAR Response"),
         st.Page("pages/05_Executive_Report.py", title="Executive Report"),
     ]
-    
     config_pages = [
         st.Page("pages/06_Settings.py", title="Platform Settings"),
     ]
-    
     pg = st.navigation({
         "Core Workflow": workspace_pages,
         "Configuration": config_pages,
     }, position="sidebar")
-
-# ═══════════════════════════════════════════════════════════════════════════════
 # SIDEBAR LOGOUT BUTTON
 # ═══════════════════════════════════════════════════════════════════════════════
 if logged_in:
