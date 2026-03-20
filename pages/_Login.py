@@ -436,12 +436,11 @@ st.markdown("""
     <h1 style="
         font-family: 'Orbitron', sans-serif !important;
         font-size: 2.8rem;
-        background: linear-gradient(135deg, #00f3ff 0%, #66d9ff 25%, #bc13fe 75%, #d966ff 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #00f3ff;
+        text-shadow: 0 0 15px rgba(0,243,255,0.6);
         letter-spacing: 5px;
         margin: 12px 0 0 0;
-    ">SOC <span style="color: #fff; -webkit-text-fill-color: #fff; font-weight: 400;">PLATFORM</span></h1>
+    ">SOC <span style="color: #fff; font-weight: 400; text-shadow: none;">PLATFORM</span></h1>
     <div style="height: 28px; margin-top: 12px;">
         <p style="
             color: #5a6a7f;
