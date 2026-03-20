@@ -12,8 +12,14 @@ try:
 except Exception:
     pass
 
-st.set_page_config(page_title="SOC Platform", page_icon="S", layout="wide")
+st.set_page_config(page_title="SOC Platform", page_icon="🛡️", layout="wide")
 
+# Globally enforce the Nightfall Aesthetic on the master entrypoint
+try:
+    from ui.theme import load_css
+    load_css()
+except Exception:
+    pass
 # ── ACTIVE FIREWALL (WAF) ──
 try:
     from services.firewall_service import firewall
