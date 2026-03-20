@@ -9,19 +9,23 @@ Wraps theme helpers into a unified page structure:
 import streamlit as st
 from ui.theme import (
     CYBERPUNK_CSS, MOBILE_CSS, COLORS, SEV_COLORS,
-    inject_particles, page_header, section_title,
-    metric_card, alert_card, cyber_badge, status_indicator,
-    loading_skeleton, empty_state,
+    inject_particles, load_css
 )
-
+from ui.primitives import (
+    page_header, kpi_card, empty_state, error_panel
+)
+from services.logger import set_correlation_id
 
 def init_page(title: str, subtitle: str = "", particles: bool = True):
     """
     Initialize a standard page with theme CSS, optional particles, and header.
     Call this at the top of every page.
     """
-    st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
-    st.markdown(MOBILE_CSS, unsafe_allow_html=True)
+    # 1. Bootstrap Observability Request Tracing for this page load
+    set_correlation_id()
+    
+    # 2. Setup GUI
+    load_css()
     if particles:
         inject_particles()
     st.markdown(page_header(title, subtitle), unsafe_allow_html=True)
@@ -47,7 +51,6 @@ def kpi_row(metrics: list[dict]):
     
     Args:
         metrics: list of dicts with keys: value, label, color
-                 e.g. [{"value": "1,234", "label": "Total Events", "color": "#00f3ff"}]
     """
     if not metrics:
         return
@@ -55,7 +58,7 @@ def kpi_row(metrics: list[dict]):
     for col, m in zip(cols, metrics):
         with col:
             st.markdown(
-                metric_card(m["value"], m["label"], m.get("color", "#00f3ff")),
+                kpi_card(m["label"], m["value"], "", m.get("color", "#00f3ff")),
                 unsafe_allow_html=True
             )
 
@@ -66,37 +69,26 @@ def section_gap():
 
 
 def content_section(title: str):
-    """Render a section title with consistent styling. Returns None - use inline."""
+    """Render a section title with consistent styling."""
+    from ui.theme import section_title
     st.markdown(section_title(title), unsafe_allow_html=True)
 
 
 def show_loading(rows: int = 3):
     """Show animated loading skeleton."""
+    from ui.theme import loading_skeleton
     st.markdown(loading_skeleton(rows), unsafe_allow_html=True)
 
 
 def show_empty(title: str, message: str, icon: str = ""):
-    """Show a styled empty-state message."""
-    # Use a neutral icon instead of emoji for professional look
-    st.markdown(empty_state(title, message, icon if icon else ""), unsafe_allow_html=True)
+    """Show a styled empty-state message using primitive component."""
+    st.markdown(empty_state(title, message, icon if icon else "📭"), unsafe_allow_html=True)
 
 
 def show_error(title: str, detail: str = ""):
-    """Show a styled error state."""
-    error_html = f"""
-    <div style="
-        text-align: center;
-        padding: 2rem;
-        background: rgba(255, 0, 60, 0.05);
-        border: 1px solid rgba(255, 0, 60, 0.15);
-        border-radius: 12px;
-        margin: 1rem 0;
-    ">
-        <h3 style="color: #ff003c; margin: 0 0 0.5rem 0; font-family: 'Rajdhani', sans-serif;">{title}</h3>
-        <p style="color: #8B95A5; margin: 0; font-size: 0.85rem; font-family: 'Share Tech Mono', monospace;">{detail}</p>
-    </div>
-    """
-    st.markdown(error_html, unsafe_allow_html=True)
+    """Show a styled error state using primitive component."""
+    st.markdown(error_panel(title, detail), unsafe_allow_html=True)
+
 
 
 def page_footer(module_name: str = ""):

@@ -15,6 +15,7 @@ logger = get_logger("env")
 REQUIRED_SECRETS = {
     "SUPABASE_URL": "Supabase project URL (e.g., https://xxx.supabase.co)",
     "SUPABASE_KEY": "Supabase service role key",
+    "ENVIRONMENT": "Deployment environment (dev, staging, prod)",
 }
 
 OPTIONAL_SECRETS = {
@@ -83,6 +84,15 @@ def validate_environment(strict: bool = False) -> dict:
             print(f"\n{'='*60}\n STARTUP ERROR: {msg}{'='*60}\n", file=sys.stderr)
             sys.exit(1)
     else:
+        # Strict validation on Environment Enum
+        env_val = str(_get_secret("ENVIRONMENT")).lower()
+        if env_val not in ("dev", "staging", "prod"):
+            err = f"INVALID ENVIRONMENT VALUE: '{env_val}'. Must be one of: dev, staging, prod."
+            logger.error(err)
+            if strict:
+                print(f"\n{'='*60}\n FATAL CONFIGURATION ERROR: {err}{'='*60}\n", file=sys.stderr)
+                sys.exit(1)
+                
         logger.info("All required environment variables are set (%d available)", len(result["available"]))
 
     return result

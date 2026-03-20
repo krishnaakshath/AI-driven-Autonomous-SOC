@@ -155,7 +155,7 @@ class SIEMService:
                 
             return len(events_to_insert)
         except Exception as e:
-            print(f"Error ingesting threat intel: {e}")
+            logger.error("Error ingesting threat intel: %s", e, exc_info=True)
             return 0
 
     def get_user_behavior_data(self) -> List[Dict]:

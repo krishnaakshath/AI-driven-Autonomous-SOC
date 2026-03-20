@@ -8,8 +8,154 @@ holographic elements, and interactive particle systems.
 import streamlit as st
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# MAIN CYBERPUNK CSS
 # ═══════════════════════════════════════════════════════════════════════════════
+# PROFESSIONAL SOC CSS (High-Readability, Low-Glow)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+PROFESSIONAL_SOC_CSS = """
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    
+    :root {
+        --prof-bg: #0F1115;
+        --prof-surface: #1E2128;
+        --prof-border: #2D313A;
+        --prof-primary: #3B82F6;
+        --prof-success: #10B981;
+        --prof-warning: #F59E0B;
+        --prof-danger: #EF4444;
+        --text-pure: #F8FAFC;
+        --text-subtle: #94A3B8;
+        --text-muted: #64748B;
+    }
+
+    /* Base Typography & Background */
+    html, body, [class*="css"]:not([class*="icon"]):not([data-testid*="Collapse"]):not([aria-label*="sidebar"]), 
+    .stMarkdown, p, div:not([data-testid*="Collapse"]), label {
+        font-family: 'Inter', sans-serif !important;
+        color: var(--text-pure);
+    }
+    
+    .stApp {
+        background-color: var(--prof-bg) !important;
+    }
+    
+    /* Preserve Material Icons font */
+    span[class*="material"], 
+    [data-testid="stSidebarCollapseButton"] span,
+    button[aria-label*="sidebar"] span {
+        font-family: 'Material Icons', 'Material Symbols Rounded', sans-serif !important;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em !important;
+    }
+
+    /* Hide Auth Pages from Sidebar Nav */
+    [data-testid="stSidebarNav"] a[href*="Login"],
+    [data-testid="stSidebarNav"] a[href*="Register"] {
+        display: none !important;
+    }
+
+    /* Minimal Top Header */
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+    }
+
+    /* Flat Professional Sidebar */
+    [data-testid="stSidebar"] {
+        min-width: 72px !important;
+        max-width: 72px !important;
+        background-color: #15181E !important;
+        border-right: 1px solid var(--prof-border);
+    }
+
+    /* Hide Sidebar Default Junk */
+    [data-testid="stSidebarCollapseButton"] { display: none !important; }
+    [data-testid="stSidebarNavItems"] [data-testid="stSidebarNavLink"] span { display: none !important; }
+
+    /* Flat Icon-Only Links */
+    [data-testid="stSidebarNavLink"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        height: 48px !important;
+        margin-bottom: 8px !important;
+        color: var(--text-subtle) !important;
+        border-radius: 6px !important;
+        background-color: transparent !important;
+    }
+    [data-testid="stSidebarNavLink"]:hover {
+        background-color: var(--prof-border) !important;
+        color: var(--text-pure) !important;
+    }
+    [data-selected="true"], [aria-selected="true"] {
+        color: var(--prof-primary) !important;
+        background-color: rgba(59, 130, 246, 0.1) !important;
+    }
+    [aria-selected="true"]::before {
+        content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 3px;
+        background-color: var(--prof-primary); border-radius: 0 4px 4px 0;
+    }
+
+    /* Map Icons to Pages */
+    [data-testid="stSidebarNavLink"]::after {
+        font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+        font-size: 22px; content: 'folder_open'; color: inherit;
+        display: block; text-align: center; width: 100%; text-transform: none !important;
+    }
+    [data-testid="stSidebarNavLink"][href$="User_Guide"]::after { content: 'auto_stories'; }
+    [data-testid="stSidebarNavLink"][href$="Dashboard"]::after { content: 'grid_view'; }
+    [data-testid="stSidebarNavLink"][href$="Executive"]::after { content: 'monitoring'; }
+    [data-testid="stSidebarNavLink"][href$="Alerts"]::after { content: 'notifications_active'; }
+    [data-testid="stSidebarNavLink"][href$="Logs"]::after { content: 'receipt_long'; }
+    [data-testid="stSidebarNavLink"][href$="Timeline"]::after { content: 'timeline'; }
+    [data-testid="stSidebarNavLink"][href$="Threat_Intel"]::after { content: 'travel_explore'; }
+    [data-testid="stSidebarNavLink"][href$="Geo_Predictions"]::after { content: 'language'; }
+    [data-testid="stSidebarNavLink"][href$="Kill_Chain"]::after { content: 'security'; }
+    [data-testid="stSidebarNavLink"][href$="OSINT_Feeds"]::after { content: 'rss_feed'; }
+    [data-testid="stSidebarNavLink"][href$="Threat_Hunt"]::after { content: 'track_changes'; }
+    [data-testid="stSidebarNavLink"][href$="Analysis"]::after { content: 'analytics'; }
+    [data-testid="stSidebarNavLink"][href$="SOAR_Workbench"]::after { content: 'handyman'; }
+
+    /* Clean Card Primitives (No Glow) */
+    .prof-card {
+        background-color: var(--prof-surface);
+        border: 1px solid var(--prof-border);
+        border-radius: 8px;
+    }
+    
+    /* Clean Buttons */
+    .stButton > button {
+        background-color: var(--prof-surface) !important;
+        border: 1px solid var(--prof-border) !important;
+        color: var(--text-pure) !important;
+        border-radius: 6px !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 500 !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.2s;
+    }
+    .stButton > button:hover {
+        border-color: var(--prof-primary) !important;
+        background-color: rgba(59, 130, 246, 0.05) !important;
+    }
+    
+    /* Clean Inputs */
+    .stTextInput input, .stSelectbox select {
+        background-color: var(--prof-surface) !important;
+        border: 1px solid var(--prof-border) !important;
+        border-radius: 6px !important;
+        color: var(--text-pure) !important;
+    }
+    .stTextInput input:focus {
+        border-color: var(--prof-primary) !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    }
+</style>
+"""
 
 CYBERPUNK_CSS = """
 <style>
@@ -771,8 +917,22 @@ CYBERPUNK_CSS = """
 # PARTICLES.JS INJECTION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def load_css():
+    """Injects core CSS themes into the Streamlit app based on session state toggle."""
+    theme_mode = st.session_state.get("theme", "cyberpunk")
+    
+    if theme_mode == "professional":
+        st.markdown(PROFESSIONAL_SOC_CSS, unsafe_allow_html=True)
+    else:
+        st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+        
+    st.markdown(MOBILE_CSS, unsafe_allow_html=True)
+
 def inject_particles():
-    """Injects Particles.js for an interactive cyberpunk background"""
+    """Injects interactive background particles via tsParticles (Cyberpunk mode only)."""
+    if st.session_state.get("theme", "cyberpunk") != "cyberpunk":
+        return  # Keep Professional SOC theme completely clean of background animations
+        
     particles_html = """
     <div id="particles-js" style="position: fixed; width: 100vw; height: 100vh; top: 0; left: 0; z-index: -1; pointer-events: none;"></div>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>

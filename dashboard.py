@@ -14,8 +14,24 @@ except Exception:
 
 st.set_page_config(page_title="SOC Platform", page_icon="🛡️", layout="wide")
 
-# Globally enforce the Nightfall Aesthetic on the master entrypoint
+# Globally enforce the exact aesthetic on the master entrypoint
 try:
+    import json
+    import os
+    from services.logger import set_correlation_id
+    
+    # Bootstrap Observability Pipeline for this execution thread
+    set_correlation_id()
+    
+    CONFIG_FILE = ".soc_config.json"
+    if "theme" not in st.session_state:
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as f:
+                cfg = json.load(f)
+                st.session_state.theme = cfg.get("theme", "cyberpunk")
+        else:
+            st.session_state.theme = "cyberpunk"
+
     from ui.theme import load_css
     load_css()
 except Exception:

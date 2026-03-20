@@ -11,9 +11,12 @@ try:
 except st.errors.StreamlitAPIException:
     pass  # Already set by dashboard.py
 
-from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
+from ui.theme import load_css, inject_particles
+from ui.primitives import page_header
+from ui.theme import section_title 
 from ui.page_layout import init_page, kpi_row, content_section, section_gap, page_footer, show_empty, show_error
-st.markdown(CYBERPUNK_CSS, unsafe_allow_html=True)
+
+load_css()
 inject_particles()
 
 # Check if user is admin
@@ -61,6 +64,10 @@ def save_config(config):
 
 config = load_config()
 
+# Preload theme from config into session state if missing
+if "theme" not in st.session_state and "theme" in config:
+    st.session_state.theme = config["theme"]
+
 # Logout function
 def logout():
     # Use centralized logout to clean up persistence
@@ -70,9 +77,9 @@ def logout():
 
 # Create tabs based on admin status
 if IS_ADMIN:
-    tab1, tab_sec, tab2, tab3, tab4, tab5, tab6, tab_rbac, tab7 = st.tabs([" Account", " Security", " CORTEX AI", " API Keys", " OAuth", " Notifications", " Thresholds", " RBAC", " About"])
+    tab1, tab_sec, tab_app, tab2, tab3, tab4, tab5, tab6, tab_rbac, tab7 = st.tabs([" Account", " Security", " Appearance", " CORTEX AI", " API Keys", " OAuth", " Notifications", " Thresholds", " RBAC", " About"])
 else:
-    tab1, tab_sec, tab2, tab7 = st.tabs([" Account", " Security", " CORTEX AI", " About"])
+    tab1, tab_sec, tab_app, tab2, tab7 = st.tabs([" Account", " Security", " Appearance", " CORTEX AI", " About"])
 
 # Account Tab with Logout
 with tab1:
@@ -216,6 +223,38 @@ with tab_sec:
         st.error("Auth module not available")
     except Exception as e:
         st.error(f"Error loading security settings: {e}")
+
+# Appearance Tab
+with tab_app:
+    st.markdown(section_title("Theme Configuration"), unsafe_allow_html=True)
+    
+    st.markdown("""
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <h4 style="color: #00D4FF; margin: 0 0 0.5rem 0;">Visual Interface Theme</h4>
+            <p style="color: #8B95A5; margin: 0; font-size: 0.9rem;">
+                Switch between the default Cyberpunk 2077 aesthetic and the flat, high-contrast Professional SOC layout.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    current_theme = st.session_state.get("theme", "cyberpunk")
+    
+    cols = st.columns(2)
+    with cols[0]:
+        new_theme = st.radio(
+            "Select Global Theme",
+            options=["cyberpunk", "professional"],
+            format_func=lambda x: " Cyberpunk (Neon Glow, Scifi)" if x == "cyberpunk" else " Professional SOC (Flat, Readability)",
+            index=0 if current_theme == "cyberpunk" else 1,
+            label_visibility="collapsed"
+        )
+        
+        if st.button("Apply Theme Override", type="primary"):
+            st.session_state.theme = new_theme
+            config["theme"] = new_theme
+            save_config(config)
+            st.toast("Theme applied globally!", icon="✅")
+            st.rerun()
 
 # CORTEX AI Personality Settings
 with tab2:

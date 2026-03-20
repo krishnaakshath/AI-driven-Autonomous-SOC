@@ -276,9 +276,9 @@ with tab2:
         
         # Create hourly buckets (or minute buckets if very recent)
         # Robust datetime parsing to prevent ValueErrors on mixed formats
-        parsed = pd.to_datetime(df_events["timestamp"], format="mixed", errors="coerce")
+        parsed = pd.to_datetime(df_events["timestamp"], format="mixed", errors="coerce", utc=True)
         # Fallback to current time if parsing completely fails for a row, ensuring dt type is kept
-        df_events["parsed_time"] = pd.to_datetime(parsed.fillna(pd.Timestamp.now()))
+        df_events["parsed_time"] = pd.to_datetime(parsed.fillna(pd.Timestamp.now(tz="UTC")), utc=True)
         df_events["time_bucket"] = df_events["parsed_time"].dt.strftime('%H:%M')
         timeline = df_events.groupby("time_bucket").size().reset_index(name="count")
         
@@ -460,7 +460,7 @@ with tab4:
         # Calculate time since last event
         try:
             # Use robust pd.to_datetime instead of fragile strptime
-            last_dt = pd.to_datetime(stats["last_event"], format="mixed", errors="coerce")
+            last_dt = pd.to_datetime(stats["last_event"], format="mixed", errors="coerce", utc=True)
             if pd.isna(last_dt):
                 last_dt = pd.Timestamp.now()
             

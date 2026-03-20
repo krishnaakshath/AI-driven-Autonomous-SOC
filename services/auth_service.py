@@ -12,6 +12,7 @@ Features:
 
 import os
 import json
+import re
 import hashlib
 import secrets
 import smtplib
@@ -81,7 +82,7 @@ class AuthService:
                     except Exception:
 
                         logger.debug("Suppressed exception", exc_info=True)
-                print(f"[AUTH] Warning: corrupted users.json: {e}")
+                logger.warning("Corrupted users.json: %s", e)
         return {}
     
     def _save_users_data(self, data: Dict):
@@ -162,8 +163,16 @@ class AuthService:
         if not email or '@' not in email:
             return False, "Invalid email address"
         
-        if len(password) < 8:
-            return False, "Password must be at least 8 characters"
+        if len(password) < 12:
+            return False, "Password must be at least 12 characters"
+        if not re.search(r"[A-Z]", password):
+            return False, "Password must contain an uppercase letter"
+        if not re.search(r"[a-z]", password):
+            return False, "Password must contain a lowercase letter"
+        if not re.search(r"[0-9]", password):
+            return False, "Password must contain a number"
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            return False, "Password must contain a special character"
         
         if email in self.users:
             return False, "Email already registered"
@@ -556,10 +565,10 @@ class AuthService:
                             if gmail_user and gmail_password:
                                 break
                     except Exception as e:
-                        print(f"Error loading config from {config_file}: {e}")
+                        logger.error("Error loading config from %s: %s", config_file, e)
             
             if not gmail_user or not gmail_password:
-                print(f"[WARNING] No Gmail credentials configured. OTP for {email}: {otp}")
+                logger.warning("No Gmail credentials configured. OTP for %s: %s", email, otp)
                 return 'fallback'  # Signal that email was NOT sent
             
             
@@ -598,7 +607,7 @@ class AuthService:
             
         except Exception as e:
             logger.warning("Email: %s", e)
-            print(f"[FALLBACK] OTP for {email}: {otp}")
+            logger.info("[FALLBACK] OTP for %s: %s", email, otp)
             return 'fallback'  # Signal that email was NOT sent
     
     def _send_otp_sms(self, phone: str, otp: str) -> bool:
@@ -626,10 +635,10 @@ class AuthService:
                         twilio_token = config.get('twilio_auth_token') or twilio_token
                         twilio_phone = config.get('twilio_phone_number') or twilio_phone
                 except Exception as e:
-                    print(f"Error loading Twilio config: {e}")
+                    logger.error("Error loading Twilio config: %s", e)
             
             if not twilio_sid or not twilio_token or not twilio_phone:
-                print(f"[ERROR] Twilio credentials not configured. Cannot send SMS to {phone}.")
+                logger.error("Twilio credentials not configured. Cannot send SMS to %s.", phone)
                 return False
             
             # Send SMS using Twilio
@@ -642,11 +651,11 @@ class AuthService:
                 to=phone
             )
             
-            print(f"SMS sent successfully. SID: {message.sid}")
+            logger.info("SMS sent successfully. SID: %s", message.sid)
             return True
             
         except ImportError:
-            print("[ERROR] Twilio library not installed. Run: pip install twilio")
+            logger.error("Twilio library not installed. Run: pip install twilio")
             return False
         except Exception as e:
             logger.warning("SMS: %s", e)
@@ -660,7 +669,7 @@ class AuthService:
             twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
             
             if not twilio_sid or not twilio_token or not phone:
-                print(f"[DEMO MODE] WhatsApp OTP to {phone}: {otp}")
+                logger.info("[DEMO MODE] WhatsApp OTP to %s: %s", phone, otp)
                 return True
             
             # Would use Twilio WhatsApp here
@@ -672,7 +681,7 @@ class AuthService:
             #     to=f'whatsapp:{phone}'
             # )
             
-            print(f"[PLACEHOLDER] WhatsApp OTP to {phone}: {otp}")
+            logger.info("[PLACEHOLDER] WhatsApp OTP to %s: %s", phone, otp)
             return True
             
         except Exception as e:
@@ -688,14 +697,36 @@ class AuthService:
         return self._load_users()
     
     def update_user_role(self, email: str, role: str) -> bool:
-        """Update a user's role. Admin-only operation."""
+        """Update a user's role. Admin-only operation with Audit Trail."""
         email = email.lower().strip()
         if role not in ('owner', 'admin', 'user'):
             return False
+            
         current_users = self._load_users()
         if email in current_users:
+            old_role = current_users[email].get('role', 'user')
             current_users[email]['role'] = role
             self._save_users_data(current_users)
+            
+            # DB Audit Trail for Role Changes
+            try:
+                from services.database import db
+                import uuid
+                db.insert_event({
+                    "id": f"EVT-RBAC-{str(uuid.uuid4())[:8]}",
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "source": "Active Directory",
+                    "event_type": "Privilege Escalation" if role in ("owner", "admin") and old_role == "user" else "Role Modification",
+                    "severity": "CRITICAL" if role in ("owner", "admin") else "HIGH",
+                    "source_ip": "127.0.0.1",
+                    "dest_ip": "127.0.0.1",
+                    "user": email,
+                    "status": "Audited",
+                    "details": f"RBAC Audit: {email} transitioned from '{old_role}' to '{role}'"
+                })
+            except Exception as e:
+                logger.error("Failed to append RBAC Audit Trail: %s", e)
+                
             return True
         return False
     

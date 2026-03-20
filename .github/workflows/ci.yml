@@ -24,8 +24,8 @@ jobs:
     - name: Ruff lint (fail on errors)
       run: ruff check . --select E9,F63,F7,F82 --no-fix
 
-    - name: Ruff lint (warnings)
-      run: ruff check . --ignore E501 --exit-zero --statistics
+    - name: Ruff lint (strict enforcement)
+      run: ruff check . --ignore E501 --statistics
 
   test:
     name: Unit Tests + Coverage
@@ -47,7 +47,7 @@ jobs:
 
     - name: Run unit tests with coverage
       run: |
-        pytest tests/test_comprehensive.py tests/test_auth.py -v --tb=short \
+        pytest tests/unit -v --tb=short \
           --cov=services --cov=ml_engine --cov-report=term-missing \
           --cov-fail-under=40
       env:
@@ -74,4 +74,4 @@ jobs:
 
     - name: Run mocked integration tests
       run: |
-        pytest tests/test_comprehensive.py::TestMockSupabase -v --tb=short
+        pytest tests/integration_mock -v --tb=short
