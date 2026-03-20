@@ -862,6 +862,8 @@ with col_center:
                 
                 # Group by date and severity
                 daily_counts = df_hist.groupby(["date", "severity"]).size().reset_index(name="count")
+                # Force strictly to string to prevent Pandas object vs datetime64 merge conflicts
+                daily_counts["date"] = pd.to_datetime(daily_counts["date"]).dt.strftime("%Y-%m-%d")
                 
                 # Dynamically set base timeline frame from absolute start of project to today
                 start_date = pd.to_datetime("2025-12-30").date()
@@ -870,7 +872,8 @@ with col_center:
                 
                 date_range = pd.date_range(start=start_date, end=today_ts.date())
                 base_df = pd.DataFrame({"date": date_range})
-                base_df["date"] = pd.to_datetime(base_df["date"]).dt.date
+                # Force strictly to string for bulletproof merge
+                base_df["date"] = pd.to_datetime(base_df["date"]).dt.strftime("%Y-%m-%d")
                 
                 # Merge with base_df to ensure all days are represented consistently
                 merged_df = pd.merge(base_df, daily_counts, on="date", how="left").fillna(0)
