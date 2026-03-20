@@ -784,32 +784,43 @@ def get_current_user() -> Optional[Dict]:
     return None 
 
 def check_persistent_session():
-    """Run at startup: Check for persistent session token file."""
+    """Run at startup: Check for persistent session token via query params or file."""
     if is_authenticated():
-        return
+        return False
     
-    # Check for local token file (simulating cookie for desktop app)
-    token_file = os.path.join(DATA_DIR, '.session_token')
-    if os.path.exists(token_file):
-        try:
-            with open(token_file, 'r') as f:
-                token = f.read().strip()
-            
-            email = auth_service.validate_session(token)
-            if email:
-                # Auto-login
-                st.session_state['authenticated'] = True
-                st.session_state['user_email'] = email
-                user = auth_service.get_user(email)
-                st.session_state['user_name'] = user.get('name') if user else email
-                st.session_state['auth_token'] = token
-                return True
-        except Exception:
-            pass
+    token = None
+    
+    # 1. Check query params first (works on Streamlit Cloud)
+    try:
+        token = st.query_params.get('session_token')
+    except Exception:
+        pass
+    
+    # 2. Fall back to local token file (works locally)
+    if not token:
+        token_file = os.path.join(DATA_DIR, '.session_token')
+        if os.path.exists(token_file):
+            try:
+                with open(token_file, 'r') as f:
+                    token = f.read().strip()
+            except Exception:
+                pass
+    
+    if token:
+        email = auth_service.validate_session(token)
+        if email:
+            # Auto-login
+            st.session_state['authenticated'] = True
+            st.session_state['user_email'] = email
+            user = auth_service.get_user(email)
+            st.session_state['user_name'] = user.get('name') if user else email
+            st.session_state['auth_token'] = token
+            return True
+    
     return False
 
 def login_user(email: str, remember: bool = False):
-    """Log in the user and set persistence."""
+    """Log in the user and set persistence via query params + file."""
     st.session_state['authenticated'] = True
     st.session_state['user_email'] = email
     user = auth_service.get_user(email)
@@ -819,10 +830,19 @@ def login_user(email: str, remember: bool = False):
     token = auth_service.create_session(email, remember)
     st.session_state['auth_token'] = token
     
-    # Save to local file for persistence across restarts
-    token_file = os.path.join(DATA_DIR, '.session_token')
-    with open(token_file, 'w') as f:
-        f.write(token)
+    # Save token to query params (works on Streamlit Cloud)
+    try:
+        st.query_params['session_token'] = token
+    except Exception:
+        pass
+    
+    # Also save to local file for persistence across restarts
+    try:
+        token_file = os.path.join(DATA_DIR, '.session_token')
+        with open(token_file, 'w') as f:
+            f.write(token)
+    except Exception:
+        pass  # May fail on read-only filesystems (Cloud)
 
 
 def get_user_preferences() -> Dict:
@@ -863,9 +883,8 @@ def require_admin():
 
 
 def logout():
-    """Logout current user."""
+    """Logout current user and clear all persistence."""
     st.session_state['authenticated'] = False
-    st.session_state['user_email'] = None
     st.session_state['user_email'] = None
     st.session_state['user_name'] = None
     
@@ -874,7 +893,15 @@ def logout():
     if token:
         auth_service.invalidate_session(token)
         st.session_state.pop('auth_token', None)
+    
+    # Clear query param token
+    try:
+        if 'session_token' in st.query_params:
+            del st.query_params['session_token']
+    except Exception:
+        pass
         
+    # Clear local token file
     token_file = os.path.join(DATA_DIR, '.session_token')
     if os.path.exists(token_file):
         try:
