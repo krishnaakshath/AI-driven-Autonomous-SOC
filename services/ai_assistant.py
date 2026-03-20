@@ -217,11 +217,20 @@ PROTOCOL:
                     return f" Failed to block IP: {e}"
             
             # ============= THREAT INTELLIGENCE =============
+            elif tool_name == "get_siem_events":
+                try:
+                    from services.database import db
+                    limit = params.get("limit", 5)
+                    alerts = db.get_alerts(limit=limit)
+                    return f"**Latest SIEM ALERTS:**\n```json\n{json.dumps(alerts, indent=2)}\n```"
+                except Exception as e:
+                    return f" SIEM Database connection error: {e}"
+
             elif tool_name == "threat_intel":
                 try:
                     from services.threat_intel import threat_intel
                     threats = threat_intel.get_otx_pulses(5)
-                    return f"**Latest Threat Intelligence:**\n```json\n{json.dumps(threats, indent=2)}\n```"
+                    return f"**Latest Global Threat Intelligence (OTX):**\n```json\n{json.dumps(threats, indent=2)}\n```"
                 except Exception as e:
                     return f" Threat intel service error: {e}"
             
