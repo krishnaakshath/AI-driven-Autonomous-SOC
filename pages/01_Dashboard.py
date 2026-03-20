@@ -846,12 +846,9 @@ with col_center:
         try:
             from services.database import db
             # Fetch recent SIEM events for the timeline
-            events = db.get_recent_events(limit=2000)
+            events = db.get_recent_events(limit=5000)
             
-            # Build an empty base dataframe covering the last 7 days to ensure empty days exist
-            today = datetime.now().date()
-            date_range = pd.date_range(end=today, periods=7)
-            base_df = pd.DataFrame({"date": date_range})
+            today_ts = pd.to_datetime(datetime.now().date())
             
             if events:
                 df_hist = pd.DataFrame(events)
@@ -866,10 +863,19 @@ with col_center:
                 # Group by date and severity
                 daily_counts = df_hist.groupby(["date", "severity"]).size().reset_index(name="count")
                 
-                # Merge with base_df to ensure all 7 days are represented
+                # Dynamically set base timeline frame from absolute start of project to today
+                start_date = df_hist["date"].min()
+                if pd.isna(start_date) or (today_ts - start_date).days < 7:
+                    start_date = today_ts - pd.Timedelta(days=6)
+                
+                date_range = pd.date_range(start=start_date, end=today_ts)
+                base_df = pd.DataFrame({"date": date_range})
+                
+                # Merge with base_df to ensure all days are represented consistently
                 merged_df = pd.merge(base_df, daily_counts, on="date", how="left").fillna(0)
             else:
-                # If DB is empty, generate realistic demo distributions for the UI
+                # If DB is empty, generate realistic demo distributions for the UI (7-days)
+                date_range = pd.date_range(end=today_ts, periods=7)
                 demo_data = []
                 for d in date_range:
                     for sev in ["Critical", "High", "Medium", "Low"]:
@@ -883,22 +889,31 @@ with col_center:
             fig_bar = go.Figure()
             colors = {"Critical": "#EF4444", "High": "#F97316", "Medium": "#EAB308", "Low": "#6B7280"}
             
+            added_traces = 0
             for sev in ["Critical", "High", "Medium", "Low"]:
                 sev_df = merged_df[merged_df["severity"] == sev].groupby("date_str")["count"].sum().reset_index()
-                if not sev_df.empty:
+                if not sev_df.empty and sev_df["count"].sum() > 0:
                     fig_bar.add_trace(go.Bar(
                         x=sev_df["date_str"], y=sev_df["count"],
                         name=sev, marker_color=colors.get(sev, "#888"),
                         hovertemplate="<b>%{x}</b><br>%{y} " + sev + " Incidents<extra></extra>"
                     ))
+                    added_traces += 1
+            
+            # Failsafe if the database somehow has zero severity counts matched
+            if added_traces == 0:
+                fig_bar.add_trace(go.Bar(
+                    x=merged_df["date_str"].unique(), y=[0]*len(merged_df["date_str"].unique()),
+                    showlegend=False, marker_color="rgba(0,0,0,0)"
+                ))
 
             fig_bar.update_layout(
                 **DARK_LAYOUT, height=260,
                 barmode="stack",
-                title=dict(text="Historical Incident Timeline (Past 7 Days)", font=dict(size=13, color="#E8E8EF"), x=0),
+                title=dict(text="Historical Incident Timeline (All-Time Record)", font=dict(size=13, color="#E8E8EF"), x=0),
                 legend=dict(orientation="h", y=-0.2, font=dict(size=10, color="#888")),
-                xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending"),
-                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Incident Count")
+                xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending", tickformat="%b %d, %Y", tickangle=-45),
+                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Incident Count", rangemode="tozero"),
             )
             st.plotly_chart(fig_bar, use_container_width=True)
         except Exception as e:
