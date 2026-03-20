@@ -240,8 +240,6 @@ if auto_refresh:
     st.rerun()
 
 try:
-    from ui.chat_interface import inject_floating_cortex_link
-    inject_floating_cortex_link()
 except Exception:
 
     logger.debug("Suppressed exception", exc_info=True)

@@ -144,18 +144,28 @@ CYBERPUNK_CSS = """
     }
 
     /* Map Specific Pages to Icons */
+    a[href$="User_Guide"]::after { content: 'auto_stories'; }
     a[href$="Dashboard"]::after { content: 'grid_view'; }
+    a[href$="Executive"]::after { content: 'monitoring'; }
     a[href$="Alerts"]::after { content: 'notifications_active'; }
+    a[href$="Logs"]::after { content: 'receipt_long'; }
+    a[href$="Timeline"]::after { content: 'timeline'; }
     a[href$="Threat_Intel"]::after { content: 'travel_explore'; }
-    a[href$="SIEM"]::after { content: 'table_chart'; }
-    a[href$="Network"]::after { content: 'lan'; }
-    a[href$="Endpoint"]::after { content: 'important_devices'; }
-    a[href$="Users"]::after { content: 'group'; }
-    a[href$="Policies"]::after { content: 'policy'; }
+    a[href$="Geo_Predictions"]::after { content: 'language'; }
+    a[href$="Kill_Chain"]::after { content: 'security'; }
+    a[href$="OSINT_Feeds"]::after { content: 'rss_feed'; }
+    a[href$="Threat_Hunt"]::after { content: 'track_changes'; }
+    a[href$="Analysis"]::after { content: 'analytics'; }
+    a[href$="SOAR_Workbench"]::after { content: 'handyman'; }
+    a[href$="Forensics"]::after { content: 'search'; }
+    a[href$="Scanners"]::after { content: 'radar'; }
     a[href$="Reports"]::after { content: 'insert_chart'; }
+    a[href$="CORTEX"]::after { content: 'smart_toy'; }
     a[href$="Settings"]::after { content: 'settings'; }
-    a[href$="Federated_Learning"]::after { content: 'hub'; }
+    a[href$="SIEM"]::after { content: 'table_chart'; }
+    a[href$="Firewall_Control"]::after { content: 'local_firewall'; }
     a[href$="RL_Adaptive"]::after { content: 'psychology'; }
+    a[href$="Federated_Learning"]::after { content: 'hub'; }
     
     /* All text inputs and labels */
     .stTextInput label, .stSelectbox label, .stNumberInput label,

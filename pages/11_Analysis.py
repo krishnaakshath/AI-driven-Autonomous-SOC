@@ -872,8 +872,3 @@ if ML_LOADED:
                         st.info("No anomalies detected to cluster.")
 
 page_footer("Analysis")
-try:
-    from ui.chat_interface import inject_floating_cortex_link
-    inject_floating_cortex_link()
-except ImportError:
-    pass

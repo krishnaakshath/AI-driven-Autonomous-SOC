@@ -9,6 +9,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from services.logger import get_logger
+logger = get_logger("threat_intel_page")
+
 try:
     st.set_page_config(page_title="Threat Intelligence | SOC", page_icon="", layout="wide")
 except st.errors.StreamlitAPIException:
@@ -460,8 +463,6 @@ except Exception as e:
     st.error(f"Error connecting to AlienVault OTX: {e}")
 
 page_footer("Threat Intelligence")
-from ui.chat_interface import inject_floating_cortex_link
 from services.logger import get_logger
 logger = get_logger("ti_page")
 
-inject_floating_cortex_link()

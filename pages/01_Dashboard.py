@@ -1087,12 +1087,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-try:
-    from ui.chat_interface import inject_floating_cortex_link
-    inject_floating_cortex_link()
-except Exception:
-    pass
-
 # Auto-refresh
 h_col = st.columns([3, 1])
 with h_col[1]:

@@ -499,6 +499,4 @@ with tab3:
             st.warning("OTX threat intel feed is currently offline")
 
 # Inject floating CORTEX orb
-from ui.chat_interface import inject_floating_cortex_link
-inject_floating_cortex_link()
 

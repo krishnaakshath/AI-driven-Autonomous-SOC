@@ -309,5 +309,3 @@ if GEO_LOADED:
         st.plotly_chart(fig2, use_container_width=True)
 
 # Inject floating CORTEX orb
-from ui.chat_interface import inject_floating_cortex_link
-inject_floating_cortex_link()
