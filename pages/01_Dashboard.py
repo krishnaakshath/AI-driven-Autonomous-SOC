@@ -855,7 +855,7 @@ with col_center:
             
             if events:
                 df_hist = pd.DataFrame(events)
-                df_hist["date"] = pd.to_datetime(df_hist["timestamp"]).dt.date
+                df_hist["date"] = pd.to_datetime(df_hist["timestamp"], format='mixed', utc=True, errors='coerce').dt.date
                 df_hist["date"] = pd.to_datetime(df_hist["date"])
                 
                 # Assign default severity if missing, and normalize to title case
