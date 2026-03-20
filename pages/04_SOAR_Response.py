@@ -239,7 +239,3 @@ if auto_refresh:
     time.sleep(30)
     st.rerun()
 
-try:
-except Exception:
-
-    logger.debug("Suppressed exception", exc_info=True)
