@@ -350,9 +350,13 @@ class ThreatIntelligence:
         return self._get_public_otx_pulses()
 
     def _get_public_otx_pulses(self) -> List[Dict]:
+        headers = {}
+        if self.otx_key:
+            headers = {'X-OTX-API-KEY': self.otx_key}
         try:
             response = requests.get(
                 'https://otx.alienvault.com/api/v1/pulses/activity',
+                headers=headers,
                 timeout=10
             )
             if response.status_code == 200:
@@ -422,9 +426,14 @@ class ThreatIntelligence:
         if self._is_cached(cache_key):
             return self.cache[cache_key]['data']
         
+        headers = {}
+        if self.otx_key:
+            headers = {'X-OTX-API-KEY': self.otx_key}
+            
         try:
             response = requests.get(
                 'https://otx.alienvault.com/api/v1/pulses/activity',
+                headers=headers,
                 timeout=10
             )
             
