@@ -394,35 +394,19 @@ with tab3:
         
         forecast_badge = f'<span style="background: rgba(139,92,246,0.2); color: #8B5CF6; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; margin-left: 10px;">{matched_forecast}</span>' if matched_forecast else ""
         
-        st.markdown(f"""
-        <div style="
-            background: rgba(26,31,46,0.5);
-            border: 1px solid rgba(0,212,255,0.2);
-            border-left: 4px solid {prob_color};
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-        ">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div>
-                    <span style="color: #00D4FF; font-weight: bold; font-size: 1.1rem;">{rule['name']}</span>
-                    {forecast_badge}
-                </div>
-                <div style="text-align: right;">
-                    <span style="font-family: 'Orbitron', sans-serif; color: {prob_color}; font-size: 1.2rem; font-weight: bold;">{chain_probability}%</span>
-                    <div style="color: #8B95A5; font-size: 0.7rem;">Attack Chain Probability</div>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 20px; font-size: 0.85rem;">
-                <div style="flex: 1; color: #8B95A5;"><strong>Condition Vector:</strong> {rule['condition']}</div>
-                <div style="flex: 1; color: #FAFAFA;"><strong>Automated Action:</strong> {rule['action']}</div>
-                <div style="width: 100px; text-align: right;">
-                    <span style="background: {hit_color}22; color: {hit_color}; padding: 2px 8px; border-radius: 4px; font-weight: bold;">{base_hits} raw events</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Strip indentation to prevent Markdown code-block escaping
+        html_payload = f"""<div style="background: rgba(26,31,46,0.5); border: 1px solid rgba(0,212,255,0.2); border-left: 4px solid {prob_color}; padding: 15px; border-radius: 8px; margin: 10px 0;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+<div><span style="color: #00D4FF; font-weight: bold; font-size: 1.1rem;">{rule['name']}</span>{forecast_badge}</div>
+<div style="text-align: right;"><span style="font-family: 'Orbitron', sans-serif; color: {prob_color}; font-size: 1.2rem; font-weight: bold;">{chain_probability}%</span><div style="color: #8B95A5; font-size: 0.7rem;">Attack Chain Probability</div></div>
+</div>
+<div style="display: flex; gap: 20px; font-size: 0.85rem;">
+<div style="flex: 1; color: #8B95A5;"><strong>Condition Vector:</strong> {rule['condition']}</div>
+<div style="flex: 1; color: #FAFAFA;"><strong>Automated Action:</strong> {rule['action']}</div>
+<div style="width: 100px; text-align: right;"><span style="background: {hit_color}22; color: {hit_color}; padding: 2px 8px; border-radius: 4px; font-weight: bold;">{base_hits} raw events</span></div>
+</div>
+</div>"""
+        st.markdown(html_payload, unsafe_allow_html=True)
 
 # ===== TAB 4: Log Sources =====
 with tab4:
