@@ -864,18 +864,20 @@ with col_center:
                 daily_counts = df_hist.groupby(["date", "severity"]).size().reset_index(name="count")
                 
                 # Dynamically set base timeline frame from absolute start of project to today
-                start_date = df_hist["date"].min()
-                if pd.isna(start_date) or (today_ts - start_date).days < 7:
-                    start_date = today_ts - pd.Timedelta(days=6)
+                start_date = pd.to_datetime("2025-12-30").date()
+                if pd.isna(start_date) or (today_ts.date() - start_date).days < 7:
+                    start_date = today_ts.date() - pd.Timedelta(days=6)
                 
-                date_range = pd.date_range(start=start_date, end=today_ts)
+                date_range = pd.date_range(start=start_date, end=today_ts.date())
                 base_df = pd.DataFrame({"date": date_range})
+                base_df["date"] = pd.to_datetime(base_df["date"]).dt.date
                 
                 # Merge with base_df to ensure all days are represented consistently
                 merged_df = pd.merge(base_df, daily_counts, on="date", how="left").fillna(0)
             else:
-                # If DB is empty, generate realistic demo distributions for the UI (7-days)
-                date_range = pd.date_range(end=today_ts, periods=7)
+                # If DB is empty, generate realistic demo distributions for the UI
+                start_date = pd.to_datetime("2025-12-30").date()
+                date_range = pd.date_range(start=start_date, end=today_ts.date())
                 demo_data = []
                 for d in date_range:
                     for sev in ["Critical", "High", "Medium", "Low"]:
@@ -884,6 +886,7 @@ with col_center:
                 merged_df = pd.DataFrame(demo_data)
 
             # Format dates for x-axis
+            merged_df["date"] = pd.to_datetime(merged_df["date"])
             merged_df["date_str"] = merged_df["date"].dt.strftime("%Y-%m-%d")
             
             fig_bar = go.Figure()
@@ -908,14 +911,19 @@ with col_center:
                 ))
 
             fig_bar.update_layout(
-                **DARK_LAYOUT, height=260,
+                **DARK_LAYOUT, height=270,
                 barmode="stack",
-                title=dict(text="Historical Incident Timeline (All-Time Record)", font=dict(size=13, color="#E8E8EF"), x=0),
+                title=dict(text="Historical Incident Timeline (Dec 30, 2025 - Present)", font=dict(size=13, color="#E8E8EF"), x=0),
                 legend=dict(orientation="h", y=-0.2, font=dict(size=10, color="#888")),
-                xaxis=dict(showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending", tickformat="%b %d, %Y", tickangle=-45),
-                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Incident Count", rangemode="tozero"),
+                xaxis=dict(
+                    showgrid=False, linecolor="rgba(255,255,255,0.05)", categoryorder="category ascending",
+                    tickformat="%b %d, %Y", tickangle=-45
+                ),
+                yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.04)", title="Incident Count", rangemode="tozero")
             )
-            st.plotly_chart(fig_bar, use_container_width=True)
+            # Make the timeline chart "movable" with a scrubbable range slider
+            fig_bar.update_xaxes(rangeslider_visible=True, rangeslider_thickness=0.08)
+            st.plotly_chart(fig_bar, use_container_width=True, use_container_height=True)
         except Exception as e:
             import traceback
             logger.debug(f"Failed to render incident timeline: {e}")
