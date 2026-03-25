@@ -1166,45 +1166,45 @@ def loading_skeleton(rows=3, height="1.2rem"):
     for i in range(rows):
         width = f"{80 - i * 15}%"
         skeleton_html += f"""
-        <div style="
-            height: {height};
-            width: {width};
-            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 6px;
-            margin-bottom: 0.6rem;
-        "></div>
-        """
+<div style="
+    height: {height};
+    width: {width};
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-bottom: 0.6rem;
+"></div>
+"""
     return f"""
-    <div style="padding: 1rem;">
-        {skeleton_html}
-        <style>
-            @keyframes shimmer {{
-                0% {{ background-position: 200% 0; }}
-                100% {{ background-position: -200% 0; }}
-            }}
-        </style>
-    </div>
-    """
+<div style="padding: 1rem;">
+    {skeleton_html}
+    <style>
+        @keyframes shimmer {{
+            0% {{ background-position: 200% 0; }}
+            100% {{ background-position: -200% 0; }}
+        }}
+    </style>
+</div>
+"""
 
 
 def empty_state(title, message, icon="📭"):
     """Renders a styled empty state with guidance text."""
     return f"""
-    <div style="
-        text-align: center;
-        padding: 3rem 2rem;
-        background: rgba(10, 10, 20, 0.5);
-        border: 1px dashed rgba(0, 243, 255, 0.15);
-        border-radius: 12px;
-        margin: 1rem 0;
-    ">
-        <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">{icon}</div>
-        <h3 style="color: #FAFAFA; margin: 0 0 0.5rem 0; font-family: 'Rajdhani', sans-serif;">{title}</h3>
-        <p style="color: #8B95A5; margin: 0; font-size: 0.9rem; line-height: 1.6;">{message}</p>
-    </div>
-    """
+<div style="
+    text-align: center;
+    padding: 3rem 2rem;
+    background: rgba(10, 10, 20, 0.5);
+    border: 1px dashed rgba(0, 243, 255, 0.15);
+    border-radius: 12px;
+    margin: 1rem 0;
+">
+    <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">{icon}</div>
+    <h3 style="color: #FAFAFA; margin: 0 0 0.5rem 0; font-family: 'Rajdhani', sans-serif;">{title}</h3>
+    <p style="color: #8B95A5; margin: 0; font-size: 0.9rem; line-height: 1.6;">{message}</p>
+</div>
+"""
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
