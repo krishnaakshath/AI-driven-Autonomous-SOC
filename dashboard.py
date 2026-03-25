@@ -161,11 +161,6 @@ else:
             st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon=":material/dashboard:"),
             st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon=":material/warning:"),
             st.Page("pages/03_Investigation.py", title="Investigation", icon=":material/search:"),
-            st.Page("pages/04_SOAR_Response.py", title="SOAR Response", icon=":material/bolt:"),
-        ],
-        "Additional Context": [
-            st.Page("pages/10_Threat_Hunt.py", title="Threat Hunting", icon=":material/troubleshoot:"),
-            st.Page("pages/11_Analysis.py", title="ML Insights", icon=":material/psychology:"),
         ],
     }, position="sidebar")
 
