@@ -121,10 +121,10 @@ elif user_is_admin:
         ],
         "🚨 CORE WORKFLOW 🚨": [
             st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon=":material/dashboard:"),
-            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon=":material/warning:"),
-            st.Page("pages/03_Investigation.py", title="Investigation", icon=":material/search:"),
-            st.Page("pages/04_SOAR_Response.py", title="SOAR Response", icon=":material/bolt:"),
-            st.Page("pages/05_Executive_Report.py", title="Executive Report", icon=":material/summarize:"),
+            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon=":material/emergency:"),
+            st.Page("pages/03_Investigation.py", title="Investigation", icon=":material/fingerprint:"),
+            st.Page("pages/04_SOAR_Response.py", title="SOAR Response", icon=":material/rocket_launch:"),
+            st.Page("pages/05_Executive_Report.py", title="Executive Report", icon=":material/leaderboard:"),
         ],
         "Dashboards & Monitoring": [
             st.Page("pages/02_Executive.py", title="Executive Overview", icon=":material/insights:"),
@@ -159,8 +159,8 @@ else:
         ],
         "🚨 CORE WORKFLOW 🚨": [
             st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon=":material/dashboard:"),
-            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon=":material/warning:"),
-            st.Page("pages/03_Investigation.py", title="Investigation", icon=":material/search:"),
+            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon=":material/emergency:"),
+            st.Page("pages/03_Investigation.py", title="Investigation", icon=":material/fingerprint:"),
         ],
     }, position="sidebar")
 
