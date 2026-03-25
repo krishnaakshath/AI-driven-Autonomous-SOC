@@ -5,6 +5,7 @@ data/user_data/
 data/weekly_reports/
 data/sessions.json
 data/parsed_logs/
+data/rl_models/
 
 # Python Artifacts
 __pycache__/

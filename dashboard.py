@@ -28,9 +28,9 @@ try:
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, 'r') as f:
                 cfg = json.load(f)
-                st.session_state.theme = cfg.get("theme", "cyberpunk")
+                st.session_state.theme = cfg.get("theme", "professional")
         else:
-            st.session_state.theme = "cyberpunk"
+            st.session_state.theme = "professional"
 
     from ui.theme import load_css
     load_css()
@@ -108,26 +108,25 @@ if not logged_in:
     # ── Not logged in: only show Login & Register ──
     pg = st.navigation({
         "Authentication": [
-            st.Page("pages/_Login.py", title="Login", icon=":material/lock:"),
-            st.Page("pages/_Register.py", title="Register", icon=":material/app_registration:"),
+            st.Page("pages/_Login.py", title="Login", icon="🔐"),
+            st.Page("pages/_Register.py", title="Register", icon="📝"),
         ],
     }, position="sidebar")
 
 elif user_is_admin:
     # ── Admin: full access to all pages ──
     pg = st.navigation({
-        "Platform Entrypoint": [
+        "Platform": [
             st.Page("pages/00_User_Guide.py", title="User Guide", icon="📘", default=True),
-        ],
-        "🚨 CORE WORKFLOW 🚨": [
             st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon="💻"),
+        ],
+        "Security Operations": [
             st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon="🔔"),
             st.Page("pages/03_Investigation.py", title="Investigation", icon="🔬"),
             st.Page("pages/04_SOAR_Response.py", title="SOAR Response", icon="🚀"),
             st.Page("pages/05_Executive_Report.py", title="Executive Report", icon="📊"),
         ],
-        "Dashboards & Monitoring": [
-            st.Page("pages/02_Executive.py", title="Executive Overview", icon="👑"),
+        "Monitoring": [
             st.Page("pages/05_Timeline.py", title="Global Timeline", icon="⏳"),
             st.Page("pages/24_SIEM.py", title="SIEM Console", icon="🏰"),
         ],
@@ -138,12 +137,11 @@ elif user_is_admin:
             st.Page("pages/09_OSINT_Feeds.py", title="OSINT Sources", icon="📻"),
             st.Page("pages/10_Threat_Hunt.py", title="Threat Hunting", icon="🏹"),
         ],
-        "Advanced AI Analysis": [
+        "AI Analysis": [
             st.Page("pages/11_Analysis.py", title="ML Insights", icon="💡"),
             st.Page("pages/26_RL_Adaptive.py", title="RL Adaptive Defense", icon="🦾"),
-            st.Page("pages/27_Federated_Learning.py", title="Federated Learning", icon="🌐"),
         ],
-        "Operations & Settings": [
+        "Operations": [
             st.Page("pages/15_Scanners.py", title="Network Scanners", icon="📡"),
             st.Page("pages/21_CORTEX.py", title="CORTEX Assistant", icon="🦉"),
             st.Page("pages/25_Firewall_Control.py", title="Firewall Control", icon="🔥"),
@@ -154,11 +152,11 @@ elif user_is_admin:
 else:
     # ── Regular user: clean, limited sidebar ──
     pg = st.navigation({
-        "Platform Entrypoint": [
+        "Platform": [
             st.Page("pages/00_User_Guide.py", title="User Guide", icon="📘", default=True),
-        ],
-        "🚨 CORE WORKFLOW 🚨": [
             st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon="💻"),
+        ],
+        "Security Operations": [
             st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon="🔔"),
             st.Page("pages/03_Investigation.py", title="Investigation", icon="🔬"),
         ],

@@ -15,7 +15,7 @@ import streamlit as st
 PROFESSIONAL_SOC_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-    
+
     :root {
         --prof-bg: #0F1115;
         --prof-surface: #1E2128;
@@ -29,131 +29,116 @@ PROFESSIONAL_SOC_CSS = """
         --text-muted: #64748B;
     }
 
-    /* Base Typography & Background */
-    html, body, [class*="css"]:not([class*="icon"]):not([data-testid*="Collapse"]):not([aria-label*="sidebar"]), 
-    .stMarkdown, p, div:not([data-testid*="Collapse"]), label {
-        font-family: 'Inter', sans-serif !important;
-        color: var(--text-pure);
+    /* Base */
+    html, body, .stApp { background-color: var(--prof-bg) !important; }
+    html, body, [class*="css"], .stMarkdown, p, label {
+        font-family: 'Inter', sans-serif !important; color: var(--text-pure);
     }
-    
-    .stApp {
-        background-color: var(--prof-bg) !important;
-    }
-    
-    /* Preserve Material Icons font */
-    span[class*="material"], 
-    [data-testid="stSidebarCollapseButton"] span,
-    button[aria-label*="sidebar"] span {
-        font-family: 'Material Icons', 'Material Symbols Rounded', sans-serif !important;
-    }
-    
     h1, h2, h3, h4, h5, h6 {
         font-family: 'Inter', sans-serif !important;
-        font-weight: 600 !important;
-        letter-spacing: -0.02em !important;
+        font-weight: 600 !important; letter-spacing: -0.02em !important; color: var(--text-pure) !important;
     }
+    code, pre { font-family: 'JetBrains Mono', monospace !important; }
+    header[data-testid="stHeader"] { background: transparent !important; }
+    #MainMenu, footer { visibility: hidden; }
+    .stDeployButton { display: none; }
 
-    /* Hide Auth Pages from Sidebar Nav */
-    [data-testid="stSidebarNav"] a[href*="Login"],
-    [data-testid="stSidebarNav"] a[href*="Register"] {
-        display: none !important;
-    }
-
-    /* Minimal Top Header */
-    header[data-testid="stHeader"] {
-        background: transparent !important;
-    }
-
-    /* Flat Professional Sidebar */
+    /* Sidebar */
     [data-testid="stSidebar"] {
-        min-width: 72px !important;
-        max-width: 72px !important;
-        background-color: #15181E !important;
-        border-right: 1px solid var(--prof-border);
+        background-color: #13161C !important;
+        border-right: 1px solid var(--prof-border) !important;
     }
-
-    /* Hide Sidebar Default Junk */
     [data-testid="stSidebarCollapseButton"] { display: none !important; }
-    [data-testid="stSidebarNavItems"] [data-testid="stSidebarNavLink"] span { display: none !important; }
-
-    /* Flat Icon-Only Links */
-    [data-testid="stSidebarNavLink"] {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        height: 48px !important;
-        margin-bottom: 8px !important;
-        color: var(--text-subtle) !important;
+    section[data-testid="stSidebar"] a {
         border-radius: 6px !important;
-        background-color: transparent !important;
+        padding: 0.45rem 0.75rem !important;
+        color: var(--text-subtle) !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        transition: all 0.15s ease !important;
     }
-    [data-testid="stSidebarNavLink"]:hover {
-        background-color: var(--prof-border) !important;
+    section[data-testid="stSidebar"] a:hover {
+        background-color: rgba(255,255,255,0.05) !important;
         color: var(--text-pure) !important;
     }
-    [data-selected="true"], [aria-selected="true"] {
+    section[data-testid="stSidebar"] a[aria-current="page"] {
+        background-color: rgba(59,130,246,0.12) !important;
         color: var(--prof-primary) !important;
-        background-color: rgba(59, 130, 246, 0.1) !important;
-    }
-    [aria-selected="true"]::before {
-        content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 3px;
-        background-color: var(--prof-primary); border-radius: 0 4px 4px 0;
+        border-left: 2px solid var(--prof-primary) !important;
     }
 
-    /* Map Icons to Pages */
-    [data-testid="stSidebarNavLink"]::after {
-        font-family: 'Material Symbols Rounded', 'Material Icons' !important;
-        font-size: 22px; content: 'folder_open'; color: inherit;
-        display: block; text-align: center; width: 100%; text-transform: none !important;
-    }
-    [data-testid="stSidebarNavLink"][href$="User_Guide"]::after { content: 'auto_stories'; }
-    [data-testid="stSidebarNavLink"][href$="Dashboard"]::after { content: 'grid_view'; }
-    [data-testid="stSidebarNavLink"][href$="Executive"]::after { content: 'monitoring'; }
-    [data-testid="stSidebarNavLink"][href$="Alerts"]::after { content: 'notifications_active'; }
-    [data-testid="stSidebarNavLink"][href$="Logs"]::after { content: 'receipt_long'; }
-    [data-testid="stSidebarNavLink"][href$="Timeline"]::after { content: 'timeline'; }
-    [data-testid="stSidebarNavLink"][href$="Threat_Intel"]::after { content: 'travel_explore'; }
-    [data-testid="stSidebarNavLink"][href$="Geo_Predictions"]::after { content: 'language'; }
-    [data-testid="stSidebarNavLink"][href$="Kill_Chain"]::after { content: 'security'; }
-    [data-testid="stSidebarNavLink"][href$="OSINT_Feeds"]::after { content: 'rss_feed'; }
-    [data-testid="stSidebarNavLink"][href$="Threat_Hunt"]::after { content: 'track_changes'; }
-    [data-testid="stSidebarNavLink"][href$="Analysis"]::after { content: 'analytics'; }
-    [data-testid="stSidebarNavLink"][href$="SOAR_Workbench"]::after { content: 'handyman'; }
-
-    /* Clean Card Primitives (No Glow) */
-    .prof-card {
+    /* Metrics */
+    [data-testid="stMetric"] {
         background-color: var(--prof-surface);
         border: 1px solid var(--prof-border);
-        border-radius: 8px;
+        border-radius: 8px; padding: 1rem 1.2rem;
     }
-    
-    /* Clean Buttons */
+    [data-testid="stMetricLabel"] { color: var(--text-subtle) !important; font-size: 0.8rem !important; }
+    [data-testid="stMetricValue"] { color: var(--text-pure) !important; font-size: 1.8rem !important; font-weight: 700 !important; }
+
+    /* Cards */
+    .glass-card, .prof-card {
+        background-color: var(--prof-surface) !important;
+        border: 1px solid var(--prof-border) !important;
+        border-radius: 8px !important; padding: 1.2rem !important;
+    }
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        background: transparent; border-bottom: 1px solid var(--prof-border); gap: 0;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: var(--text-subtle); font-size: 0.875rem; font-weight: 500;
+        padding: 0.6rem 1rem; border-bottom: 2px solid transparent;
+        background: transparent; transition: all 0.15s;
+    }
+    .stTabs [data-baseweb="tab"]:hover { color: var(--text-pure); }
+    .stTabs [aria-selected="true"] {
+        color: var(--prof-primary) !important;
+        border-bottom-color: var(--prof-primary) !important;
+        background: transparent !important;
+    }
+    .stTabs [data-baseweb="tab-border"], .stTabs [data-baseweb="tab-highlight"] { display: none; }
+
+    /* Buttons */
     .stButton > button {
         background-color: var(--prof-surface) !important;
         border: 1px solid var(--prof-border) !important;
-        color: var(--text-pure) !important;
-        border-radius: 6px !important;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 500 !important;
-        padding: 0.5rem 1rem !important;
-        transition: all 0.2s;
+        color: var(--text-pure) !important; border-radius: 6px !important;
+        font-weight: 500 !important; padding: 0.45rem 1rem !important; transition: all 0.15s;
     }
     .stButton > button:hover {
         border-color: var(--prof-primary) !important;
-        background-color: rgba(59, 130, 246, 0.05) !important;
+        color: var(--prof-primary) !important;
+        background-color: rgba(59,130,246,0.06) !important;
     }
-    
-    /* Clean Inputs */
-    .stTextInput input, .stSelectbox select {
+
+    /* Inputs */
+    .stTextInput input, .stTextArea textarea, .stSelectbox > div > div {
         background-color: var(--prof-surface) !important;
         border: 1px solid var(--prof-border) !important;
-        border-radius: 6px !important;
-        color: var(--text-pure) !important;
+        border-radius: 6px !important; color: var(--text-pure) !important;
     }
-    .stTextInput input:focus {
+    .stTextInput input:focus, .stTextArea textarea:focus {
         border-color: var(--prof-primary) !important;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(59,130,246,0.2) !important;
     }
+
+    /* Tables */
+    .stDataFrame { border: 1px solid var(--prof-border); border-radius: 8px; overflow: hidden; }
+
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: var(--prof-surface) !important;
+        border: 1px solid var(--prof-border) !important;
+        border-radius: 6px !important; color: var(--text-pure) !important;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--prof-bg); }
+    ::-webkit-scrollbar-thumb { background: var(--prof-border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 </style>
 """
 
