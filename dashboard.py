@@ -120,15 +120,15 @@ elif user_is_admin:
             st.Page("pages/00_User_Guide.py", title="User Guide", icon="📘", default=True),
         ],
         "🚨 CORE WORKFLOW 🚨": [
-            st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon="🖥️"),
-            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon="⚠️"),
+            st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon="💻"),
+            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon="🔔"),
             st.Page("pages/03_Investigation.py", title="Investigation", icon="🔬"),
             st.Page("pages/04_SOAR_Response.py", title="SOAR Response", icon="🚀"),
             st.Page("pages/05_Executive_Report.py", title="Executive Report", icon="📊"),
         ],
         "Dashboards & Monitoring": [
             st.Page("pages/02_Executive.py", title="Executive Overview", icon="👑"),
-            st.Page("pages/05_Timeline.py", title="Global Timeline", icon="🕰️"),
+            st.Page("pages/05_Timeline.py", title="Global Timeline", icon="⏳"),
             st.Page("pages/24_SIEM.py", title="SIEM Console", icon="🏰"),
         ],
         "Threat Intelligence": [
@@ -141,13 +141,13 @@ elif user_is_admin:
         "Advanced AI Analysis": [
             st.Page("pages/11_Analysis.py", title="ML Insights", icon="💡"),
             st.Page("pages/26_RL_Adaptive.py", title="RL Adaptive Defense", icon="🦾"),
-            st.Page("pages/27_Federated_Learning.py", title="Federated Learning", icon="🕸️"),
+            st.Page("pages/27_Federated_Learning.py", title="Federated Learning", icon="🌐"),
         ],
         "Operations & Settings": [
             st.Page("pages/15_Scanners.py", title="Network Scanners", icon="📡"),
             st.Page("pages/21_CORTEX.py", title="CORTEX Assistant", icon="🦉"),
             st.Page("pages/25_Firewall_Control.py", title="Firewall Control", icon="🔥"),
-            st.Page("pages/06_Settings.py", title="Platform Settings", icon="🛠️"),
+            st.Page("pages/06_Settings.py", title="Platform Settings", icon="🔧"),
         ],
     }, position="sidebar")
 
@@ -158,8 +158,8 @@ else:
             st.Page("pages/00_User_Guide.py", title="User Guide", icon="📘", default=True),
         ],
         "🚨 CORE WORKFLOW 🚨": [
-            st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon="🖥️"),
-            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon="⚠️"),
+            st.Page("pages/01_Dashboard.py", title="SOC Dashboard", icon="💻"),
+            st.Page("pages/02_Alert_Triage.py", title="Alert Triage", icon="🔔"),
             st.Page("pages/03_Investigation.py", title="Investigation", icon="🔬"),
         ],
     }, position="sidebar")
