@@ -128,7 +128,6 @@ elif user_is_admin:
         ],
         "Dashboards & Monitoring": [
             st.Page("pages/02_Executive.py", title="Executive Overview", icon="👔"),
-            st.Page("pages/04_Logs.py", title="Raw Logs", icon="📜"),
             st.Page("pages/05_Timeline.py", title="Global Timeline", icon="⏱️"),
             st.Page("pages/24_SIEM.py", title="SIEM Console", icon="🛡️"),
         ],
@@ -165,7 +164,6 @@ else:
             st.Page("pages/04_SOAR_Response.py", title="SOAR Response", icon="⚡"),
         ],
         "Additional Context": [
-            st.Page("pages/04_Logs.py", title="Raw Logs", icon="📜"),
             st.Page("pages/10_Threat_Hunt.py", title="Threat Hunting", icon="🎯"),
             st.Page("pages/11_Analysis.py", title="ML Insights", icon="🧠"),
         ],
