@@ -507,10 +507,13 @@ with tab4:
             st.success(f"Log source '{source_name}' added successfully!")
 
 page_footer("SIEM")
-# Live Refresh Logic
+# Live Refresh Logic (non-blocking)
 st.sidebar.markdown("---")
-auto_refresh = st.sidebar.toggle("Live Refresh (30s)", value=True)
-if auto_refresh:
-    import time
-    time.sleep(30)
-    st.rerun()
+siem_sidebar_refresh = st.sidebar.toggle("Live Refresh (30s)", value=False, key="siem_sidebar_refresh")
+if siem_sidebar_refresh:
+    if 'siem_sidebar_ts' not in st.session_state:
+        st.session_state.siem_sidebar_ts = time.time()
+    if time.time() - st.session_state.siem_sidebar_ts > 30:
+        st.session_state.siem_sidebar_ts = time.time()
+        st.rerun()
+
