@@ -77,8 +77,8 @@ class SupabaseClient:
     
     def is_connected(self):
         """Test if Supabase is reachable."""
-        if self._connected is not None:
-            return self._connected
+        if self._connected:
+            return True
         try:
             r = requests.get(
                 f"{self.url}/rest/v1/events?limit=1",
@@ -212,17 +212,18 @@ class DatabaseService:
     
     def __init__(self):
         self._supabase = None
-        self._use_supabase = False
         
         if SUPABASE_URL and SUPABASE_KEY:
             self._supabase = SupabaseClient(SUPABASE_URL, SUPABASE_KEY)
-            try:
-                self._use_supabase = self._supabase.is_connected()
-            except Exception:
-                self._use_supabase = False
         
         if not self._use_supabase:
             print("[DB] CRITICAL WARNING: Supabase is unreachable. Cloud database is required.")
+
+    @property
+    def _use_supabase(self):
+        if self._supabase:
+            return self._supabase.is_connected()
+        return False
 
     # ═══════════════════════════════════════════════════════════════════════════
     # INSERT METHODS
