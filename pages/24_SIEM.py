@@ -428,11 +428,14 @@ with tab4:
     source_stats = {}
     for event in events:
         src = event.get("source")
+        ts = event.get("timestamp")
+        if not src:
+            continue
         if src not in source_stats:
-            source_stats[src] = {"count": 0, "last_event": event.get("timestamp")}
+            source_stats[src] = {"count": 0, "last_event": ts or ""}
         source_stats[src]["count"] += 1
-        if event.get("timestamp") > source_stats[src]["last_event"]:
-            source_stats[src]["last_event"] = event.get("timestamp")
+        if ts and source_stats[src]["last_event"] and ts > source_stats[src]["last_event"]:
+            source_stats[src]["last_event"] = ts
     
     # Map sources to product names
     source_products = {

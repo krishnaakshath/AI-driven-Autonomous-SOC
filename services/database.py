@@ -477,6 +477,28 @@ class DatabaseService:
         if not self._use_supabase: return 0
         return self._supabase.count("events")
 
+    def insert_soar_action(self, action_data: Dict) -> bool:
+        """Log a SOAR automated response action."""
+        if not self._use_supabase: return False
+        row = {
+            "id": action_data.get("id"),
+            "timestamp": action_data.get("timestamp", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+            "alert_id": action_data.get("alert_id"),
+            "playbook": action_data.get("playbook"),
+            "action": action_data.get("action"),
+            "status": action_data.get("status", "Executed"),
+            "details": action_data,
+        }
+        return self._supabase.insert("soar_actions", row)
+
+    def get_soar_actions(self, limit=100) -> List[Dict]:
+        """Get recent SOAR action logs."""
+        if not self._use_supabase: return []
+        try:
+            return self._supabase.select("soar_actions", limit=limit, order="timestamp.desc")
+        except Exception:
+            return []
+
     def mass_seed_supabase(self, target_count: int = 180000):
         """Massive simulation backfill up to `target_count` using chunked batches."""
         if not self._use_supabase: return False
