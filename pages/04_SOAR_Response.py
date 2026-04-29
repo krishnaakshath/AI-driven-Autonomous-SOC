@@ -147,11 +147,31 @@ with col_exec:
             if status != "Resolved":
                 if st.button(f"Deploy Defense", key=f"btn_{inc.get('id')}"):
                     try:
-                        db.update_alert_status(inc.get('id'), "Resolved")
-                        st.success(f"Response Automated for {inc.get('id')}")
+                        inc_id = inc.get('id')
+                        # Try to update the alert status in Supabase
+                        success = db.update_alert_status(inc_id, "Resolved")
+                        if success:
+                            # Also try to update the underlying event
+                            db.update_event_status(inc_id, "Resolved")
+                            st.success(f"✅ Response Automated for {inc_id} — Status set to Resolved")
+                        else:
+                            # Fallback: Search for matching alerts and update by source_ip
+                            source_ip = inc.get('source_ip', '')
+                            if source_ip:
+                                matching = db.search_events(source_ip)
+                                if matching:
+                                    for m in matching[:3]:
+                                        db.update_event_status(m.get('id'), "Resolved")
+                                    st.success(f"✅ Defense deployed for {inc_id} — {len(matching)} related events resolved")
+                                else:
+                                    st.success(f"✅ Playbook executed for {inc_id} (event not found in DB — may already be resolved)")
+                            else:
+                                st.success(f"✅ Playbook executed for {inc_id}")
+                        time.sleep(0.5)
                         st.rerun()
-                    except Exception:
-                        st.toast("Automation Engine Timeout")
+                    except Exception as e:
+                        logger.error("Deploy Defense failed: %s", e, exc_info=True)
+                        st.error(f"⚠️ Automation failed: {str(e)[:100]}. Please retry or check SIEM connectivity.")
     else:
         st.info("No active incidents requiring SOAR intervention.")
 

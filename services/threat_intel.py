@@ -10,7 +10,7 @@ logger = get_logger("threat_intel")
 
 
 CACHE_FILE = ".threat_intel_cache.json"
-CACHE_DURATION = 300  # 5 minutes — keep data fresh
+CACHE_DURATION = 180  # 3 minutes — keep data fresh
 CONFIG_FILE = ".soc_config.json"
 
 # Max payload sizes for external IOC data
@@ -90,6 +90,16 @@ class ThreatIntelligence:
             if time.time() - cached_time < CACHE_DURATION:
                 return True
         return False
+
+    def clear_cache(self):
+        """Clear all cached threat intelligence data to force fresh API calls."""
+        self.cache = {}
+        if os.path.exists(CACHE_FILE):
+            try:
+                os.remove(CACHE_FILE)
+            except Exception:
+                pass
+        logger.info("Threat intel cache cleared")
     
     def check_ip_abuseipdb(self, ip: str) -> Dict:
         cache_key = f"abuseipdb_{ip}"
@@ -489,11 +499,14 @@ class ThreatIntelligence:
         }
         
         # Try to get fresh data or cached
-        # If force_refresh is True, we pass it down if get_otx_pulses supported it, or just ignore cache here
-        if force_refresh and "otx_pulses_100" in self.cache:
-            del self.cache["otx_pulses_100"]
+        # If force_refresh is True, clear all pulse-related caches
+        if force_refresh:
+            keys_to_remove = [k for k in self.cache if k.startswith("otx_pulses") or k == "global_stats"]
+            for k in keys_to_remove:
+                del self.cache[k]
+            self._save_cache()
             
-        pulses = self.get_otx_pulses(limit=100) # This uses cache internally unless we add force_refresh there too
+        pulses = self.get_otx_pulses(limit=100) # This uses cache internally unless we clear it above
         counts = {k: 0 for k in country_keywords.keys()}
         
         for p in pulses:

@@ -50,6 +50,12 @@ if 'last_refresh' not in st.session_state:
 with h_col2:
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("↻ Refresh", use_container_width=True):
+        # Clear threat intel cache to force fresh API calls
+        if HAS_THREAT_SERVICE:
+            try:
+                threat_intel.clear_cache()
+            except Exception:
+                pass
         st.session_state.force_refresh_next_run = True
         st.session_state.last_refresh = time.time()
         st.rerun()

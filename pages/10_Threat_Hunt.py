@@ -237,17 +237,53 @@ with tab2:
             """, unsafe_allow_html=True)
         with col2:
             if st.button(" Run", key=f"run_{query['name']}", use_container_width=True):
-                # Execute real query (Phase 18)
-                from services.database import db
-                # Extract key term from query string for simple search
-                key_term = query['query'].split(':')[1].split(' ')[0].replace('(', '').replace(')', '')
-                results = db.search_events(key_term)
+                # Map hunt query categories to meaningful search terms for SIEM DB
+                hunt_search_map = {
+                    "Suspicious PowerShell": ["powershell", "encoded", "execution", "process"],
+                    "Lateral Movement": ["psexec", "wmic", "smb", "lateral", "rdp", "admin"],
+                    "Data Exfiltration": ["exfil", "tunnel", "dns", "large", "upload", "443"],
+                    "C2 Beaconing": ["beacon", "c2", "http", "callback", "malware", "trojan"],
+                    "Credential Dumping": ["credential", "lsass", "mimikatz", "password", "login", "brute"],
+                }
                 
-                if results:
-                    st.success(f"Found {len(results)} matches")
-                    st.session_state[f"hunt_result_{query['name']}"] = results
+                search_terms = hunt_search_map.get(query['name'], [query['name'].lower()])
+                
+                from services.database import db
+                all_results = []
+                for term in search_terms:
+                    results = db.search_events(term)
+                    if results:
+                        # Deduplicate by event ID
+                        existing_ids = {r.get('id') for r in all_results}
+                        for r in results:
+                            if r.get('id') not in existing_ids:
+                                all_results.append(r)
+                                existing_ids.add(r.get('id'))
+                    if len(all_results) >= 50:
+                        break
+                
+                if all_results:
+                    st.success(f"🎯 Found {len(all_results)} matches across {len(search_terms)} search terms")
+                    st.session_state[f"hunt_result_{query['name']}"] = all_results
+                    # Save to hunt history
+                    if 'hunt_execution_log' not in st.session_state:
+                        st.session_state.hunt_execution_log = []
+                    st.session_state.hunt_execution_log.append({
+                        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "query": query['name'],
+                        "results": len(all_results),
+                        "status": "Matches Found"
+                    })
                 else:
                     st.warning("No matches found in current logs")
+                    if 'hunt_execution_log' not in st.session_state:
+                        st.session_state.hunt_execution_log = []
+                    st.session_state.hunt_execution_log.append({
+                        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "query": query['name'],
+                        "results": 0,
+                        "status": "No Findings"
+                    })
 
     # Display results if available
     for query in HUNT_QUERIES:
@@ -255,7 +291,7 @@ with tab2:
             res = st.session_state[f"hunt_result_{query['name']}"]
             if isinstance(res, list) and res:
                 st.write(f"**Results for {query['name']}:**")
-                st.dataframe(pd.DataFrame(res).head(5), use_container_width=True)
+                st.dataframe(pd.DataFrame(res).head(10), use_container_width=True)
 
 with tab3:
     st.markdown(section_title("Hypothesis-Driven Hunting"), unsafe_allow_html=True)
@@ -356,13 +392,37 @@ with tab4:
         
     st.markdown("---")
     st.markdown("###  Historical Execution Log")
-    # Sample hunt history
-    history = [
-        {"date": "2024-02-05 14:30", "query": "Suspicious PowerShell", "results": 12, "status": "Reviewed"},
-        {"date": "2024-02-05 10:15", "query": "C2 Beaconing Detection", "results": 3, "status": "Investigating"},
-        {"date": "2024-02-04 16:45", "query": "Lateral Movement Scan", "results": 0, "status": "No Findings"},
-        {"date": "2024-02-04 09:00", "query": "Credential Dumping Hunt", "results": 5, "status": "Escalated"},
-    ]
+    
+    # Use dynamic hunt execution log from session state
+    if 'hunt_execution_log' in st.session_state and st.session_state.hunt_execution_log:
+        history = st.session_state.hunt_execution_log
+    else:
+        # Fallback: generate initial history from DB search counts
+        history = []
+        try:
+            from services.database import db as _hist_db
+            for q in HUNT_QUERIES:
+                hunt_search_map = {
+                    "Suspicious PowerShell": "powershell",
+                    "Lateral Movement": "lateral",
+                    "Data Exfiltration": "exfil",
+                    "C2 Beaconing": "beacon",
+                    "Credential Dumping": "credential",
+                }
+                term = hunt_search_map.get(q['name'], q['name'].lower())
+                results = _hist_db.search_events(term)
+                count = len(results) if results else 0
+                status = "Matches Found" if count > 0 else "No Findings"
+                history.append({
+                    "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "query": q['name'],
+                    "results": count,
+                    "status": status
+                })
+        except Exception:
+            history = [
+                {"date": datetime.now().strftime("%Y-%m-%d %H:%M"), "query": "System Initialization", "results": 0, "status": "Awaiting First Hunt"}
+            ]
     
     df = pd.DataFrame(history)
     st.dataframe(df, use_container_width=True, hide_index=True)

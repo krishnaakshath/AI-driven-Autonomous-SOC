@@ -192,7 +192,23 @@ class SupabaseClient:
             return None
         except Exception:
             return None
-    
+
+    def update(self, table, filters, data):
+        """Update rows matching filters with new data via PATCH."""
+        try:
+            params = filters or {}
+            r = requests.patch(
+                f"{self.url}/rest/v1/{table}",
+                headers={**self.headers, "Prefer": "return=minimal"},
+                params=params,
+                json=data,
+                timeout=10
+            )
+            return r.status_code in (200, 204)
+        except Exception as e:
+            logger.warning("[DB] Supabase update: %s", e)
+            return False
+
     def delete_all(self, table):
         """Delete all rows from a table."""
         try:
@@ -287,6 +303,28 @@ class DatabaseService:
             "events", query, 
             ["source_ip", "dest_ip", "user", "event_type"],
             limit=limit
+        )
+
+    def update_alert_status(self, alert_id, new_status):
+        """Update the status of an alert by ID."""
+        if not self._use_supabase:
+            logger.warning("[DB] Cannot update alert — Supabase not connected")
+            return False
+        return self._supabase.update(
+            "alerts",
+            {"id": f"eq.{alert_id}"},
+            {"status": new_status}
+        )
+
+    def update_event_status(self, event_id, new_status):
+        """Update the status of an event by ID."""
+        if not self._use_supabase:
+            logger.warning("[DB] Cannot update event — Supabase not connected")
+            return False
+        return self._supabase.update(
+            "events",
+            {"id": f"eq.{event_id}"},
+            {"status": new_status}
         )
 
     # ═══════════════════════════════════════════════════════════════════════════

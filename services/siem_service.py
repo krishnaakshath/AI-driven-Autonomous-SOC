@@ -47,15 +47,17 @@ class SIEMService:
 
                 logger.debug("Suppressed exception", exc_info=True)
             
-        # Periodically pull fresh OSINT threat intelligence (20% chance)
-        if random.random() < 0.2:
-            try:
-                self.ingest_live_threats(limit=10)
-            except Exception:
-
-                logger.debug("Suppressed exception", exc_info=True)
+        # Always try to ingest fresh threats (small batch) to keep data flowing
+        try:
+            self.ingest_live_threats(limit=3)
+        except Exception:
+            logger.debug("Suppressed exception", exc_info=True)
                 
         return db.get_recent_events(limit=count)
+
+    def force_ingest(self, limit: int = 20) -> int:
+        """Force ingestion of fresh threat data — not random, always executes."""
+        return self.ingest_live_threats(limit=limit)
 
 
     def ingest_threat_intelligence(self):
