@@ -193,10 +193,31 @@ with tabs[0]:
     b_col1, b_col2, b_col3 = st.columns([1, 1, 2])
     with b_col1:
         if st.button("✅ Resolve Selected", use_container_width=True):
-            st.toast("Simulated: Selected alerts marked as Resolved.", icon="✅")
+            from services.database import db
+            resolved_count = 0
+            for idx, alert in filtered.head(40).iterrows():
+                if st.session_state.get(f"sel_{alert['id']}_{idx}", False):
+                    db.update_alert_status(alert['id'], "Resolved")
+                    resolved_count += 1
+            if resolved_count > 0:
+                st.toast(f"Resolved {resolved_count} selected alerts.", icon="✅")
+                st.rerun()
+            else:
+                st.toast("No alerts selected. Use checkboxes to select alerts first.", icon="ℹ️")
     with b_col2:
         if st.button("🤖 AI Auto-Triage", use_container_width=True, type="primary"):
-            st.toast("RL Agent automatically suppressed 3 False Positives.", icon="🤖")
+            from services.database import db
+            # Auto-resolve LOW severity alerts that are Open
+            low_open = filtered[(filtered['severity'] == 'LOW') & (filtered['status'] == 'Open')]
+            suppressed = 0
+            for idx, alert in low_open.head(10).iterrows():
+                db.update_alert_status(alert['id'], "Resolved")
+                suppressed += 1
+            if suppressed > 0:
+                st.toast(f"RL Agent auto-resolved {suppressed} low-severity alerts.", icon="🤖")
+                st.rerun()
+            else:
+                st.toast("No low-severity open alerts to auto-triage.", icon="ℹ️")
             
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -222,6 +243,9 @@ with tabs[0]:
         RL_ALERTS = False
 
     for idx, alert in filtered.head(40).iterrows():
+        # Extract alert status first (needed for SLA calculation)
+        alert_status = str(alert["status"]).lower()
+        
         # SLA Calculation (Assuming 4hr SLA)
         try:
             alert_time = pd.to_datetime(alert["time"])
@@ -229,7 +253,7 @@ with tabs[0]:
                 alert_time = alert_time.replace(tzinfo=datetime.now().astimezone().tzinfo)
             deadline = alert_time + timedelta(hours=4)
             rem = (deadline - datetime.now().astimezone()).total_seconds()
-            if status == "resolved":
+            if alert_status == "resolved":
                 sla_str = '<span style="color:#00C853;">Met</span>'
             elif rem < 0:
                 sla_str = '<span style="color:#ff003c; font-weight:bold;">Breach</span>'
@@ -245,8 +269,7 @@ with tabs[0]:
         sev = alert["severity"].lower()
         sev_color = {"critical": "#ff003c", "high": "#ff6b00", "medium": "#f0ff00", "low": "#0aff0a"}.get(sev, "#00f3ff")
         
-        status = str(alert["status"]).lower()
-        status_color = {"open": "#ff003c", "investigating": "#00f3ff", "resolved": "#0aff0a"}.get(status, "#888")
+        status_color = {"open": "#ff003c", "investigating": "#00f3ff", "resolved": "#0aff0a"}.get(alert_status, "#888")
         
         # RL Priority
         rl_badge = ""

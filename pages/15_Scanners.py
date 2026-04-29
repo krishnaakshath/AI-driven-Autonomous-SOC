@@ -101,10 +101,6 @@ with tab2:
             except Exception:
 
                 logger.debug("Suppressed exception", exc_info=True)
-        
-        # Hardcoded fallback for deployment (your API key)
-        if not VT_KEY:
-            VT_KEY = '6a0b6fa88fa9cc23373b227af1e641af64597a152e6ea37d3a8d5fd1beff1fc7'
             
     except Exception as e:
         st.error(f"Configuration Error: {e}")

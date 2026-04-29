@@ -150,19 +150,38 @@ with tab1:
         
         uploaded_mem = st.file_uploader("Upload Memory Image", type=["mem", "raw", "bin", "vmem"], key="mem_upload")
         if uploaded_mem:
-            with st.spinner(f"Parsing memory structures in {uploaded_mem.name}..."):
-                import time
-                import random
-                time.sleep(1.5)
+            with st.spinner(f"Analyzing {uploaded_mem.name}..."):
+                import hashlib
+                file_bytes = uploaded_mem.getvalue()
+                file_hash = hashlib.sha256(file_bytes).hexdigest()
+                file_md5 = hashlib.md5(file_bytes).hexdigest()
+                file_size = len(file_bytes)
+                
+                # Extract printable strings from binary
+                import re
+                printable_strings = re.findall(b'[\\x20-\\x7e]{8,}', file_bytes[:500000])
+                urls = [s.decode() for s in printable_strings if b'http' in s.lower()][:5]
+                ips = re.findall(b'\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b', file_bytes[:500000])
+                unique_ips = list(set(ip.decode() for ip in ips))[:10]
+                
                 st.success("Analysis Complete")
-                st.markdown(f"**Discovered Artifacts:**")
-                # Simulated volatility output
-                st.code(f"""[+] Found Hidden Process: svchost.exe (PID: {random.randint(2000, 9999)})
-[+] Recovered 3 Mutexes associated with known C2 frameworks
-[+] Extracted Network Strings:
-    -> 'http://185.220.101.1:443/api/v1/auth'
-    -> 'powershell.exe -nop -w hidden -ep bypass -c...'
-[!] Warning: Suspicious inline API hooks detected in ntdll.dll""", language="bash")
+                st.markdown("**File Metadata:**")
+                st.code(f"""[+] File: {uploaded_mem.name}
+[+] Size: {file_size:,} bytes ({file_size/1024:.1f} KB)
+[+] SHA-256: {file_hash}
+[+] MD5: {file_md5}
+[+] Printable strings found: {len(printable_strings)}
+[+] Embedded URLs: {len(urls)}
+[+] Embedded IPs: {len(unique_ips)}""", language="bash")
+                
+                if urls:
+                    st.markdown("**Extracted URLs:**")
+                    for u in urls:
+                        st.code(f"  → {u}", language=None)
+                if unique_ips:
+                    st.markdown("**Extracted IPs:**")
+                    for ip in unique_ips:
+                        st.code(f"  → {ip}", language=None)
     with col2:
         st.markdown("""
             <div class="glass-card">

@@ -1,8 +1,0 @@
-{
-  "test@example.com": {
-    "name": "Test User",
-    "password_hash": "$2b$12$DummyHashForTestingBcrypt............",
-    "password_salt": "legacy_salt",
-    "two_factor_enabled": false
-  }
-}

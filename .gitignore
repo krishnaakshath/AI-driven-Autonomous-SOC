@@ -28,18 +28,33 @@ soc-env/
 .threat_intel_cache.json
 soc_monitor.log
 
+# Binary Documents (should not be in git)
+*.pdf
+*.docx
+
 # Temporary/Test Files
-test_day1.py
+test_*.py
 manual_attack_tool.py
 *.pcapng.gz
-live_capture.csv
-test_report.pdf
+live_capture.*
+uploaded_*
+
+# Thesis / Academic Generators (not part of SOC runtime)
+academic_content.py
+comprehensive_thesis_generator.py
+docx_thesis_generator.py
+thesis_generator.py
+soc_content_generator.py
+update_ieee.py
+hollywood_simulator.py
+api_tester.py
 
 # User Data & Auth
 .soc_users.json
 data/users.json
 data/users.json.bak
 data/blocked_ips.json
+data/.session_token
 
 # Logs
 logs/
@@ -48,3 +63,4 @@ logs/
 # Reports
 reports/
 ui/__pycache__/
+

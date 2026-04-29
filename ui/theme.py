@@ -202,12 +202,12 @@ CYBERPUNK_CSS = """
         text-transform: uppercase;
     }
     
-    /* Custom Minimal Sidebar (Icon-Only Nightfall Theme) */
+    /* Custom Compact Sidebar with Readable Labels */
     
-    /* Lock sidebar width */
+    /* Sidebar width — compact but readable */
     [data-testid="stSidebar"] {
-        min-width: 68px !important;
-        max-width: 68px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
         background-color: #12121A !important;
         border-right: 1px solid rgba(255,255,255,0.05);
         overflow-x: hidden !important;
@@ -221,24 +221,26 @@ CYBERPUNK_CSS = """
         display: none !important;
     }
 
-    /* Hide text from links */
+    /* Show text labels in sidebar */
     [data-testid="stSidebarNavItems"] [data-testid="stSidebarNavLink"] span {
-        display: none !important;
+        display: inline !important;
+        font-size: 0.8rem !important;
+        margin-left: 4px !important;
     }
 
     /* Link container styling */
     [data-testid="stSidebarNavLink"] {
         display: flex !important;
-        justify-content: center !important;
         align-items: center !important;
-        height: 48px !important;
-        padding: 0 !important;
-        margin-bottom: 12px !important;
+        height: 40px !important;
+        padding: 0 12px !important;
+        margin-bottom: 4px !important;
         color: #888 !important;
         background-color: transparent !important;
-        border-radius: 0 !important;
+        border-radius: 6px !important;
         position: relative;
         text-decoration: none !important;
+        gap: 8px;
     }
 
     [data-testid="stSidebarNavLink"]:hover {
