@@ -10,7 +10,7 @@ logger = get_logger("threat_intel")
 
 
 CACHE_FILE = ".threat_intel_cache.json"
-CACHE_DURATION = 180  # 3 minutes — keep data fresh
+CACHE_DURATION = 60  # 1 minute — keep data fresh
 CONFIG_FILE = ".soc_config.json"
 
 # Max payload sizes for external IOC data

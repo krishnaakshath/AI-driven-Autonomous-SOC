@@ -154,11 +154,14 @@ try:
     with refresh_col1:
         auto_refresh = st.toggle("Auto-refresh", value=False, key="siem_auto_refresh")
     with refresh_col2:
-        refresh_interval = st.selectbox("Interval", [5, 10, 15, 30], index=1, key="siem_interval")
+        refresh_interval = st.selectbox("Interval (s)", [15, 30, 60], index=1, key="siem_interval")
 
     if auto_refresh:
-        time.sleep(refresh_interval)
-        st.rerun()
+        if 'siem_auto_ts' not in st.session_state:
+            st.session_state.siem_auto_ts = time.time()
+        if time.time() - st.session_state.siem_auto_ts > refresh_interval:
+            st.session_state.siem_auto_ts = time.time()
+            st.rerun()
 
     # Tabs
     tab1, tab2, tab3, tab4 = st.tabs(["Event Stream", "Analytics", "Correlation Rules", "Log Sources"])
