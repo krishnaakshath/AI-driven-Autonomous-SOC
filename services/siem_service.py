@@ -147,6 +147,13 @@ class SIEMService:
         if alerts_batch:
             db.bulk_insert_alerts(alerts_batch)
 
+            # === 4. Email notification for HIGH/CRITICAL alerts ===
+            try:
+                from services.alert_notifier import alert_notifier
+                alert_notifier.notify_batch(alerts_batch)
+            except Exception:
+                logger.debug("Alert notification skipped", exc_info=True)
+
         return inserted
 
     def force_ingest(self, limit: int = 20) -> int:
@@ -248,6 +255,11 @@ class SIEMService:
                 db.bulk_insert_events(events_to_insert)
             if alerts_to_insert:
                 db.bulk_insert_alerts(alerts_to_insert)
+                try:
+                    from services.alert_notifier import alert_notifier
+                    alert_notifier.notify_batch(alerts_to_insert)
+                except Exception:
+                    pass
                 
             return len(events_to_insert)
         except Exception as e:
