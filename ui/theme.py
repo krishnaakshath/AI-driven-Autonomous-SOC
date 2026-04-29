@@ -265,41 +265,7 @@ CYBERPUNK_CSS = """
         border-radius: 0 4px 4px 0;
     }
 
-    /* Inject Material Icons for pages */
-    [data-testid="stSidebarNavLink"]::after {
-        font-family: 'Material Symbols Rounded', 'Material Icons' !important;
-        font-size: 24px;
-        content: 'folder_open'; /* default icon */
-        color: inherit;
-        display: block;
-        text-align: center;
-        width: 100%;
-        text-transform: none !important; /* Critical to prevent breaking ligatures */
-    }
-
-    /* Map Specific Pages to Icons (Strictly scoped to sidebar nav links) */
-    [data-testid="stSidebarNavLink"][href$="User_Guide"]::after { content: 'auto_stories'; }
-    [data-testid="stSidebarNavLink"][href$="Dashboard"]::after { content: 'grid_view'; }
-    [data-testid="stSidebarNavLink"][href$="Executive"]::after { content: 'monitoring'; }
-    [data-testid="stSidebarNavLink"][href$="Alerts"]::after { content: 'notifications_active'; }
-    [data-testid="stSidebarNavLink"][href$="Logs"]::after { content: 'receipt_long'; }
-    [data-testid="stSidebarNavLink"][href$="Timeline"]::after { content: 'timeline'; }
-    [data-testid="stSidebarNavLink"][href$="Threat_Intel"]::after { content: 'travel_explore'; }
-    [data-testid="stSidebarNavLink"][href$="Geo_Predictions"]::after { content: 'language'; }
-    [data-testid="stSidebarNavLink"][href$="Kill_Chain"]::after { content: 'security'; }
-    [data-testid="stSidebarNavLink"][href$="OSINT_Feeds"]::after { content: 'rss_feed'; }
-    [data-testid="stSidebarNavLink"][href$="Threat_Hunt"]::after { content: 'track_changes'; }
-    [data-testid="stSidebarNavLink"][href$="Analysis"]::after { content: 'analytics'; }
-    [data-testid="stSidebarNavLink"][href$="SOAR_Workbench"]::after { content: 'handyman'; }
-    [data-testid="stSidebarNavLink"][href$="Forensics"]::after { content: 'search'; }
-    [data-testid="stSidebarNavLink"][href$="Scanners"]::after { content: 'radar'; }
-    [data-testid="stSidebarNavLink"][href$="Reports"]::after { content: 'insert_chart'; }
-    [data-testid="stSidebarNavLink"][href$="CORTEX"]::after { content: 'smart_toy'; }
-    [data-testid="stSidebarNavLink"][href$="Settings"]::after { content: 'settings'; }
-    [data-testid="stSidebarNavLink"][href$="SIEM"]::after { content: 'table_chart'; }
-    [data-testid="stSidebarNavLink"][href$="Firewall_Control"]::after { content: 'shield'; }
-    [data-testid="stSidebarNavLink"][href$="RL_Adaptive"]::after { content: 'psychology'; }
-    [data-testid="stSidebarNavLink"][href$="Federated_Learning"]::after { content: 'hub'; }
+    /* Icons are now handled natively by Streamlit's :material/ icon system */
     
     /* All text inputs and labels */
     .stTextInput label, .stSelectbox label, .stNumberInput label,

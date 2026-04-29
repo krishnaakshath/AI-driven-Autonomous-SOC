@@ -88,8 +88,8 @@ try:
     st.session_state.siem_refresh_count += 1
     session_duration = (datetime.now() - st.session_state.siem_start_time).total_seconds()
 
-    # Convert to DataFrame for analytics
-    df_events = pd.DataFrame(events)
+    # Convert to DataFrame for analytics (with safe column check)
+    df_events = pd.DataFrame(events) if events else pd.DataFrame()
 
     # ===== Top Metrics =====
     st.markdown("<br>", unsafe_allow_html=True)
@@ -165,8 +165,11 @@ try:
 except Exception as e:
     st.error(f"❌ Critical SIEM UI Error: {e}")
     st.exception(e)
-    # Stop further execution to prevent cascading errors
-    st.stop()
+    # Define fallbacks to prevent cascading errors
+    events = []
+    df_events = pd.DataFrame()
+    session_duration = 0
+    tab1, tab2, tab3, tab4 = st.tabs(["Event Stream", "Analytics", "Correlation Rules", "Log Sources"])
 
 # ===== TAB 1: Event Stream =====
 with tab1:
@@ -234,41 +237,47 @@ with tab2:
         
         with chart1:
             # Events by source
-            source_counts = df_events.groupby("source").size().reset_index(name="count")
-            fig = px.bar(source_counts, x="source", y="count", color="count",
-                        color_continuous_scale=["#1A1F2E", "#00D4FF", "#8B5CF6"],
-                        title="Events by Source")
-            fig.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#FAFAFA",
-                height=300,
-                showlegend=False
-            )
-            fig.update_traces(marker_line_width=0)
-            st.plotly_chart(fig, use_container_width=True)
+            if "source" in df_events.columns:
+                source_counts = df_events.groupby("source").size().reset_index(name="count")
+                fig = px.bar(source_counts, x="source", y="count", color="count",
+                            color_continuous_scale=["#1A1F2E", "#00D4FF", "#8B5CF6"],
+                            title="Events by Source")
+                fig.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font_color="#FAFAFA",
+                    height=300,
+                    showlegend=False
+                )
+                fig.update_traces(marker_line_width=0)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No source data available for visualization.")
         
         with chart2:
             # Events by severity
-            severity_counts = df_events.groupby("severity").size().reset_index(name="count")
-            severity_order = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-            severity_counts["severity"] = pd.Categorical(severity_counts["severity"], categories=severity_order, ordered=True)
-            severity_counts = severity_counts.sort_values("severity")
-            
-            colors = {"LOW": "#00D4FF", "MEDIUM": "#FF8C00", "HIGH": "#FF4444", "CRITICAL": "#FF0066"}
-            fig = go.Figure(data=[go.Pie(
-                labels=severity_counts["severity"],
-                values=severity_counts["count"],
-                hole=0.5,
-                marker_colors=[colors.get(s, "#8B95A5") for s in severity_counts["severity"]]
-            )])
-            fig.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                font_color="#FAFAFA",
-                height=300,
-                title="Events by Severity"
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            if "severity" in df_events.columns:
+                severity_counts = df_events.groupby("severity").size().reset_index(name="count")
+                severity_order = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+                severity_counts["severity"] = pd.Categorical(severity_counts["severity"], categories=severity_order, ordered=True)
+                severity_counts = severity_counts.sort_values("severity")
+                
+                colors = {"LOW": "#00D4FF", "MEDIUM": "#FF8C00", "HIGH": "#FF4444", "CRITICAL": "#FF0066"}
+                fig = go.Figure(data=[go.Pie(
+                    labels=severity_counts["severity"],
+                    values=severity_counts["count"],
+                    hole=0.5,
+                    marker_colors=[colors.get(s, "#8B95A5") for s in severity_counts["severity"]]
+                )])
+                fig.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    font_color="#FAFAFA",
+                    height=300,
+                    title="Events by Severity"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No severity data available for visualization.")
         
         # Timeline
         st.markdown("<br>", unsafe_allow_html=True)
@@ -276,32 +285,35 @@ with tab2:
         
         # Create hourly buckets (or minute buckets if very recent)
         # Robust datetime parsing to prevent ValueErrors on mixed formats
-        parsed = pd.to_datetime(df_events["timestamp"], format="mixed", errors="coerce", utc=True)
-        # Fallback to current time if parsing completely fails for a row, ensuring dt type is kept
-        df_events["parsed_time"] = pd.to_datetime(parsed.fillna(pd.Timestamp.now(tz="UTC")), utc=True)
-        df_events["time_bucket"] = df_events["parsed_time"].dt.strftime('%H:%M')
-        timeline = df_events.groupby("time_bucket").size().reset_index(name="count")
+        if "timestamp" in df_events.columns:
+            parsed = pd.to_datetime(df_events["timestamp"], format="mixed", errors="coerce", utc=True)
+            # Fallback to current time if parsing completely fails for a row
+            df_events["parsed_time"] = pd.to_datetime(parsed.fillna(pd.Timestamp.now(tz="UTC")), utc=True)
+            df_events["time_bucket"] = df_events["parsed_time"].dt.strftime('%H:%M')
+            timeline = df_events.groupby("time_bucket").size().reset_index(name="count")
         
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=timeline["time_bucket"],
-            y=timeline["count"],
-            mode="lines+markers",
-            fill="tozeroy",
-            line=dict(color="#00D4FF", width=2),
-            fillcolor="rgba(0,212,255,0.2)"
-        ))
-        fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#FAFAFA",
-            height=250,
-            xaxis=dict(title="Time", showgrid=False),
-            yaxis=dict(title="Events", showgrid=True, gridcolor="rgba(255,255,255,0.1)")
-        )
-        st.plotly_chart(fig, use_container_width=True)
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=timeline["time_bucket"],
+                y=timeline["count"],
+                mode="lines+markers",
+                fill="tozeroy",
+                line=dict(color="#00D4FF", width=2),
+                fillcolor="rgba(0,212,255,0.2)"
+            ))
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#FAFAFA",
+                height=250,
+                xaxis=dict(title="Time", showgrid=False),
+                yaxis=dict(title="Events", showgrid=True, gridcolor="rgba(255,255,255,0.1)")
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No timestamp data available for timeline.")
     else:
-        st.info("No events to analyze.")
+        st.info("No events to analyze. Events will appear as the SIEM ingests data.")
 
 # ===== TAB 3: Correlation Rules =====
 with tab3:

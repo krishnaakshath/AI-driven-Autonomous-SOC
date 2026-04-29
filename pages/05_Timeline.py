@@ -92,13 +92,26 @@ def load_incidents():
                         if not event.get("icon"):
                             event["icon"] = icon_map.get(event.get("phase", ""), "")
                     
+                    # Robust datetime parsing — handles ISO, tz, microseconds
+                    raw_time = inc.get("start_time")
+                    if isinstance(raw_time, str):
+                        try:
+                            parsed_time = pd.to_datetime(raw_time, format="mixed", errors="coerce")
+                            parsed_time = parsed_time.to_pydatetime().replace(tzinfo=None) if not pd.isna(parsed_time) else datetime.now()
+                        except Exception:
+                            parsed_time = datetime.now()
+                    elif isinstance(raw_time, datetime):
+                        parsed_time = raw_time
+                    else:
+                        parsed_time = datetime.now()
+                    
                     result.append({
                         "id": inc.get("id", "INC-0000"),
                         "title": inc.get("title", "Unknown Incident"),
                         "severity": inc.get("severity", "HIGH"),
                         "status": inc.get("status", "Investigating"),
                         "source": inc.get("source", "SIEM"),
-                        "start_time": datetime.strptime(inc.get("start_time", datetime.now().strftime("%Y-%m-%d %H:%M:%S")), "%Y-%m-%d %H:%M:%S") if isinstance(inc.get("start_time"), str) else datetime.now(),
+                        "start_time": parsed_time,
                         "timeline": timeline
                     })
                 if result:
@@ -160,6 +173,10 @@ except Exception as e:
 
 
 # Incident selector
+if not INCIDENTS:
+    st.info("No incidents available from SIEM. Events are being ingested — check back shortly.")
+    st.stop()
+
 incident_options = {f"{inc['id']} - {inc['title']}": inc for inc in INCIDENTS}
 selected = st.selectbox("Select Incident", list(incident_options.keys()))
 incident = incident_options[selected]
@@ -220,7 +237,15 @@ if st.session_state.playback_incident == incident['id']:
     visible_timeline = incident.get("timeline", [])[:st.session_state.playback_step + 1]
 
 for i, event in enumerate(visible_timeline):
-    event_time = incident.get("start_time", datetime.now()) + timedelta(hours=event.get("time", 0) + 36)
+    base_time = incident.get("start_time", datetime.now())
+    if isinstance(base_time, str):
+        try:
+            base_time = pd.to_datetime(base_time, format="mixed", errors="coerce").to_pydatetime().replace(tzinfo=None)
+        except Exception:
+            base_time = datetime.now()
+    if not isinstance(base_time, datetime):
+        base_time = datetime.now()
+    event_time = base_time + timedelta(hours=event.get("time", 0) + 36)
     
     # Color based on phase type
     phase_colors = {

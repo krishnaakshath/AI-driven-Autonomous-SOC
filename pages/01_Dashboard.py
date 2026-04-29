@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
     st.set_page_config(page_title="Dashboard | SOC Platform", page_icon="D", layout="wide")
-except st.errors.StreamlitAPIError:
+except st.errors.StreamlitAPIException:
     pass
 
 from services.logger import get_logger

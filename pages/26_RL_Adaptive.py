@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
     st.set_page_config(page_title="RL Adaptive | SOC", page_icon="", layout="wide")
-except st.errors.StreamlitAPIError:
+except st.errors.StreamlitAPIException:
     pass
 
 from ui.theme import CYBERPUNK_CSS, inject_particles, page_header, section_title
