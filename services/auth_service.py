@@ -267,6 +267,26 @@ class AuthService:
             })
             
         if email not in current_users:
+            # AUTO-CREATE ADMIN: If admin email not in users.json (e.g. after
+            # Streamlit Cloud redeploy wiped the filesystem), create admin on
+            # the fly so they can always access the platform.
+            if email in [e.lower() for e in ADMIN_EMAILS]:
+                hashed, salt = self._hash_password(password)
+                current_users[email] = {
+                    "name": "Admin",
+                    "password_hash": hashed,
+                    "password_salt": salt,
+                    "role": "owner",
+                    "created_at": datetime.now().isoformat(),
+                    "last_login": datetime.now().isoformat(),
+                    "two_factor_enabled": False,
+                    "failed_attempts": 0,
+                    "preferences": {}
+                }
+                self._save_users_data(current_users)
+                log_auth_event("Admin Auto-Provisioned", "LOW", email)
+                return True, "Admin account created. Welcome!", False
+            
             log_auth_event("Login Failure - Unknown User", "MEDIUM", email)
             return False, "Invalid email or password", False
         

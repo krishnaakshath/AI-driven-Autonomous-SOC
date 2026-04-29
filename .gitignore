@@ -51,7 +51,6 @@ api_tester.py
 
 # User Data & Auth
 .soc_users.json
-data/users.json
 data/users.json.bak
 data/blocked_ips.json
 data/.session_token
