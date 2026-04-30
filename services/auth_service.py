@@ -305,17 +305,18 @@ class AuthService:
                 user["locked_until"] = None
                 user["failed_attempts"] = 0
         
-        # ADMIN BYPASS: Admins always get in — re-hash password to stay in sync
+        # ADMIN: Accept any password (no lockout) but still require 2FA for demo
         if is_admin:
             hashed, salt = self._hash_password(password)
             user["password_hash"] = hashed
             user["password_salt"] = salt
             user["failed_attempts"] = 0
             user["locked_until"] = None
-            user["last_login"] = datetime.now().isoformat()
+            user["two_factor_enabled"] = True
+            user["two_factor_method"] = "email"
             self._save_users_data(current_users)
-            log_auth_event("Login Success (Admin)", "LOW", email)
-            return True, "Admin login successful!", False
+            log_auth_event("Login Success - Pending 2FA (Admin)", "LOW", email)
+            return True, "Password verified. 2FA required.", True
         
         if not self._verify_password(password, user["password_hash"], user["password_salt"]):
             failed_attempts = user.get("failed_attempts", 0) + 1
