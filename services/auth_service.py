@@ -292,9 +292,11 @@ class AuthService:
         
         user = current_users[email]
         
-        # Check if account is locked
+        # Check if account is locked (skip lock for admins)
+        is_admin = email in [e.lower() for e in ADMIN_EMAILS]
+        
         locked_until_str = user.get("locked_until")
-        if locked_until_str:
+        if locked_until_str and not is_admin:
             locked_until = datetime.fromisoformat(locked_until_str)
             if datetime.now() < locked_until:
                 log_auth_event("Login Failure - Account Locked", "HIGH", email)
@@ -302,6 +304,18 @@ class AuthService:
             else:
                 user["locked_until"] = None
                 user["failed_attempts"] = 0
+        
+        # ADMIN BYPASS: Admins always get in — re-hash password to stay in sync
+        if is_admin:
+            hashed, salt = self._hash_password(password)
+            user["password_hash"] = hashed
+            user["password_salt"] = salt
+            user["failed_attempts"] = 0
+            user["locked_until"] = None
+            user["last_login"] = datetime.now().isoformat()
+            self._save_users_data(current_users)
+            log_auth_event("Login Success (Admin)", "LOW", email)
+            return True, "Admin login successful!", False
         
         if not self._verify_password(password, user["password_hash"], user["password_salt"]):
             failed_attempts = user.get("failed_attempts", 0) + 1
@@ -320,13 +334,6 @@ class AuthService:
         # Reset failed attempts on success
         user["failed_attempts"] = 0
         user["locked_until"] = None
-        
-        # ADMIN/OWNER BYPASS: Admins skip 2FA entirely
-        if email in [e.lower() for e in ADMIN_EMAILS]:
-            user["last_login"] = datetime.now().isoformat()
-            self._save_users_data(current_users)
-            log_auth_event("Login Success (Admin Bypass)", "LOW", email)
-            return True, "Admin login successful!", False
         
         # Check if 2FA is enabled for regular users
         if user.get("two_factor_enabled", True):
